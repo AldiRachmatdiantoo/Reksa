@@ -1,0 +1,136 @@
+# REKSA: orkestrasi lokal / staging.
+#
+#   cp .env.example .env            # isi semua CHANGE_ME
+#   docker compose up -d postgres redis
+#   docker compose --profile tools run --rm migrate
+#   docker compose up -d --build
+#
+# Jaringan:
+#   internal_net : internal: true, tanpa akses keluar. postgres + redis hanya di sini.
+#   app_net      : jaringan bridge biasa. frontend (nginx) + backend.
+#                  Backend butuh akses keluar untuk Gemini & R2 (Fase 3), tetapi
+#                  tidak mem-publish port apa pun. Satu-satunya port yang terbuka
+#                  ke host adalah nginx, dan hanya di 127.0.0.1.
+
+name: reksa
+
+x-hardening: &hardening
+  read_only: true
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: reksa
+      POSTGRES_USER: ${POSTGRES_OWNER_USER:-reksa_owner}
+      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?POSTGRES_OWNER_PASSWORD wajib diisi di .env}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?APP_DB_PASSWORD wajib diisi di .env}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/prisma/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - internal_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:?REDIS_PASSWORD wajib diisi di .env}
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - volatile-lru
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD}
+    volumes:
+      - redisdata:/data
+    networks:
+      - internal_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Jalankan manual: docker compose --profile tools run --rm migrate
+  migrate:
+    profiles: ["tools"]
+    build:
+      context: ./backend
+      target: migrator
+    environment:
+      MIGRATION_DATABASE_URL: postgresql://${POSTGRES_OWNER_USER:-reksa_owner}:${POSTGRES_OWNER_PASSWORD}@postgres:5432/reksa
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal_net
+
+  backend:
+    <<: *hardening
+    build:
+      context: ./backend
+      target: runner
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DATABASE_URL: postgresql://app_service_user:${APP_DB_PASSWORD}@postgres:5432/reksa
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET wajib diisi di .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET wajib diisi di .env}
+      AI_PROVIDER_MODE: ${AI_PROVIDER_MODE:-mock}
+      MOCK_AI_LATENCY_MS: ${MOCK_AI_LATENCY_MS:-300}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal_net
+      - app_net
+
+  frontend:
+    <<: *hardening
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+      - /var/cache/nginx:size=32m,mode=1777
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app_net
+
+networks:
+  internal_net:
+    internal: true
+  app_net: {}
+
+volumes:
+  pgdata:
+  redisdata:

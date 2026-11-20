@@ -243,13 +243,15 @@ Seluruh tabel menggunakan tipe primary key `UUID` (`gen_random_uuid()`) untuk me
 4. **`classes`**: `id (UUID PK)`, `institution_id (UUID FK nullable)`, `educator_id (UUID FK)`, `class_code (VARCHAR UNIQUE)`, `name (VARCHAR)`, `created_at (TIMESTAMPTZ)`.
 5. **`class_members`**: `id (UUID PK)`, `class_id (UUID FK)`, `student_id (UUID FK)`, `joined_at (TIMESTAMPTZ)`, `UNIQUE (class_id, student_id)`. Tabel ini dasar otorisasi "siswa di kelasnya": pendidik hanya boleh membaca data siswa yang terdaftar di kelas dengan `classes.educator_id = authenticatedUserId`.
 6. **`study_materials`**: `id (UUID PK)`, `uploader_id (UUID FK)`, `class_id (UUID FK nullable)`, `title (VARCHAR)`, `content_hash (VARCHAR(64))`, `storage_key (TEXT)`, `extracted_rubric_json (JSONB)`, `created_at (TIMESTAMPTZ)`.
-7. **`study_sessions`**: `id (UUID PK)`, `user_id (UUID FK)`, `material_id (UUID FK)`, `class_id (UUID FK nullable)`, `session_type (ENUM: INITIAL_BLURTING, SPACED_REVIEW)`, `planned_duration_sec (INT)`, `actual_duration_sec (INT)`, `status (ENUM: FOCUS_ACTIVE, AWAITING_JOL, AWAITING_SCAN, COMPLETED, EXPIRED)`, `started_at (TIMESTAMPTZ)`, `completed_at (TIMESTAMPTZ)`.
+7. **`study_sessions`**: `id (UUID PK)`, `user_id (UUID FK)`, `material_id (UUID FK)`, `class_id (UUID FK nullable)`, `session_type (ENUM: INITIAL_BLURTING, SPACED_REVIEW)`, `planned_duration_sec (INT)`, `actual_duration_sec (INT)`, `predicted_jol_score (INT CHECK 0..100, nullable — diisi saat `PATCH /sessions/:id/jol`, sebelum foto diunggah, lalu disalin ke `essay_submissions`)`, `status (ENUM: FOCUS_ACTIVE, AWAITING_JOL, AWAITING_SCAN, COMPLETED, EXPIRED)`, `started_at (TIMESTAMPTZ)`, `completed_at (TIMESTAMPTZ)`.
 8. **`essay_submissions`**: `id (UUID PK)`, `session_id (UUID UNIQUE FK)`, `user_id (UUID FK)`, `image_storage_key (TEXT)`, `predicted_jol_score (INT CHECK 0..100)`, `actual_ai_score (INT CHECK 0..100)`, `accurate_concepts_json (JSONB)`, `blind_spots_json (JSONB)`, `logic_corrections_json (JSONB)`, `ledger_hash (VARCHAR(64))`, `created_at (TIMESTAMPTZ)`.
 9. **`spaced_schedules`**: `id (UUID PK)`, `user_id (UUID FK)`, `origin_submission_id (UUID FK)`, `material_id (UUID FK)`, `target_blind_spots_json (JSONB)`, `interval_day (INT CHECK IN (3, 7))`, `next_review_at (TIMESTAMPTZ)`, `is_completed (BOOLEAN DEFAULT FALSE)`.
 
 ### 7.2 Strategi Indexing (Performa & Proteksi Anti-Query DoS)
 * `CREATE UNIQUE INDEX idx_users_email ON users(email);` — Lookup autentikasi instan $O(\log n)$.
 * `CREATE UNIQUE INDEX idx_refresh_tokens_hash ON refresh_tokens(token_hash);` — Validasi *refresh token rotation* tanpa *table scan*.
+* `CREATE INDEX idx_refresh_tokens_family ON refresh_tokens(family_id);` dan `idx_refresh_tokens_user ON refresh_tokens(user_id)` — Pencabutan seluruh *token family* / seluruh sesi user saat *reuse* terdeteksi.
+* `CREATE UNIQUE INDEX idx_spaced_origin_interval ON spaced_schedules(origin_submission_id, interval_day);` — Mencegah jadwal H+3/H+7 ganda untuk satu submission.
 * `CREATE INDEX idx_materials_content_hash ON study_materials(content_hash);` — Pencarian cepat rubrik yang sudah pernah diekstrak.
 * `CREATE INDEX idx_sessions_user_started ON study_sessions(user_id, started_at DESC);` — Paginasi riwayat sesi belajar pelajar.
 * `CREATE INDEX idx_class_members_student ON class_members(student_id);` — Daftar kelas milik seorang siswa (lookup `(class_id, student_id)` sudah dicakup oleh constraint `UNIQUE`).
@@ -272,12 +274,15 @@ Seluruh endpoint berada di bawah prefix `/api/v1` dan menggunakan middleware val
 | `POST` | `/sessions` | `STUDENT` | Memulai sesi Pomodoro; mengunci waktu mulai di server. |
 | `PATCH` | `/sessions/:id/jol` | `STUDENT` (Owner) | Mengakhiri fase fokus & menyimpan skor keyakinan metakognisi (`predicted_jol_score`). |
 | `POST` | `/sessions/:id/qr-bridge` | `STUDENT` (Owner) | Menghasilkan token QR sementara di Redis (TTL 300 detik) untuk akses dari desktop. |
+| `GET` | `/scans/qr-bridge/:token/events` | `STUDENT` (Owner, desktop) | *(Usulan, final ditentukan Adli)* Stream SSE ke layar laptop saat foto dari HP masuk. Nginx sudah dikonfigurasi tanpa buffering untuk path ini. |
 | `POST` | `/scans/upload` | `STUDENT` / QR Token | Menerima `multipart/form-data` foto esai, validasi *magic bytes*, menghapus EXIF, menjalankan audit `IAiService`, dan menjadwalkan H+3 & H+7. |
 | `GET` | `/spaced/due` | `STUDENT` | Mengambil daftar sesi *micro-blurting* yang jatuh tempo hari ini. |
 | `GET` | `/governance/classes/:classId/ledger` | `EDUCATOR` (Owner) | Mengambil daftar *Proof of Understanding Ledger* siswa beserta *Signed URL* foto tulisan tangan. |
 | `GET` | `/governance/classes/:classId/blind-spots` | `EDUCATOR` / `ADMIN` | Mengambil hasil klasterisasi *Cohort Blind-Spots* & rekomendasi perbaikan kurikulum. |
 
-### 8.2 Contoh Kontrak Zod Schema (`scans.schema.ts`)
+### 8.2 Contoh Kontrak Zod Schema
+
+> Di implementasi, `SubmitJolSchema` ada di `study-sessions/sessions.schema.ts` (endpoint-nya `/sessions/:id/jol`), dan `AiEssayAuditOutputSchema` didefinisikan di `common/ai/ai.schema.ts` lalu diekspor ulang dari `essay-scans/scans.schema.ts`.
 
 ```typescript
 import { z } from 'zod';
@@ -305,6 +310,45 @@ export const AiEssayAuditOutputSchema = z.object({
 }).strict();
 ```
 
+### 8.3 Kontrak yang Dikunci di Langkah 0
+
+Sumber kebenarannya adalah file `*.schema.ts`. Tabel ini ringkasan agar frontend dan backend bisa bekerja paralel. **Perubahan kontrak wajib dikabarkan ke rekan sebelum di-merge**, karena frontend dan backend sama-sama bergantung padanya.
+
+**Umum**
+* Semua body/params/query divalidasi Zod `.strict()`. Field asing → `400 VALIDATION_ERROR`.
+* Format error: `{ "error": { "code": string, "message": string, "issues"?: [{ "path", "message" }] } }`.
+* Resource milik orang lain dijawab `404 NOT_FOUND` (bukan `403`) agar keberadaannya tidak bocor.
+
+**`auth`** (`features/auth/auth.schema.ts`)
+* Register: `email` (di-trim & lowercase, maks 254), `password` (12–128 karakter, wajib huruf kecil, huruf besar, angka), `fullName` (1–100), `role` opsional `STUDENT` | `EDUCATOR` (default `STUDENT`). `INSTITUTION_ADMIN` tidak bisa daftar sendiri.
+* Login: `email`, `password` (maks 128).
+* Respons user: `id`, `email`, `fullName`, `role`, `tier`. Tidak pernah memuat hash password.
+
+**`materials`** (`features/materials/materials.schema.ts`)
+* Teks: body JSON `{ title (1–200), content (1–15.000 karakter), classId? }`.
+* PDF: `multipart/form-data`, file di field `file` (maks 10 MB, dicek *magic bytes*), field teks `title`, `classId?`.
+
+**`study-sessions`** (`features/study-sessions/sessions.schema.ts`)
+* `POST /sessions`: `{ materialId, preset, classId? }`. `preset` salah satu dari `CLASSIC_25_5`, `DEEP_45_10`, `FOCUS_SPRINT_15_3`. Durasi ditentukan server dari preset, bukan dikirim klien.
+* `PATCH /sessions/:id/jol`: `{ predictedJolScore: int 0..100 }`. Disimpan di `study_sessions.predicted_jol_score` sebelum foto boleh diunggah.
+
+**`essay-scans`** (`features/essay-scans/scans.schema.ts`)
+* `POST /scans/upload`: `multipart/form-data`, foto di field `image` (maks 5 MB; `image/jpeg`, `image/png`, `image/webp`, `image/heic`; dicek *magic bytes*). Field teks: **tepat salah satu** dari `sessionId` (pengguna login) atau `qrToken` (HP via QR bridge).
+* Token QR: 32 byte acak dalam base64url (43 karakter `[A-Za-z0-9_-]`), TTL 300 detik, sekali pakai. Respons `POST /sessions/:id/qr-bridge`: `{ qrToken, expiresInSec: 300 }`.
+
+**`spaced-repetition`** (`features/spaced-repetition/spaced.schema.ts`)
+* `GET /spaced/due?limit=` (1–50, default 20). Interval hanya 3 dan 7 hari.
+
+**`governance`** (`features/governance/governance.schema.ts`)
+* `GET /governance/classes/:classId/ledger?cursor=&limit=` (cursor UUID, limit 1–100, default 20).
+* `GET /governance/classes/:classId/blind-spots?materialId=`.
+
+**Output AI** (`common/ai/ai.schema.ts`, semua `.strict()`)
+* `AiRubricOutput`: `materialTitle`, `summary`, `keyConcepts[] { id (slug), concept, definition, weight 1..5 }`, `causalRelations[] { fromConceptId, toConceptId, relation }`. Setiap relasi wajib merujuk `id` konsep yang ada.
+* `AiEssayAuditOutput`: persis seperti contoh di §8.2.
+* `AiCohortClusterOutput`: `totalStudentsAnalyzed`, `clusters[] { label, memberConcepts[], affectedStudentCount, failureRatePercent 0..100, severity HIGH|MEDIUM|LOW, remediationSuggestion }`, `curriculumRecommendation`.
+* Data dummy `MockAiProvider` ada di `common/ai/mockAi.fixtures.ts` dan diuji lolos skema di atas.
+
 ---
 
 ## 9. Security-First NFR & Docker Multi-Stage Architecture
@@ -318,6 +362,8 @@ Keamanan ditempatkan sebagai prioritas arsitektur nomor satu (*Security-First De
    * **PostgreSQL Row-Level Security (RLS)** diaktifkan pada tabel sensitif sebagai lapisan pertahanan kedua.
      * **Pola konteks user:** setiap operasi data milik user dijalankan di dalam *interactive transaction* Prisma yang diawali `SELECT set_config('app.current_user_id', $1, true)` (parameterized; `true` = berlaku lokal untuk transaksi itu saja, aman untuk connection pooling). Kebijakan RLS membaca nilai ini via `current_setting('app.current_user_id', true)::uuid`. `SET LOCAL` tidak dipakai karena tidak menerima parameter dan akan memaksa interpolasi string.
      * Role `app_service_user` bukan pemilik tabel dan tidak memiliki atribut `BYPASSRLS`, sehingga kebijakan RLS benar-benar berlaku. Migrasi dijalankan dengan role terpisah (pemilik skema).
+     * RLS aktif pada `study_materials`, `study_sessions`, `essay_submissions`, dan `spaced_schedules`. Tabel `users` dan `refresh_tokens` sengaja tanpa RLS karena login & refresh harus mencari data sebelum user diketahui.
+     * `essay_submissions` bersifat *append-only* di level database: hak `UPDATE`/`DELETE` dicabut dari `app_service_user`, sehingga ledger tidak bisa diubah setelah tersimpan.
    * **Concurrency Lock:** Pemotongan kuota harian pemindaian AI (`daily_scan_count`) dan pembuatan `ledger_hash` dibungkus dalam transaksi database menggunakan `SELECT ... FOR UPDATE` untuk mencegah *race condition*.
 2. **Hardening JWT + Cookies & Anti-CSRF:**
    * Token tidak pernah disimpan di `localStorage` atau `sessionStorage`.
