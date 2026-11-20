@@ -109,7 +109,16 @@ apiClient.interceptors.response.use(undefined, async (error) => {
 - **Endpoint SSE QR bridge:** di `nginx.conf` saya pakai usulan `/api/v1/scans/qr-bridge/:token/events`. Kalau kamu pakai path lain atau WebSocket, kabari saya supaya `nginx.conf` disesuaikan.
 - **Dependency backend baru** (misalnya `sharp`, `file-type`): silakan tambah sendiri. Kalau `package-lock.json` konflik saat merge, ambil versi `main` lalu jalankan `npm install` lagi.
 
-## 6. Menjalankan test
+## 6. CI di GitHub
+
+Setiap PR ke `main` menjalankan `.github/workflows/ci-security.yml`: typecheck, unit test, integration test, `npm audit --audit-level=high`, Semgrep, dan build Docker. PR sebaiknya baru di-merge kalau semua job hijau.
+
+Untuk frontend:
+- Job `frontend` dan build image frontend otomatis aktif begitu `frontend/package.json` ada di branch-mu. Pastikan `npm ci` dan `npm run build` lolos.
+- `npm audit --audit-level=high` juga akan memeriksa `frontend/`. Hindari dependency dengan advisory *high*/*critical*.
+- Semgrep memindai seluruh repo, termasuk kode frontend (mis. `dangerouslySetInnerHTML`, secret yang ter-commit).
+
+## 7. Menjalankan test
 
 ```bash
 cd backend

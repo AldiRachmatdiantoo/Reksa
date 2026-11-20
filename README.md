@@ -308,6 +308,8 @@ Temukan celah keamanan? Laporkan langsung ke maintainer, jangan lewat issue publ
 | SAST & dependensi | Semgrep, `npm audit --audit-level=high` | CI | Setiap PR |
 | DAST | OWASP ZAP | Staging | Baseline & full scan |
 
+Semua pemeriksaan di atas (kecuali DAST) dijalankan otomatis oleh [`.github/workflows/ci-security.yml`](.github/workflows/ci-security.yml) di setiap pull request ke `main`.
+
 Aturan: setiap `*.service.ts` baru wajib punya unit test, setiap endpoint baru wajib punya integration test, dan setiap fitur akses data wajib punya skenario negatif (IDOR/unauthorized).
 
 ---
@@ -320,6 +322,7 @@ Aturan: setiap `*.service.ts` baru wajib punya unit test, setiap endpoint baru w
 - [ ] **Fase 1: infrastruktur, hardening database, auth** (tanpa AI)
   - [x] Modul `auth`: Argon2id, cookie `__Host-`/`__Secure-`, refresh rotation + reuse detection, RBAC, rate limit Redis
   - [x] Security suite: cookie, token replay, JWT palsu, SQLi/fuzzing, rate limit, RLS, least privilege
+  - [x] CI: typecheck, unit, integration (Testcontainers), `npm audit`, Semgrep, Docker build
 - [ ] **Fase 2: golden path & governance dengan `MockAiProvider`**, beserta seluruh test
 - [ ] **Fase 3: `GeminiAiProvider` & uji prompt injection**
 
