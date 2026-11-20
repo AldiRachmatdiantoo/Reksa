@@ -1,0 +1,104 @@
+
+  <div class="min-h-screen flex flex-col bg-light-surface" data-stitch-vh="min-h-screen===min-h-screen">
+
+    <!-- Contextual Task Flow Header -->
+    <header class="sticky top-0 z-30 bg-light-surface-container-lowest border-b border-light-outline-variant/60 px-gutter-md py-3">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <a href="../landing-beranda/LandingBeranda.html" aria-label="Kembali ke Beranda" class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-light-surface-container-low border border-light-outline-variant/70 text-light-on-surface transition-colors duration-state-change ease-state-change hover:bg-light-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">arrow_back</span>
+          </a>
+          <div class="flex flex-col">
+            <h1 data-design-text-token="title-md" class="font-headline text-title-md text-light-on-surface leading-none">Mode Tanpa Internet</h1>
+            <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Tetap bisa belajar tanpa sinyal</span>
+          </div>
+        </div>
+
+        <button id="conn-toggle-btn" type="button" class="inline-flex items-center gap-1 rounded-full bg-light-surface-container-low border border-light-outline-variant px-3 py-1 font-label text-label-sm text-warning whitespace-nowrap">
+          <span id="conn-icon" class="material-symbols-outlined text-body-md" aria-hidden="true">wifi_off</span>
+          <span id="conn-chip-text" data-design-text-token="label-sm">Sedang Offline</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-1 flex flex-col gap-gutter-lg px-gutter-md py-gutter-lg">
+
+      <!-- Offline Status Banner -->
+      <article id="status-banner" class="rounded-md bg-light-surface-container border border-light-outline-variant p-4 flex items-start gap-3">
+        <span id="banner-icon" class="material-symbols-outlined text-warning text-title-lg shrink-0" aria-hidden="true">cloud_off</span>
+        <div class="flex flex-col gap-0.5">
+          <h2 id="banner-title" data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Sinyal Tidak Tersedia</h2>
+          <p id="banner-desc" data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant text-pretty">
+            Tenang! Timer fokus dan foto catatanmu tetap tersimpan aman di HP, lalu otomatis terkirim saat internet nyala lagi.
+          </p>
+        </div>
+      </article>
+
+      <!-- Saved Materials on Device -->
+      <section aria-labelledby="saved-heading" class="flex flex-col gap-2.5">
+        <h2 id="saved-heading" data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">
+          Bacaan Tersimpan di HP
+        </h2>
+
+        <article class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-3.5 shadow-sm flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-md bg-light-surface-variant text-light-primary flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">download_done</span>
+            </div>
+            <div class="flex flex-col min-w-0">
+              <span data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Arsitektur Enterprise — TOGAF</span>
+              <span data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">Siap dibuka offline • 2,4 MB</span>
+            </div>
+          </div>
+          <a href="../study-studio/StudyStudio.html" class="rounded-full bg-light-primary text-light-on-primary px-3.5 py-1.5 font-label text-label-sm whitespace-nowrap">
+            <span data-design-text-token="label-sm">Buka</span>
+          </a>
+        </article>
+      </section>
+
+      <!-- Queued Essay Photos -->
+      <section aria-labelledby="queue-heading" class="flex flex-col gap-2.5">
+        <div class="flex items-center justify-between gap-2">
+          <h2 id="queue-heading" data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">
+            Antrean Foto Catatan
+          </h2>
+          <span id="queue-count" data-design-text-token="label-sm" class="font-mono text-label-sm text-light-primary tabular-nums">2 Menunggu</span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <article class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-3.5 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-light-secondary text-title-lg" aria-hidden="true">photo_camera</span>
+              <div class="flex flex-col">
+                <span data-design-text-token="label-lg" class="font-label text-label-lg text-light-on-surface">Catatan TOGAF ADM</span>
+                <span data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant tabular-nums">Disimpan 07:45 • 1,1 MB</span>
+              </div>
+            </div>
+            <span class="queue-badge rounded-full bg-light-surface-container-low px-2.5 py-1 font-label text-label-sm text-warning whitespace-nowrap">Menunggu Sinyal</span>
+          </article>
+
+          <article class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-3.5 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-light-secondary text-title-lg" aria-hidden="true">photo_camera</span>
+              <div class="flex flex-col">
+                <span data-design-text-token="label-lg" class="font-label text-label-lg text-light-on-surface">Peta Konsep Arsitektur Data</span>
+                <span data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant tabular-nums">Disimpan 07:52 • 940 KB</span>
+              </div>
+            </div>
+            <span class="queue-badge rounded-full bg-light-surface-container-low px-2.5 py-1 font-label text-label-sm text-warning whitespace-nowrap">Menunggu Sinyal</span>
+          </article>
+        </div>
+      </section>
+
+      <!-- Sync Action -->
+      <button id="sync-now-btn" data-component-id="button-primary" data-component-type="button" data-component-variant="primary" type="button" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-light-primary text-light-on-primary px-6 py-3 font-label text-label-lg shadow-sm transition-colors duration-state-change ease-state-change hover:bg-light-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+        <span class="material-symbols-outlined text-title-lg" aria-hidden="true">sync</span>
+        <span id="sync-btn-text" data-design-text-token="label-lg">Coba Sambungkan &amp; Kirim Sekarang</span>
+      </button>
+
+    </main>
+  </div>
+
+  
+
+

@@ -1,0 +1,224 @@
+
+  <div class="min-h-screen flex flex-col bg-light-surface" data-stitch-vh="min-h-screen===min-h-screen">
+
+    <!-- Desktop Top Header -->
+    <header class="sticky top-0 z-30 bg-light-surface-container-lowest border-b border-light-outline-variant/60 px-gutter-lg py-3.5">
+      <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <a href="../landing-beranda-desktop/LandingBerandaDesktop.html" aria-label="Kembali ke Beranda" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-light-surface-container-low border border-light-outline-variant/70 text-light-on-surface transition-colors duration-state-change ease-state-change hover:bg-light-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">arrow_back</span>
+          </a>
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-md bg-light-primary text-light-on-primary flex items-center justify-center shadow-sm">
+              <span class="material-symbols-outlined text-title-lg" aria-hidden="true">school</span>
+            </div>
+            <div class="flex flex-col">
+              <span data-design-text-token="title-md" class="font-headline text-title-md text-light-primary leading-none">Portal Guru</span>
+              <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Kelas IF-4B • Arsitektur Enterprise</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+          <span data-component-id="chip-action" data-component-type="chip" data-component-variant="action" class="inline-flex items-center gap-1.5 rounded-full bg-light-surface-container-low border border-light-outline-variant px-3.5 py-1.5 font-label text-label-sm text-light-primary tabular-nums whitespace-nowrap">
+            <span data-design-text-token="label-sm">32 Siswa</span>
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Dashboard Content -->
+    <main class="flex-1 px-gutter-lg py-gutter-xl">
+      <div class="max-w-6xl mx-auto flex flex-col gap-gutter-lg">
+
+        <!-- Top 3-Column Metrics -->
+        <section aria-label="Ringkasan kelas" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+          <div class="h-full rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-5 shadow-sm flex items-center justify-between gap-4">
+            <div class="flex flex-col gap-1">
+              <span data-design-text-token="label-md" class="font-label text-label-md text-light-on-surface-variant">Sudah Mengumpulkan</span>
+              <span data-design-text-token="headline-lg" class="font-mono text-headline-lg text-light-primary tabular-nums">28/32</span>
+            </div>
+            <span class="material-symbols-outlined text-light-primary text-headline-lg" aria-hidden="true">assignment_turned_in</span>
+          </div>
+
+          <div class="h-full rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-5 shadow-sm flex items-center justify-between gap-4">
+            <div class="flex flex-col gap-1">
+              <span data-design-text-token="label-md" class="font-label text-label-md text-light-on-surface-variant">Rata-Rata Nilai</span>
+              <span data-design-text-token="headline-lg" class="font-mono text-headline-lg text-light-secondary tabular-nums">74%</span>
+            </div>
+            <span class="material-symbols-outlined text-light-secondary text-headline-lg" aria-hidden="true">insights</span>
+          </div>
+
+          <div class="h-full rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-5 shadow-sm flex items-center justify-between gap-4">
+            <div class="flex flex-col gap-1">
+              <span data-design-text-token="label-md" class="font-label text-label-md text-light-on-surface-variant">Catatan Terverifikasi</span>
+              <span data-design-text-token="headline-lg" class="font-mono text-headline-lg text-success tabular-nums">100%</span>
+            </div>
+            <span class="material-symbols-outlined text-success text-headline-lg" aria-hidden="true">verified_user</span>
+          </div>
+        </section>
+
+        <!-- Main 2-Column Governance Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-start">
+
+          <!-- Left Column: Proof of Understanding Table -->
+          <section aria-labelledby="ledger-heading" class="lg:col-span-7 flex flex-col gap-3">
+            <div class="flex items-center justify-between gap-2">
+              <h1 id="ledger-heading" data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">
+                Bukti Belajar Asli Siswa
+              </h1>
+              <span data-design-text-token="label-md" class="font-label text-label-md text-success flex items-center gap-1 whitespace-nowrap">
+                <span class="material-symbols-outlined text-title-md" aria-hidden="true">verified</span>
+                Anti Salin-Tempel
+              </span>
+            </div>
+
+            <div class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 shadow-sm overflow-hidden">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-light-surface-container-low border-b border-light-outline-variant/60 font-label text-label-md text-light-on-surface-variant">
+                    <th class="py-3 px-4">Nama Siswa</th>
+                    <th class="py-3 px-4">Fokus</th>
+                    <th class="py-3 px-4">Tebakan / Asli</th>
+                    <th class="py-3 px-4">Status</th>
+                    <th class="py-3 px-4 text-right">Catatan</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-light-outline-variant/40 font-body text-body-md">
+                  <tr class="hover:bg-light-surface-container-low/50">
+                    <td class="py-3.5 px-4">
+                      <div class="flex flex-col">
+                        <span class="font-title text-title-md text-light-on-surface">Raka Pratama</span>
+                        <span class="font-body text-body-sm text-light-on-surface-variant">Hari ini, 09:14</span>
+                      </div>
+                    </td>
+                    <td class="py-3.5 px-4 font-mono text-mono-md text-light-on-surface tabular-nums whitespace-nowrap">24m 42d</td>
+                    <td class="py-3.5 px-4 font-mono text-mono-md tabular-nums whitespace-nowrap">
+                      <span class="text-light-on-surface-variant">75%</span>
+                      <span class="text-light-outline"> / </span>
+                      <span class="text-light-primary">68%</span>
+                    </td>
+                    <td class="py-3.5 px-4">
+                      <span class="rounded-full bg-light-surface-container-low border border-light-outline-variant px-2.5 py-0.5 font-label text-label-sm text-success whitespace-nowrap">Asli</span>
+                    </td>
+                    <td class="py-3.5 px-4 text-right">
+                      <button type="button" class="font-label text-label-md text-light-primary hover:underline whitespace-nowrap">Lihat Foto</button>
+                    </td>
+                  </tr>
+
+                  <tr class="hover:bg-light-surface-container-low/50">
+                    <td class="py-3.5 px-4">
+                      <div class="flex flex-col">
+                        <span class="font-title text-title-md text-light-on-surface">Siti Nurhaliza</span>
+                        <span class="font-body text-body-sm text-light-on-surface-variant">Hari ini, 08:50</span>
+                      </div>
+                    </td>
+                    <td class="py-3.5 px-4 font-mono text-mono-md text-light-on-surface tabular-nums whitespace-nowrap">15m 10d</td>
+                    <td class="py-3.5 px-4 font-mono text-mono-md tabular-nums whitespace-nowrap">
+                      <span class="text-light-on-surface-variant">80%</span>
+                      <span class="text-light-outline"> / </span>
+                      <span class="text-light-primary">84%</span>
+                    </td>
+                    <td class="py-3.5 px-4">
+                      <span class="rounded-full bg-light-surface-container-low border border-light-outline-variant px-2.5 py-0.5 font-label text-label-sm text-success whitespace-nowrap">Asli</span>
+                    </td>
+                    <td class="py-3.5 px-4 text-right">
+                      <button type="button" class="font-label text-label-md text-light-primary hover:underline whitespace-nowrap">Lihat Foto</button>
+                    </td>
+                  </tr>
+
+                  <tr class="hover:bg-light-surface-container-low/50">
+                    <td class="py-3.5 px-4">
+                      <div class="flex flex-col">
+                        <span class="font-title text-title-md text-light-on-surface">Bagas Mahendra</span>
+                        <span class="font-body text-body-sm text-light-on-surface-variant">Hari ini, 08:32</span>
+                      </div>
+                    </td>
+                    <td class="py-3.5 px-4 font-mono text-mono-md text-light-on-surface tabular-nums whitespace-nowrap">25m 00d</td>
+                    <td class="py-3.5 px-4 font-mono text-mono-md tabular-nums whitespace-nowrap">
+                      <span class="text-light-on-surface-variant">70%</span>
+                      <span class="text-light-outline"> / </span>
+                      <span class="text-light-primary">72%</span>
+                    </td>
+                    <td class="py-3.5 px-4">
+                      <span class="rounded-full bg-light-surface-container-low border border-light-outline-variant px-2.5 py-0.5 font-label text-label-sm text-success whitespace-nowrap">Asli</span>
+                    </td>
+                    <td class="py-3.5 px-4 text-right">
+                      <button type="button" class="font-label text-label-md text-light-primary hover:underline whitespace-nowrap">Lihat Foto</button>
+                    </td>
+                  </tr>
+
+                  <tr class="hover:bg-light-surface-container-low/50">
+                    <td class="py-3.5 px-4">
+                      <div class="flex flex-col">
+                        <span class="font-title text-title-md text-light-on-surface">Nadia Kusuma</span>
+                        <span class="font-body text-body-sm text-light-on-surface-variant">Kemarin, 19:45</span>
+                      </div>
+                    </td>
+                    <td class="py-3.5 px-4 font-mono text-mono-md text-light-on-surface tabular-nums whitespace-nowrap">42m 18d</td>
+                    <td class="py-3.5 px-4 font-mono text-mono-md tabular-nums whitespace-nowrap">
+                      <span class="text-light-on-surface-variant">65%</span>
+                      <span class="text-light-outline"> / </span>
+                      <span class="text-light-primary">78%</span>
+                    </td>
+                    <td class="py-3.5 px-4">
+                      <span class="rounded-full bg-light-surface-container-low border border-light-outline-variant px-2.5 py-0.5 font-label text-label-sm text-success whitespace-nowrap">Asli</span>
+                    </td>
+                    <td class="py-3.5 px-4 text-right">
+                      <button type="button" class="font-label text-label-md text-light-primary hover:underline whitespace-nowrap">Lihat Foto</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Right Column: Cohort Blind-Spots + Recommendation -->
+          <section aria-labelledby="blindspots-heading" class="lg:col-span-5 flex flex-col gap-3">
+            <h2 id="blindspots-heading" data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">
+              Bagian Sulit di Kelas
+            </h2>
+
+            <article class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-4 shadow-sm flex flex-col gap-2">
+              <header class="flex items-center justify-between gap-2">
+                <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Tahapan TOGAF ADM</h3>
+                <span data-design-text-token="mono-md" class="font-mono text-mono-md text-light-error tabular-nums whitespace-nowrap">72% Lupa</span>
+              </header>
+              <div class="w-full h-2 rounded-full bg-light-surface-container-high overflow-hidden">
+                <div class="h-full w-3/4 rounded-full bg-light-error"></div>
+              </div>
+              <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant text-pretty">
+                20 dari 28 siswa belum menuliskan urutan lengkap dari Visi Arsitektur sampai Implementasi.
+              </p>
+            </article>
+
+            <article class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-4 shadow-sm flex flex-col gap-2">
+              <header class="flex items-center justify-between gap-2">
+                <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Arsitektur Teknologi</h3>
+                <span data-design-text-token="mono-md" class="font-mono text-mono-md text-light-secondary tabular-nums whitespace-nowrap">48% Lupa</span>
+              </header>
+              <div class="w-full h-2 rounded-full bg-light-surface-container-high overflow-hidden">
+                <div class="h-full w-1/2 rounded-full bg-light-secondary"></div>
+              </div>
+              <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant text-pretty">
+                Banyak yang tertukar antara perangkat keras server dengan layanan aplikasi.
+              </p>
+            </article>
+
+            <article class="rounded-md bg-light-primary text-light-on-primary p-5 flex flex-col gap-2 shadow-sm">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-title-lg" aria-hidden="true">lightbulb</span>
+                <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-primary">Saran Pertemuan Berikutnya</h3>
+              </div>
+              <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-primary-container text-pretty">
+                Coba tambahkan contoh studi kasus nyata alur TOGAF ADM di perusahaan ritel sebelum tugas minggu depan agar siswa lebih mudah membayangkan urutannya.
+              </p>
+            </article>
+          </section>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+
