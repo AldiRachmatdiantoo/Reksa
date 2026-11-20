@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 20 November 2026, storage service (Aldi, branch `feat/aldi-storage`)
+**Checkpoint terakhir:** 21 November 2026, frontend di repo terpisah (Aldi, `reksa-frontend` branch `feat/aldi-frontend-app`)
 
 ---
 
@@ -10,12 +10,32 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 
 | Tahap | Aldi | Adli |
 | :--- | :--- | :--- |
-| Langkah 0 | ✅ Selesai, di `main` (PR #1) | ⏳ Belum mulai |
+| Langkah 0 | ✅ Selesai, di `main` (PR #1) | ⏳ Belum mulai (bagian frontend diambil alih Aldi) |
 | Fase 1 | ✅ Selesai: `auth` (PR #2, #3), CI + branch protection (PR #4) | — |
-| Fase 2 | 🟡 Storage service (`feat/aldi-storage`) | ⬜ |
+| Fase 2 | ✅ Storage (PR #6) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | ⬜ |
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #5 · Frontend di repo terpisah · `reksa-frontend` branch `feat/aldi-frontend-app`
+
+**Sumber frontend**
+- Repo: https://github.com/AldiRachmatdiantoo/reksa-frontend, pemilik Aldi (bukan lagi area Adli)
+- Desain: ekspor Figma Make, disimpan di `design-reference/` repo itu sebagai referensi
+- Animasi: Watermelon UI (pola tab bergeser *Discrete Tabs* + `@number-flow/react`)
+- Stack: Vite 8, React 19, TypeScript, Tailwind 4, react-router 7, motion
+
+**Selesai**
+- Masuk/Daftar tersambung ke endpoint `auth` asli (cookie `HttpOnly`, refresh single-flight, guard per peran)
+- Alur pelajar: timer fokus → tebak nilai (JOL) + foto → hasil cek, memakai data contoh = fixture `MockAiProvider`, diberi label "contoh" di UI
+- Portal guru (keadaan kosong), beranda, tema terang/gelap
+- Status rinci dan backlog: `docs/CHECKPOINT.md` dan `docs/BACKLOG.md` di repo frontend
+
+**Di repo ini**
+- `docker-compose.dev.yml`: port Postgres/Redis dev kini `127.0.0.1` dan bisa diatur (`POSTGRES_DEV_PORT`, `REDIS_DEV_PORT`), untuk mesin yang port 5432-nya sudah dipakai
+- CLAUDE.md §1 dan `UNTUK-ADLI.md` dicatat soal perpindahan frontend
+
+**Menjalankan lokal**: backend `npm run dev` di `backend/`, lalu `npm run dev` di `reksa-frontend` (proksi `/api` ke `VITE_API_PROXY_TARGET`, default `http://localhost:3000`).
 
 ### #4 — Storage service S3 (Fase 2) · branch `feat/aldi-storage`
 
@@ -102,14 +122,14 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 ## Berikutnya
 
 **Aldi**
-1. Merge `feat/aldi-storage`, lalu modul `materials` (upload PDF → magic bytes → storage, cache rubrik SHA-256 di Redis)
-2. Persiapan deploy: migrasi pencabutan hak `anon`/`authenticated` Supabase, `vercel.json` (rewrite + header), konfigurasi Render
-3. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
+1. Merge PR `feat/aldi-frontend-app` (reksa-frontend) dan `feat/aldi-frontend-integration` (repo ini)
+2. Modul `materials` (upload PDF → magic bytes → storage, cache rubrik SHA-256 di Redis) + halaman unggah materi di frontend
+3. Persiapan deploy: migrasi pencabutan hak `anon`/`authenticated` Supabase, `vercel.json` di reksa-frontend (rewrite + header), konfigurasi Render
+4. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
 
 **Adli** (lihat [UNTUK-ADLI.md](UNTUK-ADLI.md))
 1. Review schema di foldernya, perkaya `mockAi.fixtures.ts`
-2. Kerangka frontend + `apiClient` dengan refresh single-flight
-3. Halaman Login/Register memakai endpoint `auth`
+2. Backend `study-sessions` dan `essay-scans`, lalu kabari bentuk API final lewat `UNTUK-ALDI.md`
 
 ## Catatan teknis yang perlu diingat
 
