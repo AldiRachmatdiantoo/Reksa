@@ -37,3 +37,6 @@ Thumbs.db
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Prisma generated client (dibuat ulang lewat `npx prisma generate`)
+backend/src/generated/

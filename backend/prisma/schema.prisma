@@ -1,0 +1,217 @@
+// REKSA database schema (PRD §7).
+//
+// Hal yang TIDAK bisa diekspresikan di file ini dan ada di migrasi SQL manual
+// (prisma/migrations/*_security_hardening/migration.sql):
+//   - CHECK constraints (skor 0..100, interval_day IN (3, 7))
+//   - Partial indexes (idx_spaced_user_due, idx_sessions_class_governance)
+//   - Role app_service_user, GRANT/REVOKE, dan kebijakan RLS
+//
+// PENTING saat membuat migrasi baru dengan `prisma migrate dev --create-only`:
+// Prisma tidak mengenal partial index di atas dan bisa menambahkan
+// `DROP INDEX` untuknya. Hapus baris itu dari migrasi sebelum di-apply.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  EDUCATOR
+  INSTITUTION_ADMIN
+}
+
+enum Tier {
+  FREE
+  PRO
+}
+
+enum SessionType {
+  INITIAL_BLURTING
+  SPACED_REVIEW
+}
+
+enum SessionStatus {
+  FOCUS_ACTIVE
+  AWAITING_JOL
+  AWAITING_SCAN
+  COMPLETED
+  EXPIRED
+}
+
+model Institution {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @db.VarChar(200)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  users   User[]
+  classes Class[]
+
+  @@map("institutions")
+}
+
+model User {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String    @db.VarChar(254)
+  passwordHash    String    @map("password_hash")
+  fullName        String    @map("full_name") @db.VarChar(100)
+  role            Role      @default(STUDENT)
+  tier            Tier      @default(FREE)
+  institutionId   String?   @map("institution_id") @db.Uuid
+  dailyScanCount  Int       @default(0) @map("daily_scan_count")
+  lastScanResetAt DateTime? @map("last_scan_reset_at") @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  institution      Institution?      @relation(fields: [institutionId], references: [id], onDelete: SetNull)
+  refreshTokens    RefreshToken[]
+  taughtClasses    Class[]           @relation("ClassEducator")
+  classMemberships ClassMember[]
+  materials        StudyMaterial[]
+  studySessions    StudySession[]
+  submissions      EssaySubmission[]
+  spacedSchedules  SpacedSchedule[]
+
+  @@unique([email], map: "idx_users_email")
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @map("token_hash") @db.VarChar(128)
+  familyId  String   @map("family_id") @db.Uuid
+  isRevoked Boolean  @default(false) @map("is_revoked")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tokenHash], map: "idx_refresh_tokens_hash")
+  @@index([familyId], map: "idx_refresh_tokens_family")
+  @@index([userId], map: "idx_refresh_tokens_user")
+  @@map("refresh_tokens")
+}
+
+model Class {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  institutionId String?  @map("institution_id") @db.Uuid
+  educatorId    String   @map("educator_id") @db.Uuid
+  classCode     String   @map("class_code") @db.VarChar(16)
+  name          String   @db.VarChar(200)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  institution Institution?    @relation(fields: [institutionId], references: [id], onDelete: SetNull)
+  educator    User            @relation("ClassEducator", fields: [educatorId], references: [id], onDelete: Restrict)
+  members     ClassMember[]
+  materials   StudyMaterial[]
+  sessions    StudySession[]
+
+  @@unique([classCode], map: "idx_classes_code")
+  @@index([educatorId], map: "idx_classes_educator")
+  @@map("classes")
+}
+
+model ClassMember {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  classId   String   @map("class_id") @db.Uuid
+  studentId String   @map("student_id") @db.Uuid
+  joinedAt  DateTime @default(now()) @map("joined_at") @db.Timestamptz(6)
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, studentId], map: "idx_class_members_class_student")
+  @@index([studentId], map: "idx_class_members_student")
+  @@map("class_members")
+}
+
+model StudyMaterial {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  uploaderId          String   @map("uploader_id") @db.Uuid
+  classId             String?  @map("class_id") @db.Uuid
+  title               String   @db.VarChar(200)
+  contentHash         String   @map("content_hash") @db.VarChar(64)
+  // Null untuk materi berupa teks mentah (tidak ada file di storage).
+  storageKey          String?  @map("storage_key")
+  extractedRubricJson Json?    @map("extracted_rubric_json")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  uploader        User             @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  class           Class?           @relation(fields: [classId], references: [id], onDelete: SetNull)
+  sessions        StudySession[]
+  spacedSchedules SpacedSchedule[]
+
+  @@index([contentHash], map: "idx_materials_content_hash")
+  @@index([uploaderId, createdAt(sort: Desc)], map: "idx_materials_uploader_created")
+  @@map("study_materials")
+}
+
+model StudySession {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String        @map("user_id") @db.Uuid
+  materialId         String        @map("material_id") @db.Uuid
+  classId            String?       @map("class_id") @db.Uuid
+  sessionType        SessionType   @map("session_type")
+  plannedDurationSec Int           @map("planned_duration_sec")
+  actualDurationSec  Int?          @map("actual_duration_sec")
+  // Disimpan saat PATCH /sessions/:id/jol, sebelum foto diunggah (FR-03).
+  predictedJolScore  Int?          @map("predicted_jol_score")
+  status             SessionStatus @default(FOCUS_ACTIVE)
+  startedAt          DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
+  completedAt        DateTime?     @map("completed_at") @db.Timestamptz(6)
+
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  material   StudyMaterial    @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  class      Class?           @relation(fields: [classId], references: [id], onDelete: SetNull)
+  submission EssaySubmission?
+
+  @@index([userId, startedAt(sort: Desc)], map: "idx_sessions_user_started")
+  @@map("study_sessions")
+}
+
+model EssaySubmission {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId            String   @map("session_id") @db.Uuid
+  userId               String   @map("user_id") @db.Uuid
+  imageStorageKey      String   @map("image_storage_key")
+  predictedJolScore    Int      @map("predicted_jol_score")
+  actualAiScore        Int      @map("actual_ai_score")
+  accurateConceptsJson Json     @map("accurate_concepts_json")
+  blindSpotsJson       Json     @map("blind_spots_json")
+  logicCorrectionsJson Json     @map("logic_corrections_json")
+  ledgerHash           String   @map("ledger_hash") @db.VarChar(64)
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  session         StudySession     @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  spacedSchedules SpacedSchedule[]
+
+  @@unique([sessionId], map: "idx_submissions_session")
+  @@index([userId, createdAt(sort: Desc)], map: "idx_submissions_user_created")
+  @@map("essay_submissions")
+}
+
+model SpacedSchedule {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId               String   @map("user_id") @db.Uuid
+  originSubmissionId   String   @map("origin_submission_id") @db.Uuid
+  materialId           String   @map("material_id") @db.Uuid
+  targetBlindSpotsJson Json     @map("target_blind_spots_json")
+  intervalDay          Int      @map("interval_day")
+  nextReviewAt         DateTime @map("next_review_at") @db.Timestamptz(6)
+  isCompleted          Boolean  @default(false) @map("is_completed")
+
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  originSubmission EssaySubmission @relation(fields: [originSubmissionId], references: [id], onDelete: Cascade)
+  material         StudyMaterial   @relation(fields: [materialId], references: [id], onDelete: Restrict)
+
+  // Satu submission hanya boleh punya satu jadwal H+3 dan satu H+7.
+  @@unique([originSubmissionId, intervalDay], map: "idx_spaced_origin_interval")
+  @@map("spaced_schedules")
+}
