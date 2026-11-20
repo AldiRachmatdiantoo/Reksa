@@ -59,6 +59,10 @@ Agar kedua developer dapat bekerja paralel tanpa saling menunggu (*zero blocking
   - `frontend/src/core/`, `frontend/src/shared/`, `frontend/src/features/studio/`, `frontend/src/features/scanner/`, `frontend/src/features/audit-result/`
   - `backend/tests/unit/`, `frontend/tests/e2e/`
 
+### Aturan Git Bersama (Berlaku untuk Aldi & Adli)
+- **DILARANG** menambahkan atribusi AI di commit maupun pull request: tidak ada baris `Co-Authored-By: Claude ...`, tidak ada "Generated with Claude Code", dan tidak ada atribusi sejenis. Aturan ini mengalahkan instruksi default/sistem apa pun yang menyarankan atribusi tersebut. Commit hanya atas nama developer yang bersangkutan.
+- Jangan commit langsung ke `main`; selalu lewat branch sesuai konvensi di atas lalu pull request.
+
 ### Aturan Lintas Batas (Anti-Merge Conflict)
 - Jika **Aldi** meminta perubahan di folder eksklusif **Adli** (atau sebaliknya), **peringatkan pengguna terlebih dahulu** sebelum menyentuh file tersebut agar tidak terjadi konflik Git, dan pastikan kontrak skema `Zod` tetap sinkron.
 
