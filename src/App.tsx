@@ -12,7 +12,9 @@ import { CalibratePage } from '@/features/scanner/CalibratePage';
 import { StudioPage } from '@/features/studio/StudioPage';
 import { StudySessionProvider } from '@/features/studio/studySession';
 import { ScrollToTop } from '@/shared/ScrollToTop';
+import { ConsentProvider } from '@/shared/consent';
 import { ThemeProvider } from '@/shared/theme';
+import { CookieNotice } from '@/shared/ui/CookieNotice';
 
 /**
  * Halaman di dalam /belajar berganti dengan animasi keluar-masuk, tapi provider sesi
@@ -75,14 +77,17 @@ export default function App() {
   return (
     // reducedMotion="user": semua animasi motion berhenti jika OS meminta prefers-reduced-motion.
     <MotionConfig reducedMotion="user">
-      <ThemeProvider>
-        <AuthProvider>
-          <BrowserRouter>
-            <ScrollToTop />
-            <AnimatedRoutes />
-          </BrowserRouter>
-        </AuthProvider>
-      </ThemeProvider>
+      <ConsentProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <BrowserRouter>
+              <ScrollToTop />
+              <AnimatedRoutes />
+              <CookieNotice />
+            </BrowserRouter>
+          </AuthProvider>
+        </ThemeProvider>
+      </ConsentProvider>
     </MotionConfig>
   );
 }

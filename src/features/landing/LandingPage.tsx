@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { homePathFor } from '@/features/auth/authApi';
+import { useConsent } from '@/shared/consent';
 import { EASE_OUT, pageTransition, Reveal, Stagger, StaggerItem, WordReveal } from '@/shared/motion';
 import { Brand } from '@/shared/ui/Brand';
 import { ButtonLink } from '@/shared/ui/Button';
@@ -43,6 +44,7 @@ const TEACHER_POINTS = [
 
 export function LandingPage() {
   const auth = useAuth();
+  const { reopen: openCookieSettings } = useConsent();
   const [audience, setAudience] = useState<Audience>('pelajar');
   const user = auth.status === 'authenticated' ? auth.user : null;
   // Parallax tipis pada foto hero: bergeser 40px selama hero digulir keluar layar.
@@ -288,6 +290,9 @@ export function LandingPage() {
             <Link to="/daftar" className="inline-flex min-h-11 items-center hover:text-teal">
               Daftar
             </Link>
+            <button type="button" onClick={openCookieSettings} className="inline-flex min-h-11 items-center hover:text-teal">
+              Pengaturan cookie
+            </button>
           </nav>
           <p>© 2026 REKSA</p>
         </div>

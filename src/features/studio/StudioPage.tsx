@@ -1,11 +1,12 @@
 import NumberFlow, { NumberFlowGroup } from '@number-flow/react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNow } from '@/shared/hooks/useNow';
 import { EASE_OUT, pageTransition, Reveal, Stagger, StaggerItem } from '@/shared/motion';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/Button';
+import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { Icon } from '@/shared/ui/Icon';
 import { SAMPLE_MATERIAL } from './sampleMaterial';
 import { StepIndicator } from './StepIndicator';
@@ -23,6 +24,7 @@ export function StudioPage() {
   const navigate = useNavigate();
   const { session, start, setPreset, finishFocus, resetTimer, clear } = useStudySession();
   const material = SAMPLE_MATERIAL;
+  const [confirm, setConfirm] = useState<'reset' | 'new' | null>(null);
 
   const preset = session?.presetMinutes ?? 25;
   const running = session?.startedAt != null && session.focusSeconds == null;
@@ -69,7 +71,7 @@ export function StudioPage() {
               <Button variant="accent" size="lg" onClick={() => navigate('/belajar/foto')}>
                 Lanjut tebak nilai
               </Button>
-              <Button variant="outline" size="lg" onClick={clear}>
+              <Button variant="outline" size="lg" onClick={() => setConfirm('new')}>
                 Mulai sesi baru
               </Button>
             </div>
@@ -220,7 +222,7 @@ export function StudioPage() {
                   <Button variant="accent" size="lg" onClick={onFinish}>
                     Selesai, lanjut tebak nilai
                   </Button>
-                  <Button variant="ghost" onClick={resetTimer}>
+                  <Button variant="ghost" onClick={() => setConfirm('reset')}>
                     <Icon name="restart_alt" />
                     Ulangi dan buka bacaan
                   </Button>
@@ -235,6 +237,35 @@ export function StudioPage() {
           </div>
         )}
       </motion.main>
+
+      <ConfirmDialog
+        open={confirm === 'reset'}
+        icon="restart_alt"
+        title="Ulangi waktu fokus?"
+        confirmLabel="Ya, ulangi"
+        cancelLabel="Lanjut fokus"
+        onCancel={() => setConfirm(null)}
+        onConfirm={() => {
+          resetTimer();
+          setConfirm(null);
+        }}
+      >
+        Waktu yang sudah berjalan ({formatDuration(elapsed)}) akan dihapus dan bacaan dibuka lagi. Catatan di kertasmu tidak terpengaruh.
+      </ConfirmDialog>
+      <ConfirmDialog
+        open={confirm === 'new'}
+        icon="note_add"
+        title="Mulai sesi baru?"
+        confirmLabel="Ya, mulai baru"
+        cancelLabel="Batal"
+        onCancel={() => setConfirm(null)}
+        onConfirm={() => {
+          clear();
+          setConfirm(null);
+        }}
+      >
+        Waktu fokus yang sudah tercatat akan dihapus dari perangkat ini.
+      </ConfirmDialog>
     </>
   );
 }

@@ -6,6 +6,7 @@ import { useSpeech } from '@/shared/hooks/useSpeech';
 import { EASE_OUT, FillBar, pageTransition, Stagger, StaggerItem } from '@/shared/motion';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button, ButtonLink } from '@/shared/ui/Button';
+import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { Icon } from '@/shared/ui/Icon';
 import { StateBlock } from '@/shared/ui/StateBlock';
 import { SAMPLE_MATERIAL } from '@/features/studio/sampleMaterial';
@@ -43,6 +44,7 @@ export function ResultPage() {
   const audit = SAMPLE_AUDIT;
   // Angka skor berangkat dari 0 lalu bergulir ke nilai asli setelah halaman tampil.
   const [revealed, setRevealed] = useState(false);
+  const [confirmNew, setConfirmNew] = useState(false);
   useEffect(() => {
     const id = window.setTimeout(() => setRevealed(true), 350);
     return () => window.clearTimeout(id);
@@ -253,12 +255,24 @@ export function ResultPage() {
               </figure>
             )}
 
-            <Button variant="accent" size="lg" onClick={startOver}>
+            <Button variant="accent" size="lg" onClick={() => setConfirmNew(true)}>
               Mulai sesi belajar baru
             </Button>
           </aside>
         </div>
       </motion.main>
+
+      <ConfirmDialog
+        open={confirmNew}
+        icon="note_add"
+        title="Mulai sesi belajar baru?"
+        confirmLabel="Ya, mulai baru"
+        cancelLabel="Tetap di hasil"
+        onCancel={() => setConfirmNew(false)}
+        onConfirm={startOver}
+      >
+        Hasil ini, tebakan nilaimu, dan foto catatan akan dihapus dari perangkat ini. Jadwal latihan ulang belum tersimpan di server.
+      </ConfirmDialog>
     </>
   );
 }
