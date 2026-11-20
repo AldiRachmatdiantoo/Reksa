@@ -29,7 +29,13 @@ export function createApp({ env, logger }: AppDeps): Express {
   );
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());
-  app.use(pinoHttp({ logger, autoLogging: env.NODE_ENV !== 'test' }));
+  app.use(
+    pinoHttp({
+      logger,
+      // Docker HEALTHCHECK memanggil /health tiap 30 detik; jangan banjiri log.
+      autoLogging: env.NODE_ENV === 'test' ? false : { ignore: (req) => req.url === '/api/v1/health' },
+    }),
+  );
 
   const api = express.Router();
 

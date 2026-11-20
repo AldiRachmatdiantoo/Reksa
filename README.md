@@ -2,7 +2,7 @@
 
 **Recall & Knowledge Semantic Audit**: platform belajar aktif multisensori dengan audit pemahaman tulisan tangan berbasis AI.
 
-> **Status:** tahap perencanaan. Baru ada dokumen spesifikasi ([PRD.md](PRD.md)) dan aturan kerja ([CLAUDE.md](CLAUDE.md)); kode backend & frontend dibangun mulai Langkah 0. Perintah di bagian [Menjalankan Proyek](#menjalankan-proyek) adalah target setelah Langkah 0 selesai.
+> **Status:** Langkah 0. Kerangka backend, database, dan infrastruktur Docker sudah ada; fitur belum. Kerangka frontend sedang disiapkan.
 
 ---
 
@@ -169,8 +169,6 @@ reksa/
 
 ## Menjalankan Proyek
 
-> Tersedia setelah Langkah 0. Bagian ini akan diperbarui begitu `docker-compose.yml` dan `.env.example` masuk ke `main`.
-
 ### Prasyarat
 
 - Docker Desktop (dengan docker compose v2)
@@ -180,48 +178,75 @@ reksa/
 ### Langkah
 
 ```bash
-git clone <url-repo> reksa
+git clone https://github.com/AldiRachmatdiantoo/Reksa.git reksa
 cd reksa
 
-cp .env.example .env               # isi secret; biarkan AI_PROVIDER_MODE=mock
-docker compose up -d --build       # postgres, redis, backend, frontend + nginx
-
-docker compose exec backend npx prisma migrate deploy
+cp .env.example .env                              # ganti semua CHANGE_ME (openssl rand -hex 32)
+docker compose up -d postgres redis               # database & cache (jaringan internal)
+docker compose --profile tools run --rm migrate   # migrasi sebagai pemilik skema
+docker compose up -d --build                      # backend + frontend (nginx)
 ```
 
-Aplikasi lalu bisa dibuka lewat Nginx di `https://localhost`. Cookie `__Host-` dan `__Secure-` mewajibkan HTTPS, jadi pengembangan lokal juga memakai sertifikat dev.
+Aplikasi bisa dibuka di `http://localhost:8080`. Health check backend ada di `http://localhost:8080/api/v1/health`.
 
-### Pengembangan tanpa Docker (opsional)
+Di lokal tidak perlu sertifikat, karena Chrome dan Firefox memperlakukan `http://localhost` sebagai *secure context*, jadi cookie `Secure`/`__Host-` tetap jalan. Di staging/produksi, HTTPS diterminasi di depan Nginx.
+
+> Service `frontend` baru bisa di-build setelah kerangka Vite dari Adli masuk ke `main`. Sebelum itu, jalankan backend saja: `docker compose up -d --build backend`.
+
+### Pengembangan backend tanpa Docker (opsional)
+
+Postgres dan Redis tidak membuka port ke host secara default. Untuk development, buka keduanya di `127.0.0.1` lewat file override:
 
 ```bash
-cd backend && npm ci && npm run dev
-cd frontend && npm ci && npm run dev
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis
+
+cd backend
+cp .env.example .env      # samakan password dengan .env di root
+npm ci
+npx prisma generate
+npm run dev
 ```
 
-PostgreSQL dan Redis tetap dijalankan lewat docker compose.
+### Perintah backend
+
+| Perintah | Fungsi |
+| :--- | :--- |
+| `npm run dev` | Server dengan hot reload (`tsx watch`) |
+| `npm run build` | Kompilasi TypeScript ke `dist/` |
+| `npm run typecheck` | Cek tipe termasuk folder `tests/` |
+| `npm test` | Unit + integration test (Vitest) |
+| `npm run test:coverage` | Test dengan laporan coverage |
+| `npx prisma generate` | Buat ulang Prisma Client ke `src/generated/prisma` |
+
+Membuat migrasi baru: `npx prisma migrate dev --create-only --name <nama>` dengan `MIGRATION_DATABASE_URL` terisi. Periksa file SQL-nya sebelum di-apply, karena Prisma tidak mengenal partial index dan bisa menambahkan `DROP INDEX` untuk `idx_spaced_user_due` / `idx_sessions_class_governance`.
 
 ---
 
 ## Environment Variables
 
-Draf. Daftar final ada di `.env.example` dan divalidasi Zod di `backend/src/config/`.
+Ada dua file contoh:
 
-| Variabel | Contoh | Keterangan |
+- [`.env.example`](.env.example) (root): dibaca docker compose. Isinya password mentah; compose yang merakit URL koneksi.
+- [`backend/.env.example`](backend/.env.example): untuk `npm run dev` di host. Isinya URL koneksi lengkap ke `127.0.0.1`.
+
+Variabel yang dibaca backend divalidasi Zod di [`backend/src/config/env.ts`](backend/src/config/env.ts). Kalau ada yang salah, server menolak start dan hanya menampilkan nama variabelnya, bukan nilainya.
+
+| Variabel | Dibaca oleh | Keterangan |
 | :--- | :--- | :--- |
-| `NODE_ENV` | `development` | `development` / `test` / `production` |
-| `DATABASE_URL` | `postgresql://app_service_user:...@postgres:5432/reksa` | Koneksi aplikasi memakai role *least-privilege* |
-| `MIGRATION_DATABASE_URL` | `postgresql://reksa_owner:...@postgres:5432/reksa` | Role pemilik skema, khusus migrasi |
-| `REDIS_URL` | `redis://redis:6379` | Cache rubrik, token QR, rate limit |
-| `JWT_ACCESS_SECRET` | *(acak, ≥32 byte)* | TTL access token 15 menit |
-| `JWT_REFRESH_SECRET` | *(acak, ≥32 byte)* | TTL refresh token 7 hari |
-| `CORS_ORIGIN` | `https://localhost` | Origin frontend yang diizinkan |
-| `AI_PROVIDER_MODE` | `mock` | `mock` (Fase 1–2) atau `gemini` (Fase 3) |
-| `GEMINI_API_KEY` | *(kosong saat mock)* | Hanya dibutuhkan di mode `gemini` |
-| `STORAGE_BUCKET` | `reksa-private` | Bucket privat R2/S3 |
-| `STORAGE_ENDPOINT` | `https://<account>.r2.cloudflarestorage.com` | Endpoint S3-compatible |
-| `STORAGE_ACCESS_KEY_ID` / `STORAGE_SECRET_ACCESS_KEY` | | Kredensial bucket |
+| `POSTGRES_OWNER_USER` / `POSTGRES_OWNER_PASSWORD` | compose | Pemilik skema, khusus migrasi |
+| `APP_DB_PASSWORD` | compose | Password `app_service_user` (role aplikasi, kena RLS) |
+| `REDIS_PASSWORD` | compose | Redis selalu memakai password |
+| `DATABASE_URL` | backend | Koneksi sebagai `app_service_user` |
+| `MIGRATION_DATABASE_URL` | Prisma CLI | Koneksi sebagai pemilik skema ([`prisma.config.ts`](backend/prisma.config.ts)) |
+| `REDIS_URL` | backend | Cache rubrik, token QR, rate limit |
+| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` | backend | Minimal 32 karakter, wajib berbeda |
+| `CORS_ORIGIN` | backend | Origin frontend yang diizinkan |
+| `AI_PROVIDER_MODE` | backend | `mock` (Fase 1–2) atau `gemini` (Fase 3) |
+| `MOCK_AI_LATENCY_MS` | backend | Simulasi latensi `MockAiProvider` (default 300) |
+| `GEMINI_API_KEY` | backend | Wajib hanya di mode `gemini` |
+| `PORT`, `LOG_LEVEL`, `NODE_ENV` | backend | Default `3000`, `info`, `development` |
 
-File `.env` tidak pernah di-commit (sudah ada di `.gitignore`).
+Variabel storage R2/S3 ditambahkan bersama fitur `materials` di Fase 2. File `.env` tidak pernah di-commit (sudah ada di `.gitignore`).
 
 ---
 
@@ -286,7 +311,7 @@ Aturan: setiap `*.service.ts` baru wajib punya unit test, setiap endpoint baru w
 ## Roadmap
 
 - [ ] **Langkah 0: kickoff paralel**
-  - [ ] Aldi: kerangka backend, docker compose, Prisma, kontrak Zod, `IAiService`, `MockAiProvider` berisi contoh JSON valid
+  - [x] Aldi: kerangka backend, docker compose, Prisma + RLS, kontrak Zod, `IAiService`, `MockAiProvider` berisi contoh JSON valid
   - [ ] Adli: kerangka frontend, `apiClient` berbasis cookie, struktur fitur, halaman Login/Register
 - [ ] **Fase 1: infrastruktur, hardening database, auth** (tanpa AI)
 - [ ] **Fase 2: golden path & governance dengan `MockAiProvider`**, beserta seluruh test

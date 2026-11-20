@@ -1,0 +1,25 @@
+# Opsional, HANYA untuk development lokal: membuka Postgres & Redis di
+# 127.0.0.1 agar backend bisa dijalankan langsung di host (npm run dev).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis
+#
+# Container di jaringan internal: true tidak bisa mem-publish port, jadi di sini
+# keduanya ditambahkan ke jaringan dev_net.
+
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      - internal_net
+      - dev_net
+
+  redis:
+    ports:
+      - "127.0.0.1:6379:6379"
+    networks:
+      - internal_net
+      - dev_net
+
+networks:
+  dev_net: {}
