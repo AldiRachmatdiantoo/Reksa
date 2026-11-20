@@ -1,5 +1,18 @@
 # Checkpoint Frontend REKSA
 
+## #4 · 2026-11-21 · Materi belajar dari backend `materials`
+
+Branch: `feat/aldi-materials` (backend: `Reksa` branch `feat/aldi-materials`)
+
+- **Halaman `/belajar/materi`** (`src/features/materials/`): tab Tempel teks / Unggah PDF (pilih atau tarik file, cek PDF dan 10 MB di browser), penghitung karakter 15.000, tombol "Susun konsep kunci" dengan status memuat. Hasilnya pratinjau konsep kunci (bobot 1 sampai 5) dan hubungan sebab-akibat, plus keterangan kalau rubrik diambil dari simpanan.
+- **Daftar materi tersimpan**: Pakai materi ini, Buka PDF (signed URL, tab dibuka sebelum request supaya tidak diblokir), Hapus dengan dialog konfirmasi (409 dijelaskan: sudah dipakai sesi). Materi yang sedang dipakai diberi tanda.
+- **Ruang belajar memakai materi asli**: tanpa sesi tampil pemilih materi (atau keadaan kosong yang mengarah ke halaman materi), tombol "Ganti materi", dan pesan khusus kalau materi sesi sudah dihapus. Tebak & Foto dan Hasil Cek menampilkan judul materi dari sesi. `sampleMaterial.ts` dihapus; sesi lama yang menyimpan materi contoh dibuang otomatis.
+- `apiClient` mendukung body `FormData` (Content-Type diisi browser). Pesan error unggah per status di `uploadErrorMessage` (ditest).
+
+Diverifikasi di browser terhadap backend lokal: unggah teks dan PDF, rubrik tampil, unggah ulang teks yang sama mengembalikan `rubricCached: true`, signed URL mengembalikan file `%PDF-`, hapus lewat dialog, pilih materi lalu timer sampai Tebak & Foto dengan judul yang benar, materi dihapus di tengah sesi menampilkan pesan "Materi ini sudah dihapus", layar sempit tanpa scroll horizontal. Typecheck, 13 test, build lulus.
+
+Catatan: backend masih `AI_PROVIDER_MODE=mock`, jadi isi rubrik selalu contoh homeostasis apa pun materinya. Hasil cek tetap data contoh berlabel.
+
 ## #3 · 2026-11-21 · Pop up cookie dan dialog konfirmasi
 
 Branch: `feat/aldi-frontend-app`
@@ -61,7 +74,7 @@ Branch: `feat/aldi-frontend-app`
 
 ### Masih data contoh (diberi label di UI)
 
-- Materi: sama dengan `MOCK_RUBRIC` di backend (homeostasis).
+- ~~Materi~~: sejak #4 memakai `/materials` asli.
 - Hasil cek: sama dengan `MOCK_ESSAY_AUDIT` di backend (nilai 62). Foto belum diunggah; hanya disimpan sebagai object URL di memori.
 - Jadwal H+3/H+7 hanya dihitung di browser, belum tersimpan.
 

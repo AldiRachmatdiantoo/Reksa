@@ -68,8 +68,11 @@ async function toApiError(res: Response): Promise<ApiError> {
 
 async function send(path: string, options: RequestOptions): Promise<Response> {
   const headers: Record<string, string> = { Accept: 'application/json' };
-  let body: string | undefined;
-  if (options.body !== undefined) {
+  let body: string | FormData | undefined;
+  if (options.body instanceof FormData) {
+    // Content-Type dibiarkan kosong: browser mengisinya sendiri lengkap dengan boundary multipart.
+    body = options.body;
+  } else if (options.body !== undefined) {
     headers['Content-Type'] = 'application/json';
     body = JSON.stringify(options.body);
   }
