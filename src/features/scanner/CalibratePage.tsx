@@ -7,7 +7,6 @@ import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button, ButtonLink } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { StateBlock } from '@/shared/ui/StateBlock';
-import { SAMPLE_MATERIAL } from '@/features/studio/sampleMaterial';
 import { StepIndicator } from '@/features/studio/StepIndicator';
 import { formatDuration, useStudySession } from '@/features/studio/studySession';
 
@@ -87,7 +86,7 @@ export function CalibratePage() {
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border border-line-soft bg-card px-5 py-4">
           <span className="flex items-center gap-2 text-body-md text-ink">
             <Icon name="menu_book" className="text-teal" />
-            {SAMPLE_MATERIAL.title}
+            {session.materialTitle}
           </span>
           <span className="flex items-center gap-2 text-body-md text-ink-muted">
             <Icon name="timer" className="text-teal" />

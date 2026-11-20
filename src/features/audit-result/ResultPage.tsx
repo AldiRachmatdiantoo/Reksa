@@ -9,7 +9,6 @@ import { Button, ButtonLink } from '@/shared/ui/Button';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { Icon } from '@/shared/ui/Icon';
 import { StateBlock } from '@/shared/ui/StateBlock';
-import { SAMPLE_MATERIAL } from '@/features/studio/sampleMaterial';
 import { StepIndicator } from '@/features/studio/StepIndicator';
 import { useStudySession } from '@/features/studio/studySession';
 import { SAMPLE_AUDIT, type ImportanceLevel } from './sampleAudit';
@@ -111,7 +110,7 @@ export function ResultPage() {
               {message.title}
             </h1>
             <p className="text-body-lg opacity-90 text-pretty">{message.body}</p>
-            <p className="text-body-md opacity-90">{SAMPLE_MATERIAL.title}</p>
+            <p className="text-body-md opacity-90">{session.materialTitle}</p>
             {/* Visual pembanding; angkanya sudah ada di daftar sebelah, jadi disembunyikan dari pembaca layar. */}
             <div aria-hidden="true" className="flex flex-col gap-2.5 pt-2">
               {[

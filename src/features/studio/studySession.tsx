@@ -7,7 +7,10 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
  * server (PRD FR-02) dan state ini menjadi cache tampilan saja.
  */
 export type StudySession = {
+  /** UUID materi dari GET /materials. */
   materialId: string;
+  /** Disalin dari materi supaya halaman berikutnya tidak perlu memuat ulang. */
+  materialTitle: string;
   presetMinutes: number;
   /** Epoch ms saat timer mulai; null = belum mulai. */
   startedAt: number | null;
@@ -19,10 +22,12 @@ export type StudySession = {
 };
 
 const STORAGE_KEY = 'reksa-study-session';
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const emptySession = (materialId: string): StudySession => ({
+const emptySession = (materialId: string, materialTitle: string, presetMinutes = 25): StudySession => ({
   materialId,
-  presetMinutes: 25,
+  materialTitle,
+  presetMinutes,
   startedAt: null,
   focusSeconds: null,
   jolScore: null,
@@ -32,7 +37,13 @@ const emptySession = (materialId: string): StudySession => ({
 function load(): StudySession | null {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as StudySession) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<StudySession>;
+    // Sesi lama (materi contoh, sebelum ada /materials) dibuang.
+    if (typeof parsed.materialId !== 'string' || !UUID_RE.test(parsed.materialId) || typeof parsed.materialTitle !== 'string') {
+      return null;
+    }
+    return parsed as StudySession;
   } catch {
     return null;
   }
@@ -42,8 +53,10 @@ type Ctx = {
   session: StudySession | null;
   /** URL objek pratinjau foto. Hilang saat reload (file tidak disimpan di browser). */
   photoUrl: string | null;
-  start: (materialId: string, presetMinutes: number) => void;
-  setPreset: (materialId: string, minutes: number) => void;
+  /** Pilih materi untuk sesi baru. Progres sesi sebelumnya dibuang. */
+  selectMaterial: (materialId: string, materialTitle: string) => void;
+  start: () => void;
+  setPreset: (minutes: number) => void;
   finishFocus: (seconds: number) => void;
   resetTimer: () => void;
   saveJol: (score: number) => void;
@@ -70,16 +83,20 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     if (photoUrl) URL.revokeObjectURL(photoUrl);
   }, [photoUrl]);
 
-  const update = useCallback((fn: (s: StudySession) => StudySession, materialId?: string) => {
-    setSession((prev) => fn(prev ?? emptySession(materialId ?? '')));
+  /** Semua perubahan selain memilih materi butuh sesi yang sudah punya materi. */
+  const update = useCallback((fn: (s: StudySession) => StudySession) => {
+    setSession((prev) => (prev ? fn(prev) : prev));
   }, []);
 
   const value: Ctx = {
     session,
     photoUrl,
-    start: (materialId, presetMinutes) =>
-      setSession({ ...emptySession(materialId), presetMinutes, startedAt: Date.now() }),
-    setPreset: (materialId, minutes) => update((s) => ({ ...s, materialId, presetMinutes: minutes }), materialId),
+    selectMaterial: (materialId, materialTitle) => {
+      setPhotoUrl(null);
+      setSession((prev) => emptySession(materialId, materialTitle, prev?.presetMinutes));
+    },
+    start: () => update((s) => ({ ...s, startedAt: Date.now(), focusSeconds: null, jolScore: null, photo: null })),
+    setPreset: (minutes) => update((s) => ({ ...s, presetMinutes: minutes })),
     finishFocus: (seconds) => update((s) => ({ ...s, focusSeconds: seconds })),
     resetTimer: () => update((s) => ({ ...s, startedAt: null, focusSeconds: null })),
     saveJol: (score) => update((s) => ({ ...s, jolScore: score })),
