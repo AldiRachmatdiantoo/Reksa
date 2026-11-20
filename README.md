@@ -352,7 +352,8 @@ Alur:
 - [PRD.md](PRD.md): spesifikasi produk lengkap (fitur, skema database, API, keamanan, rencana QA)
 - [CLAUDE.md](CLAUDE.md): aturan kerja untuk AI assistant dan pembagian tugas tim
 - [docs/CHECKPOINT.md](docs/CHECKPOINT.md): posisi progres terakhir, keputusan, dan langkah berikutnya
-- [docs/UNTUK-ADLI.md](docs/UNTUK-ADLI.md): catatan serah terima dari Aldi untuk Adli
+- [docs/UNTUK-ADLI.md](docs/UNTUK-ADLI.md): catatan dan permintaan dari Aldi untuk Adli
+- [docs/UNTUK-ALDI.md](docs/UNTUK-ALDI.md): catatan dan permintaan dari Adli untuk Aldi
 
 ## Lisensi
 

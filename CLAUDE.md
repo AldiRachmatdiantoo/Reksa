@@ -16,7 +16,10 @@ Agar kedua developer dapat bekerja paralel tanpa saling menunggu (*zero blocking
   - **Tips Percepatan Wajib:** Saat Aldi meminta AI membuat kerangka awal backend di Langkah 0, **langsung isi `MockAiProvider` dengan minimal 1 contoh respons JSON statis yang 100% valid secara skema Zod** untuk setiap metode (`extractRubric`, `evaluateHandwritingEssay`, `clusterCohortBlindSpots`). Dengan begitu, begitu Adli menarik kode (`git pull`) dari branch `main`, simulasi AI sudah langsung hidup dan Adli tinggal menyesuaikan variasi data *dummy*-nya sesuai kebutuhan tampilan UI.
 - **Adli** secara bersamaan menyiapkan kerangka `frontend/` (`Vite + React TS + Tailwind CSS + Shadcn/UI`), `apiClient` berbasis cookie (`withCredentials: true`), struktur folder fitur, serta halaman awal Login/Register.
 - **Status:** bagian Aldi selesai (backend, Docker, Prisma + RLS, kontrak Zod, `MockAiProvider`). Kontraknya dirangkum di `PRD.md` §8.3.
-- **Sebelum mulai kerja di sesi baru:** baca `docs/CHECKPOINT.md` (posisi progres terakhir). Jika pengguna = **Adli**, baca juga `docs/UNTUK-ADLI.md` (catatan serah terima dari Aldi, termasuk aturan wajib refresh token *single-flight* di `apiClient`).
+- **Sebelum mulai kerja di sesi baru:** baca `docs/CHECKPOINT.md` (posisi progres terakhir), lalu:
+  - Jika pengguna = **Adli**: baca `docs/UNTUK-ADLI.md` (catatan dari Aldi, termasuk aturan wajib refresh token *single-flight* di `apiClient`).
+  - Jika pengguna = **Aldi**: baca `docs/UNTUK-ALDI.md` dan sampaikan ke Aldi setiap entri berstatus `⏳ menunggu` sebelum mengerjakan hal lain.
+- **Komunikasi antar developer lewat file, bukan chat:** permintaan perubahan di area rekan, perubahan kontrak, dan kabar progres ditulis ke file catatan untuk rekan (`docs/UNTUK-ALDI.md` atau `docs/UNTUK-ADLI.md`) lalu dikirim lewat PR. Setelah permintaan selesai, ubah statusnya menjadi `✅ selesai` di file tersebut.
 - **Checklist Adli setelah `git pull origin main`:**
   1. Review kontrak di folder Adli yang dibuat Aldi saat Langkah 0: `study-sessions/sessions.schema.ts`, `essay-scans/scans.schema.ts`, dan `backend/tests/unit/`. Setuju → lanjut; ingin ubah → kabari Aldi dulu.
   2. Perkaya variasi data dummy di `backend/src/common/ai/mockAi.fixtures.ts`, lalu jalankan `npm test` di `backend/`; test gagal jika ada dummy yang tidak lolos skema Zod.
