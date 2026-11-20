@@ -1,0 +1,241 @@
+import NumberFlow from '@number-flow/react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AppHeader } from '@/shared/ui/AppHeader';
+import { Button, ButtonLink } from '@/shared/ui/Button';
+import { Icon } from '@/shared/ui/Icon';
+import { StateBlock } from '@/shared/ui/StateBlock';
+import { SAMPLE_MATERIAL } from '@/features/studio/sampleMaterial';
+import { StepIndicator } from '@/features/studio/StepIndicator';
+import { formatDuration, useStudySession } from '@/features/studio/studySession';
+
+// Sama dengan SCAN_ALLOWED_MIME_TYPES & SCAN_MAX_IMAGE_BYTES di backend.
+// Ini hanya pemeriksaan awal; backend tetap memvalidasi magic bytes.
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
+const MAX_BYTES = 5 * 1024 * 1024;
+
+function confidenceLabel(v: number) {
+  if (v < 40) return 'Masih ragu';
+  if (v < 70) return 'Lumayan paham';
+  return 'Cukup yakin';
+}
+
+function formatBytes(n: number) {
+  return n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
+}
+
+export function CalibratePage() {
+  const navigate = useNavigate();
+  const { session, photoUrl, saveJol, setPhoto } = useStudySession();
+  const [guess, setGuess] = useState(session?.jolScore ?? 50);
+  const [photoError, setPhotoError] = useState('');
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
+  const [coarsePointer] = useState(() => window.matchMedia?.('(pointer: coarse)').matches ?? false);
+
+  useEffect(() => {
+    document.title = 'Tebak & Foto · REKSA';
+  }, []);
+
+  if (!session || session.focusSeconds == null) {
+    return (
+      <>
+        <AppHeader subtitle="Tebak & Foto" />
+        <main className="px-4 py-16">
+          <StateBlock
+            icon="timer"
+            title="Mulai dari waktu fokus dulu"
+            action={<ButtonLink to="/belajar" variant="accent">Buka ruang belajar</ButtonLink>}
+          >
+            Tebakan nilai dan foto catatan dibuat setelah kamu menulis di kertas selama waktu fokus.
+          </StateBlock>
+        </main>
+      </>
+    );
+  }
+
+  const jolLocked = session.jolScore != null;
+  const canSubmit = jolLocked && session.photo != null && photoUrl != null;
+
+  const onPick = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setPhotoError('Pilih foto berformat JPG, PNG, WebP, atau HEIC.');
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      setPhotoError(`Ukuran foto ${formatBytes(file.size)}. Maksimal 5 MB, coba foto ulang dengan resolusi lebih kecil.`);
+      return;
+    }
+    setPhotoError('');
+    setPhoto(file);
+  };
+
+  return (
+    <>
+      <AppHeader subtitle="Tebak & Foto" />
+      <motion.main
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8"
+      >
+        <StepIndicator current={2} />
+
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border border-line-soft bg-card px-5 py-4">
+          <span className="flex items-center gap-2 text-body-md text-ink">
+            <Icon name="menu_book" className="text-teal" />
+            {SAMPLE_MATERIAL.title}
+          </span>
+          <span className="flex items-center gap-2 text-body-md text-ink-muted">
+            <Icon name="timer" className="text-teal" />
+            Fokus {formatDuration(session.focusSeconds)}
+          </span>
+        </div>
+
+        <div className="grid items-start gap-6 lg:grid-cols-2">
+          <section aria-labelledby="jol-title" className="flex flex-col gap-5 rounded-lg border border-line-soft bg-card p-5 sm:p-6">
+            <header className="flex flex-col gap-2">
+              <h1 id="jol-title" className="font-headline text-headline-lg-mobile text-ink sm:text-headline-md">
+                Menurutmu, berapa nilai catatanmu?
+              </h1>
+              <p className="text-body-md text-ink-muted text-pretty">
+                Tebak dulu sebelum catatanmu dicek. Selisih tebakan dan hasil asli melatihmu mengenali kapan kamu benar-benar paham.
+              </p>
+            </header>
+
+            <div className="flex items-end justify-between gap-4">
+              <label htmlFor="jol" className="text-label-lg text-ink">
+                Tebakan nilaimu
+                <span className="block text-body-md font-normal text-ink-muted">{confidenceLabel(guess)}</span>
+              </label>
+              <span aria-hidden="true" className="font-mono text-[44px] leading-none text-teal tabular-nums">
+                <NumberFlow value={guess} suffix="%" />
+              </span>
+            </div>
+            <input
+              id="jol"
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={guess}
+              disabled={jolLocked}
+              aria-valuetext={`${guess} persen, ${confidenceLabel(guess)}`}
+              onChange={(e) => setGuess(Number(e.target.value))}
+              className="h-11 w-full accent-[var(--teal)]"
+            />
+            <div className="flex justify-between text-label-sm text-ink-muted" aria-hidden="true">
+              <span>0%</span>
+              <span>50%</span>
+              <span>100%</span>
+            </div>
+
+            {jolLocked ? (
+              <p className="flex items-center gap-2 rounded-md bg-teal-wash px-4 py-3 text-body-md text-teal">
+                <Icon name="check_circle" fill />
+                Tebakan {session.jolScore}% tersimpan. Tebakan tidak bisa diubah setelah disimpan.
+              </p>
+            ) : (
+              <Button variant="primary" size="lg" onClick={() => saveJol(guess)}>
+                Simpan tebakan
+              </Button>
+            )}
+          </section>
+
+          <section
+            aria-labelledby="photo-title"
+            aria-disabled={!jolLocked}
+            className={`flex flex-col gap-5 rounded-lg border p-5 sm:p-6 ${jolLocked ? 'border-line-soft bg-card' : 'border-dashed border-line bg-wash'}`}
+          >
+            <header className="flex flex-col gap-2">
+              <h2 id="photo-title" className="font-headline text-headline-lg-mobile text-ink sm:text-headline-md">
+                Foto catatan kertasmu
+              </h2>
+              <p className="text-body-md text-ink-muted text-pretty">
+                {jolLocked
+                  ? 'Pastikan seluruh tulisan dan panahmu terlihat jelas dalam satu foto.'
+                  : 'Simpan tebakan nilaimu dulu. Foto dibuka setelah itu supaya tebakan tidak dipengaruhi hasil.'}
+              </p>
+            </header>
+
+            <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} onChange={onPick} aria-hidden="true" />
+            <input ref={galleryRef} type="file" accept={ALLOWED_TYPES.join(',')} className="sr-only" tabIndex={-1} onChange={onPick} aria-hidden="true" />
+
+            <AnimatePresence initial={false}>
+              {photoUrl && session.photo && (
+                <motion.figure
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden rounded-md border border-line-soft bg-wash"
+                >
+                  <img src={photoUrl} alt="Pratinjau foto catatan yang kamu pilih" className="max-h-72 w-full object-contain" />
+                  <figcaption className="flex items-center justify-between gap-3 border-t border-line-soft px-4 py-2.5 text-body-sm text-ink-muted">
+                    <span className="truncate">{session.photo.name}</span>
+                    <span className="shrink-0 tabular-nums">{formatBytes(session.photo.sizeBytes)}</span>
+                  </figcaption>
+                </motion.figure>
+              )}
+            </AnimatePresence>
+
+            {session.photo && !photoUrl && (
+              <p className="text-body-md text-ink-muted">Halaman dimuat ulang, jadi foto perlu dipilih lagi.</p>
+            )}
+
+            {photoError && (
+              <p role="alert" className="flex items-start gap-2 rounded-md bg-danger-wash px-4 py-3 text-body-md text-on-danger-wash">
+                <Icon name="error" className="mt-px text-[20px]" />
+                {photoError}
+              </p>
+            )}
+
+            <div className={`flex flex-col gap-2 ${coarsePointer ? '' : 'sm:flex-row'}`}>
+              {coarsePointer && (
+                <Button variant="primary" size="lg" disabled={!jolLocked} onClick={() => cameraRef.current?.click()}>
+                  <Icon name="photo_camera" />
+                  {photoUrl ? 'Foto ulang' : 'Buka kamera'}
+                </Button>
+              )}
+              <Button variant={coarsePointer ? 'outline' : 'primary'} size="lg" disabled={!jolLocked} onClick={() => galleryRef.current?.click()}>
+                <Icon name="image" />
+                {coarsePointer ? 'Pilih dari galeri' : photoUrl ? 'Ganti foto' : 'Pilih foto dari perangkat'}
+              </Button>
+            </div>
+
+            <p className="flex items-start gap-2 text-body-sm text-ink-muted">
+              <Icon name="info" className="text-[18px]" />
+              Di versi ini foto belum dikirim ke server dan hasil cek memakai contoh. Pengecekan otomatis aktif setelah modul pindai selesai.
+            </p>
+          </section>
+        </div>
+
+        <div className="flex flex-col-reverse items-stretch justify-between gap-3 border-t border-line-soft pt-6 sm:flex-row sm:items-center">
+          <ButtonLink to="/belajar" variant="ghost">
+            <Icon name="arrow_back" />
+            Kembali ke ruang belajar
+          </ButtonLink>
+          <div className="flex flex-col items-stretch gap-1.5 sm:items-end">
+            <Button
+              variant="accent"
+              size="lg"
+              disabled={!canSubmit}
+              aria-describedby={canSubmit ? undefined : 'submit-hint'}
+              onClick={() => navigate('/belajar/hasil')}
+            >
+              Lihat hasil cek catatan
+            </Button>
+            {!canSubmit && (
+              <span id="submit-hint" className="text-body-sm text-ink-muted">
+                {jolLocked ? 'Pilih foto catatanmu dulu.' : 'Simpan tebakan dan pilih foto dulu.'}
+              </span>
+            )}
+          </div>
+        </div>
+      </motion.main>
+    </>
+  );
+}
