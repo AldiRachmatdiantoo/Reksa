@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNow } from '@/shared/hooks/useNow';
+import { EASE_OUT, pageTransition, Reveal, Stagger, StaggerItem } from '@/shared/motion';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
@@ -52,15 +53,13 @@ export function StudioPage() {
     <>
       <AppHeader subtitle="Ruang Belajar" />
       <motion.main
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
+        {...pageTransition}
         className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8"
       >
         <StepIndicator current={1} />
 
         {finished ? (
-          <section className="ruled-sheet flex flex-col gap-4 rounded-lg border border-line-soft p-6 pl-12 sm:p-8 sm:pl-14">
+          <Reveal className="ruled-sheet flex flex-col gap-4 rounded-lg border border-line-soft p-6 pl-12 sm:p-8 sm:pl-14">
             <h1 className="font-headline text-headline-md text-ink">Waktu fokus sudah tercatat</h1>
             <p className="text-body-lg text-ink-muted">
               Kamu fokus menulis selama <strong className="text-ink">{formatDuration(session!.focusSeconds!)}</strong>. Lanjutkan
@@ -74,7 +73,7 @@ export function StudioPage() {
                 Mulai sesi baru
               </Button>
             </div>
-          </section>
+          </Reveal>
         ) : (
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
             <section aria-labelledby="material-title" className="flex flex-col gap-3">
@@ -116,14 +115,14 @@ export function StudioPage() {
                       <h2 className="font-title text-title-lg text-ink">{material.title}</h2>
                       <p className="text-body-md text-ink-muted text-pretty">{material.summary}</p>
                     </header>
-                    <dl className="flex flex-col divide-y divide-line-soft border-t border-line-soft">
+                    <Stagger as="dl" trigger="mount" gap={0.06} delay={0.15} className="flex flex-col divide-y divide-line-soft border-t border-line-soft">
                       {material.keyConcepts.map((c) => (
-                        <div key={c.id} className="grid gap-1 py-3 sm:grid-cols-[10rem_1fr] sm:gap-4">
+                        <StaggerItem key={c.id} className="grid gap-1 py-3 sm:grid-cols-[10rem_1fr] sm:gap-4">
                           <dt className="text-title-md text-teal">{c.concept}</dt>
                           <dd className="text-body-md text-ink">{c.definition}</dd>
-                        </div>
+                        </StaggerItem>
                       ))}
-                    </dl>
+                    </Stagger>
                     <p className="text-body-sm text-ink-muted">
                       Unggah PDF materimu sendiri akan tersedia setelah modul materi selesai.
                     </p>
@@ -149,10 +148,18 @@ export function StudioPage() {
                       return (
                         <label
                           key={p.minutes}
-                          className={`flex min-h-14 flex-col items-center justify-center rounded-md border-2 px-2 py-2 transition-colors has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-teal ${
-                            checked ? 'border-teal bg-teal-wash text-teal' : 'border-line-soft bg-card text-ink hover:border-line'
+                          className={`relative flex min-h-14 flex-col items-center justify-center rounded-md border-2 px-2 py-2 transition-colors has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-teal ${
+                            checked ? 'border-transparent text-teal' : 'border-line-soft bg-card text-ink hover:border-line'
                           }`}
                         >
+                          {checked && (
+                            <motion.span
+                              layoutId="preset-indicator"
+                              aria-hidden="true"
+                              className="absolute -inset-0.5 rounded-md border-2 border-teal bg-teal-wash"
+                              transition={{ type: 'spring', stiffness: 210, damping: 18 }}
+                            />
+                          )}
                           <input
                             type="radio"
                             name="preset"
@@ -161,8 +168,8 @@ export function StudioPage() {
                             onChange={() => setPreset(material.id, p.minutes)}
                             className="sr-only"
                           />
-                          <span className="font-mono text-mono-md tabular-nums">{p.minutes} mnt</span>
-                          <span className="text-label-sm text-ink-muted">{p.label}</span>
+                          <span className="relative font-mono text-mono-md tabular-nums">{p.minutes} mnt</span>
+                          <span className="relative text-label-sm text-ink-muted">{p.label}</span>
                         </label>
                       );
                     })}
@@ -181,6 +188,25 @@ export function StudioPage() {
                     <NumberFlow value={remaining % 60} format={TWO_DIGITS} trend={-1} digits={{ 1: { max: 5 } }} />
                   </div>
                 </NumberFlowGroup>
+                <AnimatePresence initial={false}>
+                  {running && (
+                    <motion.div
+                      initial={{ opacity: 0, scaleX: 0.6 }}
+                      animate={{ opacity: 1, scaleX: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.4, ease: EASE_OUT }}
+                      aria-hidden="true"
+                      className="mt-5 h-1.5 overflow-hidden rounded-full bg-wash-strong"
+                    >
+                      <motion.div
+                        className={`h-full rounded-full ${timeUp ? 'bg-ember' : 'bg-teal'}`}
+                        initial={false}
+                        animate={{ width: `${(elapsed / totalSeconds) * 100}%` }}
+                        transition={{ duration: 1, ease: 'linear' }}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               <p className="text-body-md text-ink-muted text-pretty">

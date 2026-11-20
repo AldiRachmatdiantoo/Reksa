@@ -1,5 +1,23 @@
 # Checkpoint Frontend REKSA
 
+## #2 · 2026-11-21 · Animasi dengan `motion`
+
+Branch: `feat/aldi-frontend-app`
+
+Watermelon UI tidak punya komponen reveal/stagger yang pas (dicari lewat katalog: hasilnya mikro-interaksi seperti Contextual AI Bar, Reveal Copy). Jadi primitif dibangun sendiri di atas `motion`, library yang sama dengan Watermelon, di `src/shared/motion.tsx`:
+
+| Primitif | Dipakai di |
+| --- | --- |
+| `pageTransition` + `AnimatePresence` | Semua halaman. `/masuk` dan `/daftar` satu kunci (tab bergeser, bukan ganti halaman). Di `/belajar` hanya isi yang berganti, provider sesi tetap hidup supaya foto di memori tidak hilang |
+| `WordReveal` | Judul beranda, kata demi kata (pembaca layar mendapat kalimat utuh) |
+| `Reveal`, `Stagger`/`StaggerItem` | Bagian beranda saat discroll, langkah pelajar/guru (juga saat ganti tab), konsep materi, kartu tebak & foto, daftar hasil cek, jadwal, portal guru |
+| `FillBar` | Batang tebakan vs nilai asli di hasil cek |
+| Lainnya | Clip reveal + parallax foto hero, indikator preset waktu `layoutId`, progress bar sisa waktu, centang langkah dan garis penghubung, konfirmasi tebakan, field daftar yang membuka/menutup, skor bergulir dari 0 |
+
+Satu kurva untuk semua gerak masuk (`EASE_OUT` = `[0.22, 1, 0.36, 1]`). Semua mati bila OS meminta `prefers-reduced-motion`. Dial MOTION naik dari 2 ke 3. Bundle JS 149 KB gzip (+5 KB).
+
+Diverifikasi di browser dengan mengukur gaya elemen saat animasi berjalan: judul dan clip hero, stagger saat scroll dan ganti tab, indikator preset, progress bar, batang hasil 50%/62%, foto tetap ada setelah pindah halaman, form daftar membuka. Typecheck, 7 test, build lulus.
+
 ## #1 · 2026-11-21 · Aplikasi pertama dari ekspor Figma Make
 
 Branch: `feat/aldi-frontend-app`

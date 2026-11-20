@@ -1,8 +1,10 @@
+import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/core/apiClient';
 import { Brand } from '@/shared/ui/Brand';
 import { Button } from '@/shared/ui/Button';
+import { EASE_OUT, pageTransition } from '@/shared/motion';
 import { Icon } from '@/shared/ui/Icon';
 import { SegmentedTabs } from '@/shared/ui/SegmentedTabs';
 import { TextField } from '@/shared/ui/TextField';
@@ -94,11 +96,14 @@ export function AuthPage({ mode }: { mode: Mode }) {
   };
 
   return (
-    <div className="grid min-h-dvh lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+    <motion.div {...pageTransition} className="grid min-h-dvh lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
       <aside className="hidden flex-col justify-between gap-10 border-r border-line-soft bg-teal-wash p-10 lg:flex">
         <Brand />
         <figure className="flex flex-col gap-6">
-          <img
+          <motion.img
+            initial={{ opacity: 0, scale: 1.04, rotate: -1.5 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            transition={{ duration: 0.9, delay: 0.1, ease: EASE_OUT }}
             src="/assets/inclusive-learning.jpg"
             alt="Kertas berisi peta konsep dengan panah, pensil, dan HP yang memotret catatan itu"
             width={1024}
@@ -125,7 +130,15 @@ export function AuthPage({ mode }: { mode: Mode }) {
           <div className="lg:hidden">
             <Brand />
           </div>
-          <div className="flex flex-col gap-2">
+          <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={isRegister ? 'daftar' : 'masuk'}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col gap-2"
+          >
             <h1 className="font-display text-headline-lg-mobile text-ink sm:text-headline-lg">
               {isRegister ? 'Buat akun REKSA' : 'Selamat datang kembali'}
             </h1>
@@ -134,7 +147,8 @@ export function AuthPage({ mode }: { mode: Mode }) {
                 ? 'Gratis. Kamu cuma butuh kertas, pulpen, dan kamera HP.'
                 : 'Masuk untuk lanjut latihan menulis dan cek pemahamanmu.'}
             </p>
-          </div>
+          </motion.div>
+          </AnimatePresence>
 
           <SegmentedTabs
             label="Pilih masuk atau daftar"
@@ -148,8 +162,9 @@ export function AuthPage({ mode }: { mode: Mode }) {
           />
 
           <form id="auth-form" role="tabpanel" noValidate onSubmit={onSubmit} className="flex flex-col gap-5">
+            <AnimatePresence initial={false}>
             {isRegister && (
-              <fieldset className="flex flex-col gap-2">
+              <motion.fieldset key="role" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3, ease: EASE_OUT }} className="flex flex-col gap-2 overflow-hidden">
                 <legend className="mb-2 text-label-lg text-ink">Daftar sebagai</legend>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {ROLE_OPTIONS.map((opt) => (
@@ -175,10 +190,10 @@ export function AuthPage({ mode }: { mode: Mode }) {
                     </label>
                   ))}
                 </div>
-              </fieldset>
+              </motion.fieldset>
             )}
-
             {isRegister && (
+              <motion.div key="name" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3, ease: EASE_OUT }} className="overflow-hidden">
               <TextField
                 id="fullName"
                 label="Nama lengkap"
@@ -189,7 +204,9 @@ export function AuthPage({ mode }: { mode: Mode }) {
                 onChange={(e) => setFullName(e.target.value)}
                 error={fieldErrors.fullName}
               />
+              </motion.div>
             )}
+            </AnimatePresence>
 
             <TextField
               id="email"
@@ -254,6 +271,6 @@ export function AuthPage({ mode }: { mode: Mode }) {
           </form>
         </div>
       </main>
-    </div>
+    </motion.div>
   );
 }
