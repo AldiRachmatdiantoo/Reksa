@@ -214,8 +214,10 @@ npm run dev
 | `npm run dev` | Server dengan hot reload (`tsx watch`) |
 | `npm run build` | Kompilasi TypeScript ke `dist/` |
 | `npm run typecheck` | Cek tipe termasuk folder `tests/` |
-| `npm test` | Unit + integration test (Vitest) |
-| `npm run test:coverage` | Test dengan laporan coverage |
+| `npm test` | Unit test (cepat, tanpa Docker) |
+| `npm run test:integration` | Integration + security test dengan PostgreSQL & Redis asli via Testcontainers (Docker harus jalan) |
+| `npm run test:all` | Semua test |
+| `npm run test:coverage` | Semua test dengan laporan coverage |
 | `npx prisma generate` | Buat ulang Prisma Client ke `src/generated/prisma` |
 
 Membuat migrasi baru: `npx prisma migrate dev --create-only --name <nama>` dengan `MIGRATION_DATABASE_URL` terisi. Periksa file SQL-nya sebelum di-apply, karena Prisma tidak mengenal partial index dan bisa menambahkan `DROP INDEX` untuk `idx_spaced_user_due` / `idx_sessions_class_governance`.
@@ -258,6 +260,8 @@ Semua endpoint di bawah prefix `/api/v1`, dengan body divalidasi Zod `.strict()`
 | :--- | :--- | :--- | :--- |
 | `POST` | `/auth/register`, `/auth/login` | Publik, rate-limited | Set cookie `__Host-access_token` & `__Secure-refresh_token` |
 | `POST` | `/auth/refresh` | Cookie refresh | Rotasi token + deteksi *reuse* |
+| `DELETE` | `/auth/refresh` | Cookie refresh | Logout perangkat ini |
+| `GET` | `/auth/me` | Login | Profil user saat ini |
 | `POST` | `/materials` | Login | Unggah materi, ekstraksi rubrik |
 | `POST` | `/sessions` | `STUDENT` | Mulai sesi Pomodoro |
 | `PATCH` | `/sessions/:id/jol` | `STUDENT` (pemilik) | Simpan skor JOL |
@@ -314,6 +318,8 @@ Aturan: setiap `*.service.ts` baru wajib punya unit test, setiap endpoint baru w
   - [x] Aldi: kerangka backend, docker compose, Prisma + RLS, kontrak Zod, `IAiService`, `MockAiProvider` berisi contoh JSON valid
   - [ ] Adli: kerangka frontend, `apiClient` berbasis cookie, struktur fitur, halaman Login/Register
 - [ ] **Fase 1: infrastruktur, hardening database, auth** (tanpa AI)
+  - [x] Modul `auth`: Argon2id, cookie `__Host-`/`__Secure-`, refresh rotation + reuse detection, RBAC, rate limit Redis
+  - [x] Security suite: cookie, token replay, JWT palsu, SQLi/fuzzing, rate limit, RLS, least privilege
 - [ ] **Fase 2: golden path & governance dengan `MockAiProvider`**, beserta seluruh test
 - [ ] **Fase 3: `GeminiAiProvider` & uji prompt injection**
 
@@ -342,6 +348,8 @@ Alur:
 
 - [PRD.md](PRD.md): spesifikasi produk lengkap (fitur, skema database, API, keamanan, rencana QA)
 - [CLAUDE.md](CLAUDE.md): aturan kerja untuk AI assistant dan pembagian tugas tim
+- [docs/CHECKPOINT.md](docs/CHECKPOINT.md): posisi progres terakhir, keputusan, dan langkah berikutnya
+- [docs/UNTUK-ADLI.md](docs/UNTUK-ADLI.md): catatan serah terima dari Aldi untuk Adli
 
 ## Lisensi
 

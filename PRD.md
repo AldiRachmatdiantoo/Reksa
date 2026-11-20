@@ -270,6 +270,8 @@ Seluruh endpoint berada di bawah prefix `/api/v1` dan menggunakan middleware val
 | :--- | :--- | :--- | :--- |
 | `POST` | `/auth/register` & `/auth/login` | Public (Rate-Limited) | Validasi email & password kuat; mengembalikan `__Host-access_token` dan `__Secure-refresh_token` via `Set-Cookie`. |
 | `POST` | `/auth/refresh` | Cookie Refresh Token | Memutar (*rotate*) refresh token; mendeteksi *token reuse attack*. |
+| `DELETE` | `/auth/refresh` | Cookie Refresh Token | Logout: mencabut *token family* perangkat ini dan menghapus kedua cookie. Memakai path yang sama dengan refresh agar cookie `__Secure-refresh_token` ikut terkirim. |
+| `GET` | `/auth/me` | Authenticated | Profil user yang sedang login (`id`, `email`, `fullName`, `role`, `tier`). |
 | `POST` | `/materials` | Authenticated | Unggah PDF/teks materi; mengekstrak rubrik JSON via `IAiService` + Redis cache. |
 | `POST` | `/sessions` | `STUDENT` | Memulai sesi Pomodoro; mengunci waktu mulai di server. |
 | `PATCH` | `/sessions/:id/jol` | `STUDENT` (Owner) | Mengakhiri fase fokus & menyimpan skor keyakinan metakognisi (`predicted_jol_score`). |
@@ -322,7 +324,10 @@ Sumber kebenarannya adalah file `*.schema.ts`. Tabel ini ringkasan agar frontend
 **`auth`** (`features/auth/auth.schema.ts`)
 * Register: `email` (di-trim & lowercase, maks 254), `password` (12–128 karakter, wajib huruf kecil, huruf besar, angka), `fullName` (1–100), `role` opsional `STUDENT` | `EDUCATOR` (default `STUDENT`). `INSTITUTION_ADMIN` tidak bisa daftar sendiri.
 * Login: `email`, `password` (maks 128).
-* Respons user: `id`, `email`, `fullName`, `role`, `tier`. Tidak pernah memuat hash password.
+* Respons user: `id`, `email`, `fullName`, `role`, `tier`. Tidak pernah memuat hash password maupun token.
+* Status: register `201`, login/refresh/me `200`, logout `204`. Kredensial salah selalu `401` dengan pesan yang sama, baik email tidak terdaftar maupun password salah. Email duplikat `409`. Rate limit `429` + header `Retry-After` (login 5/menit, register 10/jam, refresh 30/menit per IP).
+* Access token hanya dibaca dari cookie `__Host-access_token`; header `Authorization` diabaikan.
+* **Wajib di frontend (`apiClient`):** saat menerima `401`, panggil `POST /auth/refresh` **satu kali saja walau ada banyak request yang gagal bersamaan** (antrekan request lain sampai refresh selesai), lalu ulangi request-nya. Dua refresh paralel dengan token yang sama dianggap *token reuse* dan seluruh sesi user dicabut. Jika refresh juga `401`, arahkan ke halaman login.
 
 **`materials`** (`features/materials/materials.schema.ts`)
 * Teks: body JSON `{ title (1–200), content (1–15.000 karakter), classId? }`.

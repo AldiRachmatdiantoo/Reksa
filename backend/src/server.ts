@@ -2,6 +2,7 @@ import { createApp } from './app.js';
 import { createAiService } from './common/ai/ai.factory.js';
 import { createLogger } from './common/utils/logger.js';
 import { loadEnv } from './config/env.js';
+import { buildRoutes } from './container.js';
 import { createPrismaClient } from './config/prisma.js';
 import { createRedisClient } from './config/redis.js';
 
@@ -17,10 +18,8 @@ async function main(): Promise<void> {
   await redis.connect();
   logger.info({ aiProviderMode: env.AI_PROVIDER_MODE }, 'Database, Redis, dan AI provider siap');
 
-  // prisma, redis, dan ai akan diteruskan ke router fitur mulai Fase 1.
-  void ai;
-
-  const app = createApp({ env, logger });
+  const routes = buildRoutes({ env, logger, prisma, redis, ai });
+  const app = createApp({ env, logger, routes });
   const server = app.listen(env.PORT, () => {
     logger.info({ port: env.PORT }, 'REKSA backend berjalan');
   });
