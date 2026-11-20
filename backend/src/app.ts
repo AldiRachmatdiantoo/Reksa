@@ -1,6 +1,6 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express, { type Express } from 'express';
+import express, { type Express, type Router } from 'express';
 import helmet from 'helmet';
 import type { Logger } from 'pino';
 import { pinoHttp } from 'pino-http';
@@ -10,9 +10,11 @@ import type { Env } from './config/env.js';
 export type AppDeps = {
   env: Pick<Env, 'CORS_ORIGIN' | 'NODE_ENV'>;
   logger: Logger;
+  /** Router fitur yang dipasang di bawah /api/v1, mis. { '/auth': authRouter }. */
+  routes?: Record<string, Router>;
 };
 
-export function createApp({ env, logger }: AppDeps): Express {
+export function createApp({ env, logger, routes = {} }: AppDeps): Express {
   const app = express();
 
   // Backend hanya diakses lewat satu reverse proxy (Nginx). Dibutuhkan agar
@@ -43,8 +45,9 @@ export function createApp({ env, logger }: AppDeps): Express {
     res.json({ status: 'ok' });
   });
 
-  // Router fitur dipasang di sini mulai Fase 1, mis.:
-  // api.use('/auth', createAuthRouter(deps));
+  for (const [path, router] of Object.entries(routes)) {
+    api.use(path, router);
+  }
 
   app.use('/api/v1', api);
 
