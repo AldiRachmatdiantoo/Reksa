@@ -3,20 +3,23 @@
 #
 #   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis
 #
+# Port 5432/6379 sudah dipakai layanan lain di host? Set POSTGRES_DEV_PORT /
+# REDIS_DEV_PORT di .env root, lalu sesuaikan DATABASE_URL / REDIS_URL di backend/.env.
+#
 # Container di jaringan internal: true tidak bisa mem-publish port, jadi di sini
 # keduanya ditambahkan ke jaringan dev_net.
 
 services:
   postgres:
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${POSTGRES_DEV_PORT:-5432}:5432"
     networks:
       - internal_net
       - dev_net
 
   redis:
     ports:
-      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:${REDIS_DEV_PORT:-6379}:6379"
     networks:
       - internal_net
       - dev_net

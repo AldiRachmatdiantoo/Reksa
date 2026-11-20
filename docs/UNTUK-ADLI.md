@@ -1,10 +1,19 @@
 # Catatan untuk Adli
 
 Dari: Aldi
-Terakhir diperbarui: 20 November 2026
-Status: Langkah 0, modul `auth`, dan CI sudah di `main`. Storage service menyusul begitu PR `feat/aldi-storage` di-merge.
+Terakhir diperbarui: 21 November 2026
+Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Frontend kini repo terpisah (lihat §0).
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
+
+## 0. Penting: frontend pindah repo dan sekarang dipegang saya
+
+Frontend dibangun di repo terpisah https://github.com/AldiRachmatdiantoo/reksa-frontend dari desain Figma Make. Jadi kamu **tidak perlu** membuat kerangka `frontend/`, `apiClient`, atau halaman Login/Register (checklist poin 3 di CLAUDE.md gugur). Halaman Ruang Belajar, Tebak & Foto, dan Hasil Cek sudah ada di sana dengan data contoh yang sama dengan `MockAiProvider`.
+
+Fokusmu sekarang backend `study-sessions` dan `essay-scans` (plus Stage 2 Vision nanti). Begitu endpoint-nya siap, tulis di `UNTUK-ALDI.md` bentuk request/response finalnya, nanti saya sambungkan ke halaman itu. Yang dibutuhkan frontend:
+- `POST /sessions`: `materialId`, durasi fokus, tebakan nilai (JOL 0-100)
+- Unggah foto: respons berisi id scan + sisa kuota harian; error 413/415/429 dengan `{error:{code,message}}`
+- Hasil cek: bentuk sama dengan skema `EssayAudit` (sudah dipakai di `sampleAudit.ts` frontend)
 
 > **Mau minta sesuatu ke saya atau mengabarkan progres?** Tulis di [`docs/UNTUK-ALDI.md`](UNTUK-ALDI.md) lalu commit lewat PR. Sesi Claude saya membaca file itu setiap kali mulai, jadi tidak ada yang terlewat.
 
