@@ -11,12 +11,14 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --project unit",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
-    "migrate:deploy": "prisma migrate deploy"
+    "migrate:deploy": "prisma migrate deploy",
+    "test:integration": "vitest run --project integration",
+    "test:all": "vitest run"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.1",

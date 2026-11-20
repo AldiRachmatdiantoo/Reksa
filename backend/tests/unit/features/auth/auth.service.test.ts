@@ -52,7 +52,7 @@ class InMemoryAuthRepository implements AuthRepository {
   async revokeAllUserTokens(userId: string) {
     this.tokens.filter((t) => t.userId === userId).forEach((t) => (t.isRevoked = true));
   }
-  withTransaction<T>(fn: (repo: AuthRepository) => Promise<T>) {
+  withTransaction<T>(fn: (repo: AuthRepository) => Promise<T>): Promise<T> {
     return fn(this);
   }
 }
