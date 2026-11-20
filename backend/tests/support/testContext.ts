@@ -6,6 +6,7 @@ import { createApp } from '../../src/app.js';
 import { MockAiProvider } from '../../src/common/ai/mockAi.provider.js';
 import { buildRoutes } from '../../src/container.js';
 import { createPrismaClient, type PrismaClient } from '../../src/config/prisma.js';
+import { S3StorageService } from '../../src/config/storage.js';
 
 export const TEST_ENV = {
   CORS_ORIGIN: 'http://localhost:8080',
@@ -21,6 +22,8 @@ export type TestContext = {
   /** Connects as the schema owner; only for setup and cleanup. */
   owner: PrismaClient;
   redis: Redis;
+  /** Real S3 bucket (SeaweedFS; same S3 API as Supabase Storage). */
+  storage: S3StorageService;
   reset(): Promise<void>;
   close(): Promise<void>;
 };
@@ -30,12 +33,15 @@ export function createTestContext(): TestContext {
   const prisma = createPrismaClient(inject('databaseUrl'));
   const owner = createPrismaClient(inject('ownerDatabaseUrl'));
   const redis = new Redis(inject('redisUrl'));
+  const storageConfig = inject('storage');
+  const storage = new S3StorageService({ ...storageConfig, region: 'us-east-1', forcePathStyle: true });
 
   const routes = buildRoutes({
     env: TEST_ENV,
     logger,
     prisma,
     redis,
+    storage,
     ai: new MockAiProvider({ latencyMs: 0 }),
   });
   const app = createApp({ env: TEST_ENV, logger, routes });
@@ -45,11 +51,13 @@ export function createTestContext(): TestContext {
     prisma,
     owner,
     redis,
+    storage,
     async reset() {
       await owner.$executeRaw`TRUNCATE TABLE users, institutions RESTART IDENTITY CASCADE`;
       await redis.flushdb();
     },
     async close() {
+      storage.destroy();
       await Promise.all([prisma.$disconnect(), owner.$disconnect(), redis.quit()]);
     },
   };

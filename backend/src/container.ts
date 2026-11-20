@@ -6,6 +6,7 @@ import { AccessTokenSigner } from './common/utils/jwt.js';
 import { Argon2PasswordHasher, type PasswordHasher } from './common/utils/passwordHasher.js';
 import type { Env } from './config/env.js';
 import type { PrismaClient } from './config/prisma.js';
+import type { IStorageService } from './config/storage.js';
 import { PrismaAuthRepository } from './features/auth/auth.repository.js';
 import { createAuthRouter } from './features/auth/auth.routes.js';
 import { AuthService } from './features/auth/auth.service.js';
@@ -16,6 +17,8 @@ export type ContainerDeps = {
   prisma: PrismaClient;
   redis: Redis;
   ai: IAiService;
+  /** Dipakai fitur materials (PDF) dan essay-scans (foto esai). */
+  storage: IStorageService;
   /** Override di test agar tidak menunggu Argon2 penuh. */
   hasher?: PasswordHasher;
 };

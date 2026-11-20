@@ -16,6 +16,15 @@ export const EnvSchema = z
     JWT_ACCESS_SECRET: z.string().min(32),
     JWT_REFRESH_SECRET: z.string().min(32),
 
+    // Object storage S3-compatible: MinIO (lokal) / Supabase Storage (staging & produksi).
+    STORAGE_ENDPOINT: z.url({ protocol: /^https?$/ }),
+    STORAGE_PUBLIC_ENDPOINT: z.url({ protocol: /^https?$/ }).optional(),
+    STORAGE_REGION: z.string().min(1).default('us-east-1'),
+    STORAGE_BUCKET: z.string().regex(/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/, 'Nama bucket tidak valid'),
+    STORAGE_ACCESS_KEY_ID: z.string().min(1),
+    STORAGE_SECRET_ACCESS_KEY: z.string().min(1),
+    STORAGE_FORCE_PATH_STYLE: z.stringbool().default(true),
+
     AI_PROVIDER_MODE: z.enum(['mock', 'gemini']).default('mock'),
     MOCK_AI_LATENCY_MS: z.coerce.number().int().min(0).max(10_000).default(300),
     GEMINI_API_KEY: z.string().optional(),

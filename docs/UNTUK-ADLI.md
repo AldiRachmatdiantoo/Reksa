@@ -2,7 +2,7 @@
 
 Dari: Aldi
 Terakhir diperbarui: 20 November 2026
-Status: Langkah 0, modul `auth`, dan CI sudah di `main`. Fase 1 bagian Aldi selesai.
+Status: Langkah 0, modul `auth`, dan CI sudah di `main`. Storage service menyusul begitu PR `feat/aldi-storage` di-merge.
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
@@ -27,9 +27,30 @@ Kamu bisa langsung mulai `study-sessions` dan `essay-scans`. Ada dua hal yang sa
 | Kamu butuh | Dari | Sementara itu |
 | :--- | :--- | :--- |
 | `materialId` valid untuk `POST /sessions` | Modul `materials` (saya) | Di test, buat materi langsung lewat `ctx.owner.studyMaterial.create(...)` di `createTestContext()` |
-| Simpan foto esai ke bucket privat + *signed URL* | **Storage service** (saya, di `backend/src/config/`) | **Jangan buat klien S3/R2 sendiri.** Kerjakan dulu validasi magic bytes, strip EXIF via `sharp`, dan kuota harian; bagian simpan file pakai antarmuka `IStorageService` yang akan saya kirim (`putObject`, `getSignedUrl`, `deleteObject`) |
+| ~~Simpan foto esai ke bucket privat + *signed URL*~~ | ✅ **Storage service siap**, lihat §1c | — |
 
-Saya kabari lewat file ini begitu storage service masuk `main`.
+## 1c. ✅ Storage service siap dipakai
+
+File: `backend/src/config/storage.ts`. **Jangan buat klien S3 sendiri**; pakai `IStorageService` yang sudah disuntikkan ke `buildRoutes()` sebagai `deps.storage`.
+
+```ts
+import { buildObjectKey, type IStorageService } from '../../config/storage.js';
+
+// Di essay-scans service, SETELAH magic bytes dicek dan EXIF di-strip via sharp:
+const key = buildObjectKey('scans', userId, 'webp'); // scans/<userId>/<uuid>.webp
+await storage.putObject({ key, body: cleanedBuffer, contentType: 'image/webp' });
+// simpan `key` ke essay_submissions.image_storage_key
+
+// Untuk halaman hasil audit:
+const url = await storage.getSignedUrl(submission.imageStorageKey); // berlaku 5 menit (maks.)
+```
+
+- Key **selalu** dibuat lewat `buildObjectKey(prefix, ownerId, ext)`; prefix `'scans'` untukmu, ext `webp | jpg | png | pdf`. Semua method menolak key lain (anti *path traversal*).
+- Bucket privat: tanpa signature dijawab 403. Signed URL maksimal 300 detik; `expiresInSec` yang lebih besar otomatis dipotong.
+- Sebelum memberi signed URL, **tetap cek kepemilikan** baris `essay_submissions` di repository (anti-IDOR). Signed URL hanya cara unduh, bukan otorisasi.
+- Di test integration, `createTestContext()` punya `ctx.storage` yang terhubung ke bucket S3 sungguhan (container SeaweedFS). Contoh: `backend/tests/integration/storage.test.ts`.
+- Lokal: `docker compose up -d storage-init` membuat bucket; signed URL mengarah ke `http://localhost:8333`. Produksi memakai Supabase Storage dengan antarmuka yang sama.
+- Frontend: tampilkan gambar dengan `<img src={signedUrl}>`. CSP `img-src` di `nginx.conf` sudah mengizinkan `localhost:8333`.
 
 ## 2. Yang perlu kamu lakukan
 

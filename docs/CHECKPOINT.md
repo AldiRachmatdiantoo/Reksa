@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 20 November 2026, setelah pipeline CI Fase 1 (Aldi)
+**Checkpoint terakhir:** 20 November 2026, storage service (Aldi, branch `feat/aldi-storage`)
 
 ---
 
@@ -12,10 +12,29 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | :--- | :--- | :--- |
 | Langkah 0 | ✅ Selesai, di `main` (PR #1) | ⏳ Belum mulai |
 | Fase 1 | ✅ Selesai: `auth` (PR #2, #3), CI + branch protection (PR #4) | — |
-| Fase 2 | ⬜ | ⬜ |
+| Fase 2 | 🟡 Storage service (`feat/aldi-storage`) | ⬜ |
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #4 — Storage service S3 (Fase 2) · branch `feat/aldi-storage`
+
+**Selesai**
+- `backend/src/config/storage.ts`: `IStorageService` (`putObject`, `getSignedUrl`, `deleteObject`, `checkConnection`) + `S3StorageService` (AWS SDK v3)
+- Object key dibuat server: `buildObjectKey(prefix, ownerId, ext)` → `<materials|scans>/<uuid>/<uuid>.<ext>`; setiap method menolak key di luar pola itu
+- Signed URL default dan maksimal 300 detik; ditandatangani terhadap `STORAGE_PUBLIC_ENDPOINT` (host yang dibuka browser), bukan endpoint internal
+- Env `STORAGE_*` divalidasi Zod; server menolak start jika bucket tidak bisa diakses
+- Compose: service `storage` (SeaweedFS 4.54, uid 1000, read-only, `cap_drop: ALL`, `127.0.0.1:8333`) + `storage-init` (membuat bucket, idempoten); backend menunggu keduanya
+- CSP `nginx.conf`: `img-src`/`frame-src` mengizinkan `http://localhost:8333`
+
+**Test**
+- Unit 45 (+storage key, TTL clamp, endpoint publik, env), integration 66 (+8 storage terhadap bucket sungguhan: signed URL, tanpa signature 403, signature dipindah ke key lain 403, kedaluwarsa 403, attachment, delete, key ilegal)
+- Docker: backend upload dari container, signed URL diambil dari host (200), tanpa signature 403
+- Semgrep bersih, `npm audit --omit=dev` 0
+
+**Keputusan**
+- **SeaweedFS, bukan MinIO.** Image MinIO tidak lagi bisa ditarik (Docker Hub & quay.io). SeaweedFS memvalidasi SigV4 dan presigned URL seperti S3/Supabase
+- **Deploy: Supabase (Postgres + Storage) / Vercel (frontend) / Render (backend).** Persiapannya dicatat di README §Deploy dan PRD §9.3: rewrite `/api/*` di Vercel (cookie `SameSite=Strict`), matikan Data API Supabase + cabut hak `anon`/`authenticated`, header keamanan di `vercel.json`, `trust proxy` sesuai rantai proxy, CSP untuk host Supabase Storage
 
 ### #3 — Pipeline CI & security gate (Fase 1) · PR #4, sudah di `main`
 
@@ -83,8 +102,8 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 ## Berikutnya
 
 **Aldi**
-1. Storage service (`IStorageService` + MinIO lokal / R2 staging); Adli menunggu ini untuk upload foto esai
-2. Modul `materials`
+1. Merge `feat/aldi-storage`, lalu modul `materials` (upload PDF → magic bytes → storage, cache rubrik SHA-256 di Redis)
+2. Persiapan deploy: migrasi pencabutan hak `anon`/`authenticated` Supabase, `vercel.json` (rewrite + header), konfigurasi Render
 3. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
 
 **Adli** (lihat [UNTUK-ADLI.md](UNTUK-ADLI.md))
@@ -98,4 +117,5 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 - Prisma tidak mengenal partial index. Saat membuat migrasi baru, hapus `DROP INDEX` untuk `idx_spaced_user_due` dan `idx_sessions_class_governance` jika muncul.
 - `src/generated/prisma` tidak di-commit; jalankan `npx prisma generate` setelah clone.
 - Advisory *moderate* tersisa hanya di dev tooling (`testcontainers` → `glob`); dependency produksi 0 vulnerability.
-- Uji integration butuh Docker Desktop berjalan.
+- Uji integration butuh Docker Desktop berjalan (Postgres, Redis, SeaweedFS ditarik otomatis).
+- Image `minio/minio` sudah tidak tersedia; jangan kembali ke MinIO.

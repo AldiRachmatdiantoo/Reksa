@@ -7,10 +7,15 @@
 #
 # Jaringan:
 #   internal_net : internal: true, tanpa akses keluar. postgres + redis hanya di sini.
-#   app_net      : jaringan bridge biasa. frontend (nginx) + backend.
-#                  Backend butuh akses keluar untuk Gemini & R2 (Fase 3), tetapi
-#                  tidak mem-publish port apa pun. Satu-satunya port yang terbuka
-#                  ke host adalah nginx, dan hanya di 127.0.0.1.
+#   app_net      : jaringan bridge biasa. frontend (nginx) + backend + storage.
+#                  Backend butuh akses keluar untuk Gemini (Fase 3), tetapi tidak
+#                  mem-publish port apa pun. Port yang terbuka ke host hanya di
+#                  127.0.0.1: nginx (8080) dan S3 storage (8333).
+#
+# Storage: SeaweedFS (S3-compatible) menggantikan Supabase Storage secara lokal.
+# Port 8333 di-publish karena browser mengambil file langsung lewat signed URL
+# (tanpa signature, bucket menolak dengan 403). Di produksi endpoint-nya adalah
+# S3 endpoint Supabase Storage; lihat README bagian Deploy.
 
 name: reksa
 
@@ -81,6 +86,56 @@ services:
     networks:
       - internal_net
 
+  # S3-compatible lokal. Kredensial dari .env ditulis ke /tmp (tmpfs) saat start.
+  storage:
+    <<: *hardening
+    image: chrislusf/seaweedfs:4.54
+    restart: unless-stopped
+    user: "1000:1000"
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        printf '{"identities":[{"name":"reksa-backend","credentials":[{"accessKey":"%s","secretKey":"%s"}],"actions":["Read","Write","List","Tagging","Admin"]}]}'           "$$STORAGE_ACCESS_KEY_ID" "$$STORAGE_SECRET_ACCESS_KEY" > /tmp/s3.json
+        exec /usr/bin/weed -logtostderr=true server -dir=/data -s3 -s3.config=/tmp/s3.json -ip.bind=0.0.0.0
+    environment:
+      STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY_ID:?STORAGE_ACCESS_KEY_ID wajib diisi di .env}
+      STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY:?STORAGE_SECRET_ACCESS_KEY wajib diisi di .env}
+    ports:
+      - "127.0.0.1:8333:8333"
+    volumes:
+      - storagedata:/data
+    tmpfs:
+      - /tmp:size=16m,mode=1777,uid=1000
+    networks:
+      - app_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8333/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Membuat bucket privat sekali (idempoten), lalu selesai.
+  storage-init:
+    <<: *hardening
+    image: chrislusf/seaweedfs:4.54
+    user: "1000:1000"
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        echo "s3.bucket.create -name $$STORAGE_BUCKET" | /usr/bin/weed shell -master=storage:9333 2>&1 | tee /tmp/out
+        if grep -qi error /tmp/out && ! grep -qi "already exist" /tmp/out; then exit 1; fi
+    environment:
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-reksa-private}
+    tmpfs:
+      - /tmp:size=8m,mode=1777
+    depends_on:
+      storage:
+        condition: service_healthy
+    networks:
+      - app_net
+
   backend:
     <<: *hardening
     build:
@@ -99,6 +154,13 @@ services:
       AI_PROVIDER_MODE: ${AI_PROVIDER_MODE:-mock}
       MOCK_AI_LATENCY_MS: ${MOCK_AI_LATENCY_MS:-300}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      STORAGE_ENDPOINT: http://storage:8333
+      STORAGE_PUBLIC_ENDPOINT: ${STORAGE_PUBLIC_ENDPOINT:-http://localhost:8333}
+      STORAGE_REGION: us-east-1
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-reksa-private}
+      STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY_ID}
+      STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY}
+      STORAGE_FORCE_PATH_STYLE: "true"
     tmpfs:
       - /tmp:size=64m,mode=1777
     depends_on:
@@ -106,6 +168,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      storage-init:
+        condition: service_completed_successfully
     networks:
       - internal_net
       - app_net
@@ -134,3 +198,4 @@ networks:
 volumes:
   pgdata:
   redisdata:
+  storagedata:

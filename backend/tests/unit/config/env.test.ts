@@ -7,6 +7,10 @@ const validEnv = {
   CORS_ORIGIN: 'http://localhost:8080',
   JWT_ACCESS_SECRET: 'a'.repeat(32),
   JWT_REFRESH_SECRET: 'b'.repeat(32),
+  STORAGE_ENDPOINT: 'http://localhost:9000',
+  STORAGE_BUCKET: 'reksa-private',
+  STORAGE_ACCESS_KEY_ID: 'key',
+  STORAGE_SECRET_ACCESS_KEY: 'secret',
 };
 
 describe('loadEnv', () => {
@@ -14,6 +18,15 @@ describe('loadEnv', () => {
     const env = loadEnv(validEnv);
     expect(env.AI_PROVIDER_MODE).toBe('mock');
     expect(env.PORT).toBe(3000);
+  });
+
+  it('parses STORAGE_FORCE_PATH_STYLE as a boolean, defaulting to true', () => {
+    expect(loadEnv(validEnv).STORAGE_FORCE_PATH_STYLE).toBe(true);
+    expect(loadEnv({ ...validEnv, STORAGE_FORCE_PATH_STYLE: 'false' }).STORAGE_FORCE_PATH_STYLE).toBe(false);
+  });
+
+  it('rejects an invalid bucket name', () => {
+    expect(() => loadEnv({ ...validEnv, STORAGE_BUCKET: 'Bad_Bucket!' })).toThrow(/STORAGE_BUCKET/);
   });
 
   it('requires GEMINI_API_KEY in gemini mode', () => {
