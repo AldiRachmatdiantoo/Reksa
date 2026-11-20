@@ -1,37 +1,36 @@
-# figma-make-app
+# reksa-frontend
 
-React + Vite + Tailwind CSS project running inside Figma Make.
+Frontend REKSA: aplikasi web belajar aktif (fokus, tulis ulang dari ingatan, tebak nilai, cek catatan). Pemilik: Aldi. Backend ada di repo terpisah `reksa` (Express + Prisma); kontrak API-nya dirangkum di `reksa/PRD.md` §8.3.
 
-## Development Server
+Sebelum kerja: baca `docs/CHECKPOINT.md` (posisi terakhir) dan `docs/BACKLOG.md` (yang belum dikerjakan).
 
-A Vite development server is **already running** on `$PORT` (default 8443). You don't need to start it manually.
+## Stack
 
-- Preview URL: The user can access the running app through the preview panel
-- Hot reload: Changes to source files are reflected immediately
+- Vite 8, React 19, TypeScript, Tailwind CSS 4 (`@theme inline` di `src/index.css`, token dari `src/theme.css`)
+- react-router-dom 7, motion 12, `@number-flow/react` (angka timer dan skor)
+- Vitest + happy-dom untuk unit test di `tests/unit/`
+- Ikon: Material Symbols Outlined (font Google), bukan Lucide
 
-## Project Structure
+## Perintah
 
-This is the canonical project structure. Start with task-relevant files below. Only follow imports or inspect other files when required, when a documented path is missing, or when the repository contradicts this guide.
+- `npm run dev`: dev server di `http://localhost:5173`, `/api` diproksi ke `VITE_API_PROXY_TARGET` (lihat `.env.example`)
+- `npm run typecheck`, `npm test`, `npm run build` (menghasilkan `dist/`)
+- Install pakai `npm`. Kalau npm 10 gagal dengan error arborist `edgesOut`, pakai `npx -y npm@11 install`.
 
-- `src/main.tsx` - React entrypoint; imports `src/index.css` and mounts `src/App.tsx` into the `#root` element
-- `src/App.tsx` - Primary application component and the usual starting point for UI work
-- `src/index.css` - Global CSS entrypoint and Tailwind CSS v4 import
-- `index.html` - Vite HTML shell containing the `#root` element and loading `src/main.tsx`
-- `package.json` - Project dependencies and the Vite build, development, preview, and formatting scripts
-- `vite.config.ts` - Vite configuration with React, Tailwind CSS v4, and Figma Make plugins plus the `@` alias for `src`
-- `.mise.toml` - Toolchain versions for Node.js and pnpm
+## Struktur
 
-## Dependencies
+- `src/core/apiClient.ts`: satu-satunya pintu ke backend. Cookie `HttpOnly` (`credentials: 'include'`), refresh token single-flight saat 401, tanpa refresh untuk `/auth/login`, `/auth/register`, `/auth/refresh`.
+- `src/shared/`: UI dasar (`ui/`), hook (`hooks/`), tema terang/gelap (`theme.tsx`).
+- `src/features/<fitur>/`: `auth`, `landing`, `studio` (sesi fokus), `scanner` (tebak nilai + foto), `audit-result` (hasil cek), `governance` (portal guru).
+- `design-reference/`: ekspor HTML dari Figma Make. Referensi visual saja, tidak di-import.
+- `public/assets/`: dua ilustrasi dari pemilik produk.
 
-- Runtime: React 19 and React DOM 19
-- Styling: Tailwind CSS v4 with the `@tailwindcss/vite` plugin
-- Build tooling: Vite 8, TypeScript 5.7, and `@vitejs/plugin-react`
-- Formatting: oxfmt
+## Aturan wajib
 
-## Styling
-
-This project uses **Tailwind CSS v4** through the `@tailwindcss/vite` plugin configured in `vite.config.ts`. `src/index.css` imports Tailwind with `@import 'tailwindcss';`. Use Tailwind utility classes directly in JSX and put global CSS or Tailwind v4 theme customization in `src/index.css`. This scaffold does not need a Tailwind config file or PostCSS config.
-
-`src/main.tsx` imports `src/index.css`, so global font wiring belongs in `src/index.css`. Keep CSS `@import` statements first, then add any `@font-face` rules and font-family defaults there.
-
-Tailwind emits utility classes in `@layer utilities`, and CSS outside any cascade layer overrides every layer regardless of specificity. Put global element styles, such as resets and defaults for `body`, headings, `button`, or `input`, inside `@layer base { ... }` so utility classes on those elements still apply. Tailwind's Preflight already applies `box-sizing: border-box`, removes default margins, and sets `font: inherit` on form controls, so do not repeat those rules.
+- Token tidak boleh disimpan di `localStorage`/`sessionStorage`. Semua auth lewat cookie dari backend. `sessionStorage` hanya untuk state sesi belajar (tanpa data rahasia).
+- Jangan tambahkan atribusi AI di commit atau PR.
+- Branch `feat/aldi-*` atau `fix/aldi-*`, lewat pull request, tidak commit ke `main`.
+- Data contoh (materi, hasil cek) wajib diberi label "contoh" di UI sampai endpoint aslinya ada. Jangan tampilkan angka, testimoni, atau klaim yang tidak nyata.
+- Bahasa UI: Bahasa Indonesia, nada santai untuk pelajar SMA/mahasiswa. Hindari em dash di teks UI.
+- Warna: teal untuk struktur, ember (oranye) satu aksen per layar. Radius pill hanya di tombol. Blur hanya di header lengket.
+- Setiap komponen interaktif harus jalan dengan keyboard dan punya target sentuh minimal 44px.
