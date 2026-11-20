@@ -192,7 +192,7 @@ reksa-platform/
 │   ├── prisma/                       # Skema PostgreSQL, migrasi, & kebijakan RLS
 │   │   └── schema.prisma
 │   ├── src/
-│   │   ├── config/                   # Env validation (Zod), DB, Redis, S3/R2
+│   │   ├── config/                   # Env validation (Zod), DB, Redis, storage S3
 │   │   ├── common/
 │   │   │   ├── ai/                   # ai.provider.interface.ts, mockAi.provider.ts, geminiAi.provider.ts, ai.factory.ts
 │   │   │   ├── middlewares/          # auth.middleware.ts, rbac.middleware.ts, validate.middleware.ts, rateLimit.middleware.ts
@@ -379,7 +379,7 @@ Keamanan ditempatkan sebagai prioritas arsitektur nomor satu (*Security-First De
    * Setiap metode di `Service` dan `Repository` wajib menyertakan klausa kepemilikan (`userId` atau kepemilikan `classId` bagi pengajar) di dalam kueri pengambilan data.
 4. **Keamanan File Upload & Storage:**
    * Validasi ukuran maksimal file (5 MB untuk gambar esai, 10 MB untuk PDF) serta pemeriksaan **Magic Bytes** menggunakan library `file-type` (menolak skrip berbahaya yang disamarkan menjadi `.jpg`/`.png`).
-   * Seluruh foto tulisan tangan diproses ulang lewat `sharp` untuk menghapus metadata sensitif (**EXIF, koordinat GPS, tipe perangkat**) sebelum diunggah ke **Private Bucket (Cloudflare R2 / S3)**.
+   * Seluruh foto tulisan tangan diproses ulang lewat `sharp` untuk menghapus metadata sensitif (**EXIF, koordinat GPS, tipe perangkat**) sebelum diunggah ke **Private Bucket S3-compatible** (Supabase Storage di produksi, SeaweedFS di lokal/CI). Object key selalu dibuat server (`<prefix>/<ownerId>/<uuid>.<ext>`) dan divalidasi ulang sebelum dipakai, sehingga *path traversal* lewat key tidak mungkin.
    * File gambar hanya dapat diakses melalui **Pre-Signed URL** berumur pendek (5 menit).
 5. **Network & HTTP Hardening:**
    * Konfigurasi `Helmet` ketat, `Content-Security-Policy (CSP)`, validasi origin CORS eksplisit, serta **Redis Sliding-Window Rate Limiting** (misal: maksimal 5 percobaan login/menit per IP; maksimal 10 permintaan AI/jam per user).
@@ -394,6 +394,14 @@ Keamanan ditempatkan sebagai prioritas arsitektur nomor satu (*Security-First De
   * `Stage 2 (runner)`: Menggunakan `nginxinc/nginx-unprivileged:alpine` (non-root) dengan kompresi Gzip/Brotli dan injeksi header keamanan HTTP.
 * **Isolasi Jaringan (`docker-compose.yml`):**
   * Container `postgres` dan `redis` berada di dalam jaringan terisolasi `internal_net` (`internal: true`) tanpa eksposur *port* ke mesin host publik. Hanya container reverse-proxy yang terhubung ke jaringan eksternal.
+  * Container `storage` (SeaweedFS, S3-compatible) mem-publish `127.0.0.1:8333` karena browser mengambil file langsung lewat *signed URL*. Bucket privat menolak request tanpa signature (403).
+
+### 9.3 Topologi Deploy Produksi
+* **Frontend:** Vercel. Header keamanan (CSP, HSTS, dsb.) didefinisikan di `vercel.json`. Vercel me-*rewrite* `/api/*` ke backend agar cookie `SameSite=Strict` + `__Host-` tetap berlaku (satu situs).
+* **Backend:** Render (image Docker target `runner`).
+* **Database & file:** Supabase Postgres (aplikasi sebagai `app_service_user` lewat pooler, migrasi lewat koneksi langsung) dan Supabase Storage lewat endpoint S3. Data API Supabase dimatikan dan hak `anon`/`authenticated` di skema `public` dicabut.
+* **Redis:** layanan Redis terkelola dengan TLS (`rediss://`).
+* `docker-compose.yml` hanya untuk lokal dan CI.
 
 ---
 

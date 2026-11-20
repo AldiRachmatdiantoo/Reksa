@@ -5,6 +5,7 @@ import { loadEnv } from './config/env.js';
 import { buildRoutes } from './container.js';
 import { createPrismaClient } from './config/prisma.js';
 import { createRedisClient } from './config/redis.js';
+import { createStorageService } from './config/storage.js';
 
 async function main(): Promise<void> {
   const env = loadEnv();
@@ -13,12 +14,14 @@ async function main(): Promise<void> {
   const prisma = createPrismaClient(env.DATABASE_URL);
   const redis = createRedisClient(env.REDIS_URL);
   const ai = createAiService(env);
+  const storage = createStorageService(env);
 
   await prisma.$connect();
   await redis.connect();
-  logger.info({ aiProviderMode: env.AI_PROVIDER_MODE }, 'Database, Redis, dan AI provider siap');
+  await storage.checkConnection();
+  logger.info({ aiProviderMode: env.AI_PROVIDER_MODE }, 'Database, Redis, storage, dan AI provider siap');
 
-  const routes = buildRoutes({ env, logger, prisma, redis, ai });
+  const routes = buildRoutes({ env, logger, prisma, redis, ai, storage });
   const app = createApp({ env, logger, routes });
   const server = app.listen(env.PORT, () => {
     logger.info({ port: env.PORT }, 'REKSA backend berjalan');
@@ -37,6 +40,7 @@ async function main(): Promise<void> {
     forceExit.unref();
 
     server.close(async () => {
+      storage.destroy();
       await Promise.allSettled([prisma.$disconnect(), redis.quit()]);
       logger.info('Server berhenti dengan bersih');
       process.exit(0);

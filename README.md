@@ -82,7 +82,7 @@ Landasan ilmiah: *retrieval practice*, *generation effect*, *dual-coding*, *judg
 | Cache & token sementara | Redis |
 | Frontend | Vite, React, TypeScript, Tailwind CSS, Shadcn/UI, Zustand, TanStack Query, Axios |
 | AI | `IAiService` → `MockAiProvider` (Fase 1–2) / `GeminiAiProvider` (Fase 3: `gemini-2.5-flash`, `gemini-2.5-pro`) |
-| File | `file-type` (magic bytes), `sharp` (strip EXIF, kompresi), Cloudflare R2 / S3 privat |
+| File | `file-type` (magic bytes), `sharp` (strip EXIF, kompresi), bucket S3 privat (Supabase Storage di produksi, SeaweedFS di lokal) |
 | Auth | JWT di cookie `HttpOnly`, Argon2id, *refresh token rotation* |
 | Infra | Docker multi-stage, docker compose, Nginx |
 | Testing | Vitest, Supertest, Testcontainers, Playwright, `@axe-core/playwright`, Semgrep, OWASP ZAP |
@@ -120,7 +120,7 @@ export interface IAiService {
 
 ### Jaringan container
 
-Container `postgres` dan `redis` berada di jaringan `internal_net` (`internal: true`) tanpa port yang dibuka ke host. Hanya reverse proxy Nginx yang menerima trafik dari luar.
+Container `postgres` dan `redis` berada di jaringan `internal_net` (`internal: true`) tanpa port yang dibuka ke host. Ke host hanya ada dua port, keduanya di `127.0.0.1`: Nginx (`8080`) dan storage S3 (`8333`). Storage perlu terbuka karena browser mengambil file langsung lewat *signed URL*; tanpa signature yang valid bucket menjawab 403.
 
 ---
 
@@ -182,7 +182,7 @@ git clone https://github.com/AldiRachmatdiantoo/Reksa.git reksa
 cd reksa
 
 cp .env.example .env                              # ganti semua CHANGE_ME (openssl rand -hex 32)
-docker compose up -d postgres redis               # database & cache (jaringan internal)
+docker compose up -d postgres redis storage-init  # database, cache, storage + bucket privat
 docker compose --profile tools run --rm migrate   # migrasi sebagai pemilik skema
 docker compose up -d --build                      # backend + frontend (nginx)
 ```
@@ -247,8 +247,14 @@ Variabel yang dibaca backend divalidasi Zod di [`backend/src/config/env.ts`](bac
 | `MOCK_AI_LATENCY_MS` | backend | Simulasi latensi `MockAiProvider` (default 300) |
 | `GEMINI_API_KEY` | backend | Wajib hanya di mode `gemini` |
 | `PORT`, `LOG_LEVEL`, `NODE_ENV` | backend | Default `3000`, `info`, `development` |
+| `STORAGE_ENDPOINT` | backend | Endpoint S3 yang dipakai backend (compose: `http://storage:8333`) |
+| `STORAGE_PUBLIC_ENDPOINT` | backend, compose | Host di dalam *signed URL* yang dibuka browser (lokal: `http://localhost:8333`). Kosongkan jika sama dengan `STORAGE_ENDPOINT` |
+| `STORAGE_REGION` | backend | Default `us-east-1`; di Supabase isi region project |
+| `STORAGE_BUCKET` | backend, compose | Bucket privat, default `reksa-private` |
+| `STORAGE_ACCESS_KEY_ID` / `STORAGE_SECRET_ACCESS_KEY` | backend, compose | Kunci S3. Lokal bebas (hex); produksi dari Supabase → Storage → S3 access keys |
+| `STORAGE_FORCE_PATH_STYLE` | backend | Default `true` (wajib untuk SeaweedFS dan Supabase) |
 
-Variabel storage R2/S3 ditambahkan bersama fitur `materials` di Fase 2. File `.env` tidak pernah di-commit (sudah ada di `.gitignore`).
+File `.env` tidak pernah di-commit (sudah ada di `.gitignore`).
 
 ---
 
@@ -324,9 +330,31 @@ Aturan: setiap `*.service.ts` baru wajib punya unit test, setiap endpoint baru w
   - [x] Security suite: cookie, token replay, JWT palsu, SQLi/fuzzing, rate limit, RLS, least privilege
   - [x] CI: typecheck, unit, integration (Testcontainers), `npm audit`, Semgrep, Docker build
 - [ ] **Fase 2: golden path & governance dengan `MockAiProvider`**, beserta seluruh test
+  - [x] Storage service S3 (`IStorageService`): object key tervalidasi, bucket privat, *signed URL* maks. 5 menit
 - [ ] **Fase 3: `GeminiAiProvider` & uji prompt injection**
 
 Setelah MVP: mode audio Feynman, *interleaving engine*, PWA *offline-first*.
+
+---
+
+## Deploy
+
+Target produksi:
+
+| Bagian | Layanan | Catatan |
+| :--- | :--- | :--- |
+| Frontend | **Vercel** | Build `frontend/` (Vite). Header keamanan dari `nginx.conf` dipindah ke `vercel.json` |
+| Backend | **Render** (Docker, target `runner`) | Migrasi dijalankan sebagai pemilik skema sebelum deploy (target `migrator` atau `npx prisma migrate deploy`) |
+| Database | **Supabase Postgres** | Aplikasi konek sebagai `app_service_user` lewat pooler; migrasi lewat koneksi langsung |
+| File | **Supabase Storage** (S3-compatible) | `STORAGE_ENDPOINT=https://<project-ref>.storage.supabase.co/storage/v1/s3`, bucket privat |
+| Redis | Redis terkelola (`rediss://`) | Rate limit, cache rubrik, token QR |
+
+`docker-compose.yml` tetap dipakai untuk lokal dan CI. Yang perlu disiapkan sebelum deploy pertama:
+
+1. **Cookie lintas domain.** Cookie auth memakai `SameSite=Strict` dan `__Host-`, jadi frontend dan API harus satu situs. Rencananya Vercel me-*rewrite* `/api/*` ke backend Render, sehingga browser hanya melihat domain Vercel.
+2. **Supabase Data API.** Secara default Supabase membuka skema `public` lewat REST untuk role `anon`/`authenticated`. REKSA tidak memakainya, jadi Data API dimatikan dan hak akses kedua role itu dicabut lewat migrasi.
+3. **`trust proxy`.** Jumlah hop disesuaikan dengan rantai Vercel → Render agar rate limit membaca IP klien yang benar.
+4. **CSP.** `img-src`/`frame-src` mengizinkan host Supabase Storage untuk *signed URL*.
 
 ---
 
