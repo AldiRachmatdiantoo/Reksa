@@ -37,7 +37,7 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 - Belum terbukti hijau di GitHub Actions sampai PR pertama dibuat
 
 **Belum**
-- Action belum di-pin ke commit SHA (masih tag `@v4`)
+- ~~Action belum di-pin ke commit SHA~~ → sudah: `actions/checkout` v7.0.1 dan `actions/setup-node` v7.1.0 di-pin ke SHA (temuan Semgrep di run CI pertama), `persist-credentials: false`
 - Branch protection di GitHub (wajibkan CI hijau sebelum merge) harus diaktifkan manual oleh pemilik repo
 - DAST (OWASP ZAP) menunggu lingkungan staging
 
