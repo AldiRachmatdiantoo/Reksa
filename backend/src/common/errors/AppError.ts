@@ -41,6 +41,26 @@ export class ConflictError extends AppError {
   }
 }
 
+export class PayloadTooLargeError extends AppError {
+  constructor(message = 'Ukuran file melebihi batas') {
+    super(413, 'PAYLOAD_TOO_LARGE', message);
+  }
+}
+
+/** Isi file (dicek dari magic bytes, bukan nama/Content-Type) bukan tipe yang diterima. */
+export class UnsupportedMediaTypeError extends AppError {
+  constructor(message = 'Tipe file tidak didukung') {
+    super(415, 'UNSUPPORTED_MEDIA_TYPE', message);
+  }
+}
+
+/** Input lolos validasi format, tapi isinya tidak bisa diproses (mis. PDF tanpa teks). */
+export class UnprocessableEntityError extends AppError {
+  constructor(message = 'Data tidak bisa diproses') {
+    super(422, 'UNPROCESSABLE_ENTITY', message);
+  }
+}
+
 export class TooManyRequestsError extends AppError {
   constructor(message = 'Terlalu banyak permintaan, coba lagi nanti') {
     super(429, 'TOO_MANY_REQUESTS', message);
