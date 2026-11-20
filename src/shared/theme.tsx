@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useConsent } from './consent';
 
 export type Theme = 'light' | 'dark';
 const STORAGE_KEY = 'reksa-theme';
@@ -18,25 +19,30 @@ function systemTheme(): Theme {
 
 const ThemeContext = createContext<{ theme: Theme; toggle: () => void } | null>(null);
 
-/** Tema mengikuti sistem sampai user memilih sendiri; pilihan disimpan per perangkat. */
+/**
+ * Tema mengikuti sistem sampai user memilih sendiri.
+ * Pilihan hanya diingat di perangkat kalau user mengizinkan "Ingat pilihan tema" di pop up cookie.
+ */
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const { consent } = useConsent();
+  const remember = consent?.preferences === true;
   const [theme, setTheme] = useState<Theme>(() => readStored() ?? systemTheme());
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
-  const toggle = useCallback(() => {
-    setTheme((prev) => {
-      const next = prev === 'dark' ? 'light' : 'dark';
-      try {
-        localStorage.setItem(STORAGE_KEY, next);
-      } catch {
-        // Penyimpanan diblokir (mode privat): tema tetap berganti untuk sesi ini.
-      }
-      return next;
-    });
-  }, []);
+  // Izin berubah atau tema diganti: simpan tema sekarang, atau hapus yang pernah tersimpan.
+  useEffect(() => {
+    try {
+      if (remember) localStorage.setItem(STORAGE_KEY, theme);
+      else localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Penyimpanan diblokir (mode privat): tema tetap berlaku untuk sesi ini.
+    }
+  }, [remember, theme]);
+
+  const toggle = useCallback(() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark')), []);
 
   return <ThemeContext.Provider value={{ theme, toggle }}>{children}</ThemeContext.Provider>;
 }

@@ -1,5 +1,18 @@
 # Checkpoint Frontend REKSA
 
+## #3 · 2026-11-21 · Pop up cookie dan dialog konfirmasi
+
+Branch: `feat/aldi-frontend-app`
+
+- **Pop up "Cookie & privasi"** (dari desain Figma beranda, `src/shared/ui/CookieNotice.tsx`): muncul sekali di halaman mana pun sampai user memilih. Tidak modal. Tombol Hanya penting / Terima semua / Atur pilihan, plus tombol tutup (= hanya penting). Bisa dibuka lagi dari tautan "Pengaturan cookie" di footer beranda.
+  - Pilihannya nyata: switch "Ingat pilihan tema" mengatur apakah tema disimpan di `localStorage` (`reksa-theme`). Hanya penting = tema tidak disimpan dan yang lama dihapus. Default mati.
+  - Catatan persetujuan di `localStorage` `reksa-consent` (`src/shared/consent.tsx`).
+  - Ini membatalkan keputusan #1 yang membuang banner cookie: sekarang ada pilihan yang benar-benar berpengaruh, jadi banner tidak kosong.
+- **Dialog konfirmasi** (`src/shared/ui/ConfirmDialog.tsx`, `<dialog>` + `showModal()`): fokus terkunci, Esc menutup, fokus awal di tombol batal. Dipakai sebelum aksi yang menghapus progres: "Ulangi dan buka bacaan" saat fokus, "Mulai sesi baru" di ruang belajar, dan "Mulai sesi belajar baru" di hasil cek.
+- Animasi `motion`: pop up naik dengan spring, ikon berputar masuk, rincian membuka, knob switch meluncur; dialog dengan latar gelap memudar dan panel spring.
+
+Diverifikasi di browser: pop up muncul saat persetujuan kosong, Atur pilihan → switch → Simpan menyimpan `preferences: true` dan tema, dibuka lagi dari footer → Hanya penting menghapus `reksa-theme`, dialog modal + fokus di tombol batal + Esc tidak menghapus waktu + konfirmasi me-reset timer. Typecheck, 7 test, build lulus (JS 151 KB gzip).
+
 ## #2 · 2026-11-21 · Animasi dengan `motion`
 
 Branch: `feat/aldi-frontend-app`
