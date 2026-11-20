@@ -2,9 +2,11 @@
 
 Dari: Aldi
 Terakhir diperbarui: 20 November 2026
-Status branch: Langkah 0 sudah di `main`; modul `auth` ada di `feat/aldi-auth` (menunggu PR)
+Status: Langkah 0, modul `auth`, dan CI sudah di `main`. Fase 1 bagian Aldi selesai.
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
+
+> **Mau minta sesuatu ke saya atau mengabarkan progres?** Tulis di [`docs/UNTUK-ALDI.md`](UNTUK-ALDI.md) lalu commit lewat PR. Sesi Claude saya membaca file itu setiap kali mulai, jadi tidak ada yang terlewat.
 
 ---
 
@@ -13,7 +15,21 @@ Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ad
 - **Backend jalan di Docker** dengan Postgres + Redis. Cara menjalankan ada di [README](../README.md#menjalankan-proyek).
 - **`MockAiProvider` sudah hidup.** Ketiga method AI mengembalikan JSON valid tanpa API key.
 - **Kontrak Zod semua fitur sudah ada** di `backend/src/features/*/` `*.schema.ts`.
-- **Endpoint auth** (setelah `feat/aldi-auth` di-merge): register, login, refresh, logout, me.
+- **Endpoint auth**: register, login, refresh, logout, me.
+- **Middleware untuk endpoint-mu**: `requireAuth(signer)` dan `requireRole('STUDENT')` di `backend/src/common/middlewares/`. Ambil user yang login di controller dengan `getAuth(res).userId`. Contoh pemakaian ada di `features/auth/auth.routes.ts`.
+- **Konteks RLS**: setiap query ke `study_sessions`, `essay_submissions`, `study_materials`, dan `spaced_schedules` **wajib** lewat `withUserContext(prisma, userId, async (tx) => ...)` dari `backend/src/config/prisma.ts`. Tanpa itu, RLS mengembalikan 0 baris (bukan error), jadi gejalanya "data kosong". Tetap tulis filter `userId` di repository; RLS hanya lapisan kedua.
+- **Rangkai router di `backend/src/container.ts`**: tambahkan satu entri, mis. `'/sessions': createSessionsRouter(...)`. Itu satu-satunya baris di file itu yang perlu kamu sentuh.
+
+## 1b. Fase 2: ketergantunganmu ke saya
+
+Kamu bisa langsung mulai `study-sessions` dan `essay-scans`. Ada dua hal yang saya siapkan paralel:
+
+| Kamu butuh | Dari | Sementara itu |
+| :--- | :--- | :--- |
+| `materialId` valid untuk `POST /sessions` | Modul `materials` (saya) | Di test, buat materi langsung lewat `ctx.owner.studyMaterial.create(...)` di `createTestContext()` |
+| Simpan foto esai ke bucket privat + *signed URL* | **Storage service** (saya, di `backend/src/config/`) | **Jangan buat klien S3/R2 sendiri.** Kerjakan dulu validasi magic bytes, strip EXIF via `sharp`, dan kuota harian; bagian simpan file pakai antarmuka `IStorageService` yang akan saya kirim (`putObject`, `getSignedUrl`, `deleteObject`) |
+
+Saya kabari lewat file ini begitu storage service masuk `main`.
 
 ## 2. Yang perlu kamu lakukan
 
@@ -104,6 +120,8 @@ apiClient.interceptors.response.use(undefined, async (error) => {
 - Aturan password: 12–128 karakter, wajib huruf kecil, huruf besar, dan angka. Validasi yang sama sebaiknya ada di form.
 
 ## 5. Kalau butuh perubahan di area saya
+
+Tulis permintaannya di [`docs/UNTUK-ALDI.md`](UNTUK-ALDI.md) (bagian "Permintaan"), lalu kirim lewat PR. Contohnya:
 
 - **Kolom database baru** untuk `study-sessions` atau `essay-scans`: bilang ke saya, saya yang buat migrasinya di `backend/prisma/`.
 - **Endpoint SSE QR bridge:** di `nginx.conf` saya pakai usulan `/api/v1/scans/qr-bridge/:token/events`. Kalau kamu pakai path lain atau WebSocket, kabari saya supaya `nginx.conf` disesuaikan.

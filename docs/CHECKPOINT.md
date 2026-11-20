@@ -11,13 +11,13 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Tahap | Aldi | Adli |
 | :--- | :--- | :--- |
 | Langkah 0 | ✅ Selesai, di `main` (PR #1) | ⏳ Belum mulai |
-| Fase 1 | ✅ `auth` di `main` (PR #2, #3); CI di `feat/aldi-ci` | — |
+| Fase 1 | ✅ Selesai: `auth` (PR #2, #3), CI + branch protection (PR #4) | — |
 | Fase 2 | ⬜ | ⬜ |
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
 
-### #3 — Pipeline CI & security gate (Fase 1) · branch `feat/aldi-ci`
+### #3 — Pipeline CI & security gate (Fase 1) · PR #4, sudah di `main`
 
 **Selesai**
 - `.github/workflows/ci-security.yml`, jalan di setiap PR ke `main` dan push ke `main`:
@@ -34,11 +34,11 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 
 **Verifikasi lokal**
 - Semgrep 0 temuan (154 aturan), actionlint + shellcheck bersih, `nginx -t` lolos, cek non-root lolos
-- Belum terbukti hijau di GitHub Actions sampai PR pertama dibuat
+- Hijau di GitHub Actions (run 44771431215), keenam job lulus
 
 **Belum**
 - ~~Action belum di-pin ke commit SHA~~ → sudah: `actions/checkout` v7.0.1 dan `actions/setup-node` v7.1.0 di-pin ke SHA (temuan Semgrep di run CI pertama), `persist-credentials: false`
-- Branch protection di GitHub (wajibkan CI hijau sebelum merge) harus diaktifkan manual oleh pemilik repo
+- ~~Branch protection~~ → aktif: ruleset `main` (tanpa hapus, tanpa force push, wajib PR, wajib 6 check hijau + up to date)
 - DAST (OWASP ZAP) menunggu lingkungan staging
 
 ### #2 — Modul `auth` (Fase 1) · PR #2 & #3, sudah di `main`
@@ -83,9 +83,9 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 ## Berikutnya
 
 **Aldi**
-1. Merge `feat/aldi-ci`, pastikan semua job hijau di GitHub Actions
-2. Aktifkan branch protection `main`: wajib PR + status check CI hijau
-3. Fase 2: `materials` (upload PDF/teks, cache rubrik SHA-256 di Redis, storage R2 + signed URL)
+1. Storage service (`IStorageService` + MinIO lokal / R2 staging); Adli menunggu ini untuk upload foto esai
+2. Modul `materials`
+3. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
 
 **Adli** (lihat [UNTUK-ADLI.md](UNTUK-ADLI.md))
 1. Review schema di foldernya, perkaya `mockAi.fixtures.ts`
