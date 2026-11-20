@@ -1,0 +1,10 @@
+# Normalisasi line ending ke LF agar script & Dockerfile aman di container Linux,
+# walau dikerjakan di Windows.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.pdf binary
+*.ico binary
