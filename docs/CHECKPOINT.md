@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 20 November 2026, setelah modul `auth` Fase 1 (Aldi)
+**Checkpoint terakhir:** 20 November 2026, setelah pipeline CI Fase 1 (Aldi)
 
 ---
 
@@ -11,13 +11,37 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Tahap | Aldi | Adli |
 | :--- | :--- | :--- |
 | Langkah 0 | ✅ Selesai, di `main` (PR #1) | ⏳ Belum mulai |
-| Fase 1 | 🟡 `auth` selesai di `feat/aldi-auth`; CI belum | — |
+| Fase 1 | ✅ `auth` di `main` (PR #2, #3); CI di `feat/aldi-ci` | — |
 | Fase 2 | ⬜ | ⬜ |
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
 
-### #2 — Modul `auth` (Fase 1) · branch `feat/aldi-auth`
+### #3 — Pipeline CI & security gate (Fase 1) · branch `feat/aldi-ci`
+
+**Selesai**
+- `.github/workflows/ci-security.yml`, jalan di setiap PR ke `main` dan push ke `main`:
+  - `backend-quality`: `npm ci`, `prisma generate` + `validate`, typecheck, unit test, build
+  - `backend-integration`: integration + security test dengan Testcontainers (Docker bawaan runner)
+  - `dependency-audit`: `npm audit --audit-level=high` (backend; frontend otomatis jika sudah ada)
+  - `semgrep`: OWASP Top 10, TypeScript, Node.js, secrets (`--error`, gagal jika ada temuan)
+  - `docker-build`: image backend runner + migrator, cek non-root, image frontend (jika ada), `nginx -t`
+  - `frontend`: `npm ci` + `npm run build`, dilewati otomatis sampai `frontend/package.json` ada
+- Permission workflow minimal (`contents: read`), run lama dibatalkan otomatis saat ada push baru
+
+**Ditemukan & diperbaiki oleh Semgrep**
+- `nginx.conf` meneruskan header `Host` dari klien ke backend (bisa dipalsukan). Sekarang diisi nilai tetap `reksa-backend`.
+
+**Verifikasi lokal**
+- Semgrep 0 temuan (154 aturan), actionlint + shellcheck bersih, `nginx -t` lolos, cek non-root lolos
+- Belum terbukti hijau di GitHub Actions sampai PR pertama dibuat
+
+**Belum**
+- Action belum di-pin ke commit SHA (masih tag `@v4`)
+- Branch protection di GitHub (wajibkan CI hijau sebelum merge) harus diaktifkan manual oleh pemilik repo
+- DAST (OWASP ZAP) menunggu lingkungan staging
+
+### #2 — Modul `auth` (Fase 1) · PR #2 & #3, sudah di `main`
 
 **Selesai**
 - Endpoint `/api/v1/auth`: `POST /register`, `POST /login`, `POST /refresh`, `DELETE /refresh` (logout), `GET /me`
@@ -59,8 +83,8 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 ## Berikutnya
 
 **Aldi**
-1. Merge `feat/aldi-auth` ke `main`
-2. Sisa Fase 1: pipeline CI `.github/workflows/ci-security.yml` (typecheck, unit, integration, `npm audit --audit-level=high`, Semgrep)
+1. Merge `feat/aldi-ci`, pastikan semua job hijau di GitHub Actions
+2. Aktifkan branch protection `main`: wajib PR + status check CI hijau
 3. Fase 2: `materials` (upload PDF/teks, cache rubrik SHA-256 di Redis, storage R2 + signed URL)
 
 **Adli** (lihat [UNTUK-ADLI.md](UNTUK-ADLI.md))
