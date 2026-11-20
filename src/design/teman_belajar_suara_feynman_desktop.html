@@ -1,0 +1,121 @@
+
+  <div class="min-h-screen flex flex-col bg-light-surface" data-stitch-vh="min-h-screen===min-h-screen">
+
+    <!-- Desktop Contextual Top Bar -->
+    <header class="sticky top-0 z-30 bg-light-surface-container-lowest border-b border-light-outline-variant/60 px-gutter-lg py-3.5">
+      <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <a href="../landing-beranda-desktop/LandingBerandaDesktop.html" aria-label="Kembali ke Beranda" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-light-surface-container-low border border-light-outline-variant/70 text-light-on-surface transition-colors duration-state-change ease-state-change hover:bg-light-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">arrow_back</span>
+          </a>
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-md bg-light-primary text-light-on-primary flex items-center justify-center shadow-sm">
+              <span class="material-symbols-outlined text-title-lg" aria-hidden="true">record_voice_over</span>
+            </div>
+            <div class="flex flex-col">
+              <span data-design-text-token="title-md" class="font-headline text-title-md text-light-primary leading-none">REKSA</span>
+              <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Teman Belajar Suara • Feynman</span>
+            </div>
+          </div>
+        </div>
+
+        <span class="rounded-full bg-light-surface-container-low border border-light-outline-variant px-3.5 py-1.5 font-label text-label-sm text-light-primary whitespace-nowrap">
+          Topik: Arsitektur Enterprise (TOGAF)
+        </span>
+
+        <span data-component-id="chip-action" data-component-type="chip" data-component-variant="action" class="inline-flex items-center gap-1.5 rounded-full bg-light-surface-container-low border border-light-outline-variant px-3.5 py-1.5 font-label text-label-sm text-light-primary whitespace-nowrap">
+          <span class="material-symbols-outlined text-body-md" aria-hidden="true">accessibility_new</span>
+          <span data-design-text-token="label-sm">Ramah Tunanetra</span>
+        </span>
+      </div>
+    </header>
+
+    <!-- Main 2-Column Workspace -->
+    <main class="flex-1 flex items-center justify-center px-gutter-lg py-gutter-xl">
+      <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-start">
+
+        <!-- Left Column: Curious AI Student Prompt & Clarity Feedback -->
+        <div class="lg:col-span-6 flex flex-col gap-gutter-lg">
+          <article class="rounded-xl bg-light-primary text-light-on-primary p-gutter-xl shadow-sm flex flex-col gap-gutter-md">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-full bg-light-primary-container flex items-center justify-center">
+                  <span class="material-symbols-outlined text-title-lg" aria-hidden="true">face</span>
+                </div>
+                <div class="flex flex-col">
+                  <span data-design-text-token="title-md" class="font-title text-title-md text-light-on-primary">Teman Bertanya</span>
+                  <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-primary-container">Pertanyaan 2 dari 4</span>
+                </div>
+              </div>
+              <span class="rounded-full bg-light-primary-container px-3 py-1 font-label text-label-sm text-light-on-primary-container whitespace-nowrap">
+                Murid Pemula
+              </span>
+            </div>
+
+            <h1 id="ai-question-text" data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-primary text-pretty">
+              &#34;Kak, kenapa sebelum bikin aplikasi baru kita harus rapikan Arsitektur Bisnis dulu sih? Bedanya sama Arsitektur Data apa?&#34;
+            </h1>
+
+            <div class="flex flex-wrap items-center gap-3 pt-2">
+              <button id="speak-question-btn" type="button" class="inline-flex items-center gap-2 rounded-full bg-light-surface-container-lowest text-light-primary px-5 py-2.5 font-label text-label-md shadow-sm transition-colors duration-state-change ease-state-change hover:bg-light-surface-container-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-on-primary">
+                <span class="material-symbols-outlined text-title-md" aria-hidden="true">volume_up</span>
+                <span id="speak-label" data-design-text-token="label-md">Dengarkan Pertanyaan</span>
+              </button>
+
+              <button id="next-question-btn" type="button" class="inline-flex items-center gap-1.5 rounded-full border border-light-on-primary/40 px-4 py-2.5 font-label text-label-md text-light-on-primary transition-colors duration-state-change ease-state-change hover:bg-light-primary-container">
+                <span data-design-text-token="label-md">Ganti Pertanyaan</span>
+              </button>
+            </div>
+          </article>
+
+          <article class="rounded-md bg-light-surface-container-low border border-light-outline-variant/70 p-gutter-lg flex flex-col gap-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-success text-title-lg" aria-hidden="true">check_circle</span>
+                <h2 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Kejelasan Penjelasanmu</h2>
+              </div>
+              <span data-design-text-token="title-md" class="font-mono text-title-md text-success tabular-nums">88% Jelas</span>
+            </div>
+            <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+              Perumpamaan denahmu mudah dipahami! Coba tambahkan 1 contoh hubungan antara data pelanggan dan alur kerja di jawaban berikutnya.
+            </p>
+          </article>
+        </div>
+
+        <!-- Right Column: Microphone & Live Transcript -->
+        <section aria-labelledby="mic-heading" class="lg:col-span-6">
+          <article class="rounded-xl bg-light-surface-container-lowest border border-light-outline-variant/60 p-gutter-xl shadow-sm flex flex-col items-center text-center gap-gutter-lg">
+            <div class="flex flex-col gap-1">
+              <h2 id="mic-heading" data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface">
+                Jawab dengan Suaramu
+              </h2>
+              <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant">
+                Jelaskan seakan kamu sedang mengajari adik kelas dengan bahasa sehari-hari.
+              </p>
+            </div>
+
+            <button id="mic-toggle-btn" type="button" aria-pressed="false" class="w-24 h-24 rounded-full bg-light-secondary text-light-on-secondary flex items-center justify-center shadow-sm transition-transform duration-state-change ease-state-change hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-secondary focus-visible:ring-offset-2 active:scale-95">
+              <span id="mic-icon" class="material-symbols-outlined text-display-lg" aria-hidden="true">mic</span>
+            </button>
+
+            <div class="flex flex-col gap-1">
+              <span id="mic-status" data-design-text-token="title-md" class="font-title text-title-md text-light-secondary">Klik Mikrofon untuk Mulai Bicara</span>
+              <span id="mic-timer" data-design-text-token="title-md" class="font-mono text-title-md text-light-on-surface-variant tabular-nums">00:00</span>
+            </div>
+
+            <div class="w-full rounded-md bg-light-surface-container-low border border-light-outline-variant/60 p-4 text-left flex flex-col gap-1.5">
+              <span data-design-text-token="label-md" class="font-label text-label-md text-light-primary">Teks Jawabanmu (Otomatis)</span>
+              <p id="transcript-box" data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface text-pretty">
+                &#34;Jadi gini, Arsitektur Bisnis itu ibarat denah cara kerja organisasi biar tahu tujuan utamanya. Kalau Arsitektur Data baru ngatur tempat menyimpan datanya...&#34;
+              </p>
+            </div>
+          </article>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  
+
+

@@ -1,0 +1,97 @@
+
+  <div class="min-h-screen flex flex-col bg-light-surface" data-stitch-vh="min-h-screen===min-h-screen">
+
+    <!-- Top Bar -->
+    <header class="px-gutter-lg py-4 border-b border-light-outline-variant/60 bg-light-surface-container-lowest">
+      <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
+        <a href="../landing-beranda-desktop/LandingBerandaDesktop.html" class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-md bg-light-primary text-light-on-primary flex items-center justify-center shadow-sm">
+            <span class="material-symbols-outlined text-title-lg" aria-hidden="true">edit_document</span>
+          </div>
+          <div class="flex flex-col">
+            <span data-design-text-token="title-md" class="font-headline text-title-md text-light-primary leading-none">REKSA</span>
+            <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Teman Belajar Aktif</span>
+          </div>
+        </a>
+
+        <a href="../landing-beranda-desktop/LandingBerandaDesktop.html" class="inline-flex items-center gap-1.5 rounded-full bg-light-surface-container-low border border-light-outline-variant/70 px-4 py-2 font-label text-label-md text-light-on-surface hover:bg-light-surface-container">
+          <span class="material-symbols-outlined text-title-md" aria-hidden="true">arrow_back</span>
+          <span data-design-text-token="label-md">Kembali ke Beranda</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Centered Single Card Auth -->
+    <main class="flex-1 flex items-center justify-center px-gutter-lg py-gutter-xl">
+      <article class="w-full max-w-md rounded-xl bg-light-surface-container-lowest border border-light-outline-variant/60 p-gutter-xl shadow-sm flex flex-col gap-gutter-md">
+        <div class="flex flex-col gap-1 text-center">
+          <h1 id="auth-title" data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface">
+            Selamat Datang Kembali
+          </h1>
+          <p id="auth-subtitle" data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+            Masuk untuk lanjut latihan menulis dan cek pemahamanmu.
+          </p>
+        </div>
+
+        <!-- Mode Tabs -->
+        <div class="grid grid-cols-2 gap-1.5 rounded-full bg-light-surface-container-low p-1" role="tablist" aria-label="Pilih Masuk atau Daftar">
+          <button id="tab-login" type="button" role="tab" aria-selected="true" class="rounded-full bg-light-primary text-light-on-primary py-2 font-label text-label-md transition-colors duration-state-change">
+            <span data-design-text-token="label-md">Masuk</span>
+          </button>
+          <button id="tab-register" type="button" role="tab" aria-selected="false" class="rounded-full text-light-on-surface-variant py-2 font-label text-label-md transition-colors duration-state-change hover:text-light-on-surface">
+            <span data-design-text-token="label-md">Daftar Akun</span>
+          </button>
+        </div>
+
+        <!-- Role Selector -->
+        <div class="flex flex-col gap-1.5">
+          <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Masuk sebagai:</span>
+          <div class="grid grid-cols-2 gap-2.5" role="radiogroup" aria-label="Pilih peran">
+            <button type="button" role="radio" aria-checked="true" data-role="student" class="role-btn rounded-md border-2 border-light-primary bg-light-surface-container-lowest p-3 flex items-center justify-center gap-2 font-label text-label-md text-light-primary">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">school</span>
+              <span data-design-text-token="label-md">Pelajar</span>
+            </button>
+            <button type="button" role="radio" aria-checked="false" data-role="educator" class="role-btn rounded-md border border-light-outline-variant/70 bg-light-surface-container-lowest p-3 flex items-center justify-center gap-2 font-label text-label-md text-light-on-surface-variant">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">person</span>
+              <span data-design-text-token="label-md">Guru / Dosen</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Auth Form -->
+        <form id="auth-form" class="flex flex-col gap-4">
+          <div id="name-field" hidden class="flex flex-col gap-1">
+            <label for="full-name" data-design-text-token="label-md" class="font-label text-label-md text-light-on-surface">Nama Lengkap</label>
+            <input id="full-name" type="text" placeholder="Contoh: Nadya Putri" class="w-full rounded border border-light-outline-variant bg-light-surface-container-lowest px-3.5 py-2.5 font-body text-body-md text-light-on-surface focus:border-light-primary focus:ring-light-primary">
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label for="email" data-design-text-token="label-md" class="font-label text-label-md text-light-on-surface">Email</label>
+            <input id="email" type="email" value="nadya.putri@kampus.ac.id" required class="w-full rounded border border-light-outline-variant bg-light-surface-container-lowest px-3.5 py-2.5 font-body text-body-md text-light-on-surface focus:border-light-primary focus:ring-light-primary">
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center justify-between">
+              <label for="password" data-design-text-token="label-md" class="font-label text-label-md text-light-on-surface">Kata Sandi</label>
+              <a href="#lupa" class="font-label text-label-sm text-light-primary hover:underline">Lupa sandi?</a>
+            </div>
+            <div class="relative">
+              <input id="password" type="password" value="BelajarAktif2026" required class="w-full rounded border border-light-outline-variant bg-light-surface-container-lowest px-3.5 py-2.5 pr-11 font-body text-body-md text-light-on-surface focus:border-light-primary focus:ring-light-primary">
+              <button id="toggle-pw-btn" type="button" aria-label="Tampilkan kata sandi" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-light-on-surface-variant hover:text-light-on-surface p-1">
+                <span id="pw-icon" class="material-symbols-outlined text-title-md" aria-hidden="true">visibility</span>
+              </button>
+            </div>
+          </div>
+
+          <button id="submit-btn" data-component-id="button-with-icon" data-component-type="button" data-component-variant="with-icon" type="submit" class="w-full mt-1 inline-flex items-center justify-center gap-2 rounded-full bg-light-secondary text-light-on-secondary px-7 py-3.5 font-label text-label-lg shadow-sm transition-colors duration-state-change ease-state-change hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-secondary">
+            <span id="submit-label" data-design-text-token="label-lg">Masuk ke Ruang Belajar</span>
+            <span class="material-symbols-outlined text-title-lg" aria-hidden="true">arrow_forward</span>
+          </button>
+        </form>
+      </article>
+    </main>
+  </div>
+
+  
+
+

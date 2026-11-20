@@ -1,0 +1,175 @@
+
+  <div class="min-h-screen flex flex-col bg-light-surface" data-stitch-vh="min-h-screen===min-h-screen">
+
+    <!-- Desktop Contextual Top Bar -->
+    <header class="sticky top-0 z-30 bg-light-surface-container-lowest border-b border-light-outline-variant/60 px-gutter-lg py-3.5">
+      <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <a href="../qr-bridge-desktop/QrBridgeDesktop.html" aria-label="Kembali ke Sambungkan Kamera HP" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-light-surface-container-low border border-light-outline-variant/70 text-light-on-surface transition-colors duration-state-change ease-state-change hover:bg-light-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">arrow_back</span>
+          </a>
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-md bg-light-primary text-light-on-primary flex items-center justify-center shadow-sm">
+              <span class="material-symbols-outlined text-title-lg" aria-hidden="true">fact_check</span>
+            </div>
+            <div class="flex flex-col">
+              <span data-design-text-token="title-md" class="font-headline text-title-md text-light-primary leading-none">Hasil Cek Catatan</span>
+              <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Arsitektur Enterprise — TOGAF.pdf</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step Progress Strip -->
+        <nav aria-label="Tahapan sesi belajar" class="flex items-center gap-2">
+          <span class="rounded-full bg-light-surface-variant text-light-primary px-3.5 py-1.5 font-label text-label-sm whitespace-nowrap">1. Fokus</span>
+          <span class="rounded-full bg-light-surface-variant text-light-primary px-3.5 py-1.5 font-label text-label-sm whitespace-nowrap">2. Tebak &amp; Foto</span>
+          <span class="rounded-full bg-light-primary text-light-on-primary px-3.5 py-1.5 font-label text-label-sm whitespace-nowrap">3. Cek Hasil</span>
+        </nav>
+
+        <span data-component-id="chip-action" data-component-type="chip" data-component-variant="action" class="inline-flex items-center gap-1.5 rounded-full bg-light-surface-container-low border border-light-outline-variant px-3.5 py-1.5 font-label text-label-sm text-light-primary whitespace-nowrap">
+          <span data-design-text-token="label-sm">Tersimpan</span>
+        </span>
+      </div>
+    </header>
+
+    <!-- Main 2-Column Workspace -->
+    <main class="flex-1 px-gutter-lg py-gutter-xl">
+      <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-start">
+
+        <!-- Left Column: Score Calibration + Spaced Review Schedule -->
+        <div class="lg:col-span-5 flex flex-col gap-gutter-md">
+          <article data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-gutter-lg shadow-sm flex flex-col gap-gutter-md">
+            <header class="flex items-start justify-between gap-3">
+              <div>
+                <h1 data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">
+                  Seberapa Tepat Tebakanmu?
+                </h1>
+                <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">
+                  Tulisan bebas • Dinilai dari isi dan alur idemu
+                </p>
+              </div>
+              <span class="material-symbols-outlined text-light-primary text-headline-md shrink-0" aria-hidden="true">fact_check</span>
+            </header>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div class="rounded-md bg-light-surface-container-low p-3 flex flex-col gap-0.5">
+                <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Nilai Asli</span>
+                <span data-design-text-token="headline-md" class="font-mono text-headline-md text-light-primary tabular-nums">68%</span>
+              </div>
+              <div class="rounded-md bg-light-surface-container-low p-3 flex flex-col gap-0.5">
+                <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Tebakanmu</span>
+                <span data-design-text-token="headline-md" class="font-mono text-headline-md text-light-on-surface tabular-nums">75%</span>
+              </div>
+              <div class="rounded-md bg-light-surface-container-low p-3 flex flex-col gap-0.5">
+                <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Selisih</span>
+                <span data-design-text-token="headline-md" class="font-mono text-headline-md text-light-secondary tabular-nums">7%</span>
+              </div>
+            </div>
+
+            <p id="audit-summary-text" data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+              Pemahamanmu tentang Arsitektur Bisnis dan Data sudah bagus! Kamu cuma lupa bagian tahapan TOGAF ADM dan cara aplikasi terhubung ke server.
+            </p>
+
+            <button id="tts-btn" data-component-id="button-with-icon" data-component-type="button" data-component-variant="with-icon" type="button" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-light-secondary text-light-on-secondary px-6 py-3 font-label text-label-lg shadow-sm transition-colors duration-state-change ease-state-change hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-secondary">
+              <span id="tts-icon" class="material-symbols-outlined text-title-lg" aria-hidden="true">volume_up</span>
+              <span id="tts-label" data-design-text-token="label-lg">Bacakan Hasilnya</span>
+            </button>
+          </article>
+
+          <!-- Spaced Review Schedule -->
+          <article class="rounded-md bg-light-primary text-light-on-primary p-gutter-lg flex flex-col gap-3 shadow-sm">
+            <header class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-title-lg" aria-hidden="true">event_repeat</span>
+              <h2 data-design-text-token="title-md" class="font-title text-title-md text-light-on-primary">
+                Jadwal Latihan Singkat
+              </h2>
+            </header>
+
+            <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-primary-container text-pretty">
+              Latihan ulang 3–5 menit khusus menguji 2 bagian yang masih terlewat biar nempel di ingatan:
+            </p>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div class="rounded bg-light-primary-container p-3 flex flex-col gap-0.5">
+                <span data-design-text-token="mono-md" class="font-mono text-mono-md text-light-on-primary-container tabular-nums">H+3 • 23 Nov</span>
+                <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-primary-container">Fokus: TOGAF ADM</span>
+              </div>
+              <div class="rounded bg-light-primary-container p-3 flex flex-col gap-0.5">
+                <span data-design-text-token="mono-md" class="font-mono text-mono-md text-light-on-primary-container tabular-nums">H+7 • 27 Nov</span>
+                <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-primary-container">Fokus: 2 Poin Lupa</span>
+              </div>
+            </div>
+
+            <a href="../ruang-belajar-desktop/RuangBelajarDesktop.html" data-component-id="button-tertiary" data-component-type="button" data-component-variant="tertiary" class="w-full inline-flex items-center justify-center rounded-full border border-light-outline-variant bg-light-surface-container-lowest text-light-primary px-6 py-3 font-label text-label-lg transition-colors duration-state-change ease-state-change hover:bg-light-surface-container-low">
+              <span data-design-text-token="label-lg">Belajar Topik Lain</span>
+            </a>
+          </article>
+        </div>
+
+        <!-- Right Column: Missed Concepts + Accurate & Corrections -->
+        <div class="lg:col-span-7 flex flex-col gap-gutter-lg">
+          <section aria-labelledby="blindspots-heading" class="flex flex-col gap-3">
+            <div class="flex items-center justify-between gap-2">
+              <h2 id="blindspots-heading" data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">
+                Yang Masih Terlewat (2)
+              </h2>
+              <span data-design-text-token="label-md" class="font-label text-label-md text-light-secondary">Perlu Diingat</span>
+            </div>
+
+            <article class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-5 shadow-sm flex flex-col gap-2">
+              <header class="flex items-center justify-between gap-2">
+                <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Tahapan TOGAF ADM</h3>
+                <span class="rounded-full bg-light-error-container text-light-on-error-container px-3 py-0.5 font-label text-label-sm whitespace-nowrap">PENTING</span>
+              </header>
+              <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+                Belum menulis urutan langkah merancang sistem dari visi bisnis sampai penerapannya di perusahaan.
+              </p>
+            </article>
+
+            <article class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-5 shadow-sm flex flex-col gap-2">
+              <header class="flex items-center justify-between gap-2">
+                <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Arsitektur Teknologi &amp; Server</h3>
+                <span class="rounded-full bg-light-surface-container-high text-light-on-surface px-3 py-0.5 font-label text-label-sm whitespace-nowrap">INGAT LAGI</span>
+              </header>
+              <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+                Sudah menggambar kotak server, tapi belum menulis bagaimana aplikasi terhubung ke jaringan.
+              </p>
+            </article>
+          </section>
+
+          <section aria-labelledby="accurate-heading" class="flex flex-col gap-3">
+            <h2 id="accurate-heading" data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">
+              Yang Sudah Bagus &amp; Perbaikan
+            </h2>
+
+            <article class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-5 shadow-sm flex flex-col gap-4">
+              <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined text-success text-title-lg shrink-0" aria-hidden="true">check_circle</span>
+                <div class="flex flex-col gap-1">
+                  <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Arsitektur Bisnis &amp; Data Tepat</h3>
+                  <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+                    Di catatanmu: Penjelasan hubungan antara tujuan perusahaan dan alur datanya sudah pas.
+                  </p>
+                </div>
+              </div>
+
+              <div class="pt-4 border-t border-light-outline-variant/40 flex items-start gap-3">
+                <span class="material-symbols-outlined text-warning text-title-lg shrink-0" aria-hidden="true">build</span>
+                <div class="flex flex-col gap-1">
+                  <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Sedikit Perbaikan Ide</h3>
+                  <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+                    Tertulis &#34;arsitektur enterprise cuma soal koding&#34; — sebenarnya: Bukan cuma soal koding, tapi menyambungkan tujuan bisnis dengan teknologi.
+                  </p>
+                </div>
+              </div>
+            </article>
+          </section>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  
+
+

@@ -1,0 +1,317 @@
+
+  <div class="min-h-screen flex flex-col bg-light-surface" data-stitch-vh="min-h-screen===min-h-screen">
+
+    <!-- Top Site Navigation -->
+    <header class="sticky top-0 z-30 bg-light-surface-container-lowest border-b border-light-outline-variant/60 px-gutter-md py-3">
+      <div class="flex items-center justify-between gap-3">
+        <a href="#top" class="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary rounded">
+          <div class="w-9 h-9 rounded-md bg-light-primary text-light-on-primary flex items-center justify-center shadow-sm">
+            <span class="material-symbols-outlined text-title-lg" aria-hidden="true">edit_document</span>
+          </div>
+          <div class="flex flex-col">
+            <span data-design-text-token="title-md" class="font-headline text-title-md text-light-primary leading-none">REKSA</span>
+            <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Teman Belajar Aktif</span>
+          </div>
+        </a>
+
+        <div class="flex items-center gap-2">
+          <a href="../masuk-daftar/MasukDaftar.html" class="inline-flex items-center justify-center rounded-full border border-light-outline-variant bg-light-surface-container-lowest text-light-primary px-4 py-1.5 font-label text-label-md transition-colors duration-state-change ease-state-change hover:bg-light-surface-container-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+            <span data-design-text-token="label-md">Masuk</span>
+          </a>
+          <button data-component-id="button-icon" data-component-type="button" data-component-variant="icon" type="button" aria-label="Buka menu navigasi" id="menu-toggle-btn" class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-light-surface-container-low border border-light-outline-variant/70 text-light-on-surface transition-colors duration-state-change ease-state-change hover:bg-light-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">menu</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Collapsible Mobile Menu -->
+      <nav id="mobile-nav" aria-label="Navigasi utama" class="hidden pt-3 pb-1 border-t border-light-outline-variant/40 mt-3 flex-col gap-2">
+        <a href="#cara-kerja" class="px-3 py-2 rounded font-label text-label-lg text-light-on-surface hover:bg-light-surface-container-low">Cara Kerja</a>
+        <a href="#inklusif" class="px-3 py-2 rounded font-label text-label-lg text-light-on-surface hover:bg-light-surface-container-low">Ramah Semua Siswa</a>
+        <a href="#landasan" class="px-3 py-2 rounded font-label text-label-lg text-light-on-surface hover:bg-light-surface-container-low">Kenapa Efektif?</a>
+      </nav>
+    </header>
+
+    <main id="top" class="flex-1 flex flex-col gap-section pb-gutter-xl">
+
+      <!-- Hero Section -->
+      <section class="bg-light-surface-container-lowest px-gutter-md pt-gutter-lg pb-gutter-xl border-b border-light-outline-variant/50">
+        <div class="flex flex-col gap-gutter-md">
+          <div class="flex items-start">
+            <span data-component-id="chip-with-icon" data-component-type="chip" data-component-variant="with-icon" class="inline-flex items-center gap-1.5 rounded-full bg-light-surface-variant px-3 py-1 font-label text-label-md text-light-primary">
+              <span class="material-symbols-outlined text-body-md" aria-hidden="true">auto_awesome</span>
+              <span data-design-text-token="label-md">Cukup Kertas, Pulpen &amp; Kamera HP</span>
+            </span>
+          </div>
+
+          <h1 data-component-id="typography-display" data-component-type="typography" data-component-variant="display" data-design-text-token="display-lg-mobile" class="font-display text-display-lg-mobile text-light-on-surface text-balance">Ubah Catatan Kertas Jadi Pemahaman Nyata</h1>
+
+          <p data-component-id="typography-body" data-component-type="typography" data-component-variant="body" data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty max-w-prose">Catat ulang pelajaran di kertas saat waktu fokus berjalan, lalu foto catatanmu. REKSA bantu cek bagian mana yang sudah oke dan mana yang masih lupa, tanpa perlu tablet mahal!</p>
+
+          <div class="grid grid-cols-1 gap-2.5 pt-1">
+            <button data-component-id="button-with-icon" data-component-type="button" data-component-variant="with-icon" type="button" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-light-secondary text-light-on-secondary px-6 py-3 font-label text-label-lg shadow-sm transition-colors duration-state-change ease-state-change hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-secondary focus-visible:ring-offset-2 active:scale-[0.98]">
+              <span class="material-symbols-outlined text-title-lg" aria-hidden="true">play_circle</span>
+              <span data-design-text-token="label-lg">Mulai Belajar Gratis</span>
+            </button>
+
+            <a href="#cara-kerja" data-component-id="button-tertiary" data-component-type="button" data-component-variant="tertiary" class="w-full inline-flex items-center justify-center rounded-full border border-light-outline-variant bg-light-surface-container-lowest text-light-primary px-6 py-3 font-label text-label-lg transition-colors duration-state-change ease-state-change hover:bg-light-surface-container-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+              <span data-design-text-token="label-lg">Lihat Cara Belajar</span>
+            </a>
+          </div>
+
+          <figure class="mt-2 rounded-lg overflow-hidden border border-light-outline-variant/60 bg-light-surface-container-low">
+            <img src="/assets/active-learning.jpg" alt="Pelajar menulis peta konsep di kertas fisik dan memindainya dengan kamera ponsel di REKSA" class="w-full h-48 object-cover">
+            <figcaption class="px-gutter-md py-2.5 bg-light-surface-container-low flex items-center justify-between gap-2 border-t border-light-outline-variant/40">
+              <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Gratis 3 kali cek catatan/hari</span>
+              <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-primary flex items-center gap-1">
+                <span class="material-symbols-outlined text-body-md" aria-hidden="true">verified</span>
+                Teruji Secara Ilmiah
+              </span>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- Interactive Role Tabs Section (Pelajar vs Pendidik) -->
+      <section id="cara-kerja" class="px-gutter-md flex flex-col gap-gutter-md">
+        <div class="flex flex-col gap-1">
+          <h2 data-design-text-token="headline-lg-mobile" class="font-headline text-headline-lg-mobile text-light-on-surface text-balance">
+            Satu Tempat untuk Belajar &amp; Mengajar
+          </h2>
+          <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+            Pilih peranmu di bawah ini untuk melihat cara serunya belajar dengan kertas.
+          </p>
+        </div>
+
+        <!-- COMPONENT: tabs-horizontal -->
+        <div data-component-id="tabs-horizontal" data-component-type="tabs" data-component-variant="horizontal" class="flex flex-col gap-gutter-md">
+          <div role="tablist" aria-label="Pilih peran pengguna" class="grid grid-cols-2 gap-1 rounded-full bg-light-surface-container p-1 border border-light-outline-variant/50">
+            <button role="tab" id="tab-pelajar" aria-selected="true" aria-controls="panel-pelajar" tabindex="0" class="role-tab rounded-full bg-light-surface-container-lowest text-light-primary py-2.5 px-3 font-label text-label-lg shadow-sm transition-colors duration-state-change ease-state-change">
+              <span data-design-text-token="label-lg">Untuk Pelajar</span>
+            </button>
+            <button role="tab" id="tab-pendidik" aria-selected="false" aria-controls="panel-pendidik" tabindex="-1" class="role-tab rounded-full text-light-on-surface-variant py-2.5 px-3 font-label text-label-lg transition-colors duration-state-change ease-state-change hover:text-light-on-surface">
+              <span data-design-text-token="label-lg">Untuk Guru</span>
+            </button>
+          </div>
+
+          <!-- Panel Pelajar -->
+          <div role="tabpanel" id="panel-pelajar" aria-labelledby="tab-pelajar" tabindex="0" class="flex flex-col gap-3">
+            <!-- COMPONENT: card-elevated -->
+            <article data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-4 shadow-sm flex flex-col gap-2">
+              <header class="flex items-start justify-between gap-3">
+                <div>
+                  <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">1. Fokus &amp; Tulis dari Ingatan</h3>
+                  <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-primary">Pilih waktu 25, 45, atau 15 menit</p>
+                </div>
+                <span class="material-symbols-outlined text-light-primary text-headline-md" aria-hidden="true">timer</span>
+              </header>
+              <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+                Bahan bacaan otomatis ditutup saat waktu berjalan supaya kamu terbiasa mengingat sendiri di atas kertas.
+              </p>
+            </article>
+
+            <!-- COMPONENT: card-elevated -->
+            <article data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-4 shadow-sm flex flex-col gap-2">
+              <header class="flex items-start justify-between gap-3">
+                <div>
+                  <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">2. Tebak Nilai &amp; Foto Kertas</h3>
+                  <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-secondary">Langsung pakai kamera HP</p>
+                </div>
+                <span class="material-symbols-outlined text-light-secondary text-headline-md" aria-hidden="true">photo_camera</span>
+              </header>
+              <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+                Tebak dulu seberapa paham kamu (0–100%) sebelum memotret catatan, biar nggak cuma merasa sudah hafal.
+              </p>
+            </article>
+
+            <!-- COMPONENT: card-elevated -->
+            <article data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-4 shadow-sm flex flex-col gap-2">
+              <header class="flex items-start justify-between gap-3">
+                <div>
+                  <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">3. Cek Hasil &amp; Latihan Ulang</h3>
+                  <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-primary">Pengingat otomatis hari ke-3 &amp; 7</p>
+                </div>
+                <span class="material-symbols-outlined text-light-primary text-headline-md" aria-hidden="true">fact_check</span>
+              </header>
+              <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+                Lihat bagian yang sudah tepat, hal yang masih lupa, dan latihan singkat 3–5 menit di hari ke-3 dan ke-7.
+              </p>
+            </article>
+          </div>
+
+          <!-- Panel Pendidik -->
+          <div role="tabpanel" id="panel-pendidik" aria-labelledby="tab-pendidik" tabindex="0" hidden class="flex flex-col gap-3">
+            <!-- COMPONENT: card-elevated -->
+            <article data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-4 shadow-sm flex flex-col gap-2">
+              <header class="flex items-start justify-between gap-3">
+                <div>
+                  <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Bukti Belajar Asli Siswa</h3>
+                  <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-primary">Anti salin-tempel dari internet</p>
+                </div>
+                <span class="material-symbols-outlined text-light-primary text-headline-md" aria-hidden="true">verified_user</span>
+              </header>
+              <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+                Lihat bukti siswa benar-benar berpikir lewat lama waktu fokus dan foto tulisan tangan aslinya.
+              </p>
+            </article>
+
+            <!-- COMPONENT: card-elevated -->
+            <article data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-4 shadow-sm flex flex-col gap-2">
+              <header class="flex items-start justify-between gap-3">
+                <div>
+                  <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Peta Bagian Sulit di Kelas</h3>
+                  <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-secondary">Bantu guru perbaiki materi</p>
+                </div>
+                <span class="material-symbols-outlined text-light-secondary text-headline-md" aria-hidden="true">analytics</span>
+              </header>
+              <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+                Ketahui topik mana yang paling sering bikin satu kelas bingung lengkap dengan saran perbaikannya.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Inclusive Technology Showcase -->
+      <section id="inklusif" class="px-gutter-md">
+        <article class="rounded-lg bg-light-surface-container-lowest border border-light-outline-variant/60 overflow-hidden shadow-sm">
+          <img src="/assets/inclusive-learning.jpg" alt="Ilustrasi pemindaian esai tulisan tangan yang ramah disgrafia dan mendukung pembacaan suara" class="w-full h-44 object-cover">
+          <div class="p-4 flex flex-col gap-3">
+            <div class="flex flex-wrap gap-2">
+              <span data-component-id="chip-action" data-component-type="chip" data-component-variant="action" class="inline-flex items-center gap-1 rounded-full bg-light-surface-container-low border border-light-outline-variant px-3 py-1 font-label text-label-sm text-light-primary">
+                <span data-design-text-token="label-sm">Tulisan Berantakan Tetap Aman</span>
+              </span>
+              <span data-component-id="chip-action" data-component-type="chip" data-component-variant="action" class="inline-flex items-center gap-1 rounded-full bg-light-surface-container-low border border-light-outline-variant px-3 py-1 font-label text-label-sm text-light-secondary">
+                <span data-design-text-token="label-sm">Hemat Kuota Internet</span>
+              </span>
+            </div>
+
+            <h2 data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface text-balance">
+              Yang Dinilai Idemu, Bukan Rapinya Tulisan
+            </h2>
+            <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+              REKSA bisa membaca panah gambar, singkatan, dan tulisan tangan apa adanya tanpa menghukum tulisan yang kurang rapi atau salah ketik.
+            </p>
+
+            <div class="pt-1 flex flex-col gap-2 border-t border-light-outline-variant/40">
+              <div class="flex items-center gap-2.5 text-light-on-surface">
+                <span class="material-symbols-outlined text-light-primary text-title-lg" aria-hidden="true">volume_up</span>
+                <span data-design-text-token="body-md" class="font-body text-body-md">Ada tombol &#34;Bacakan Hasil&#34; biar makin gampang didengar</span>
+              </div>
+              <div class="flex items-center gap-2.5 text-light-on-surface">
+                <span class="material-symbols-outlined text-light-primary text-title-lg" aria-hidden="true">devices</span>
+                <span data-design-text-token="body-md" class="font-body text-body-md">Foto langsung pakai HP atau sambungkan ke laptop</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- Scientific Foundation Metrics -->
+      <section id="landasan" class="px-gutter-md flex flex-col gap-gutter-md">
+        <h2 data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">
+          Kenapa Cara Ini Bikin Cepat Paham?
+        </h2>
+        <div class="grid grid-cols-2 gap-3 items-stretch">
+          <div class="rounded-md bg-light-surface-container-low border border-light-outline-variant/50 p-4 flex flex-col gap-1">
+            <span data-design-text-token="headline-md" class="font-mono text-headline-md text-light-primary tabular-nums">H+3 &amp; H+7</span>
+            <span data-design-text-token="label-md" class="font-label text-label-md text-light-on-surface">Diingat Lagi</span>
+            <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">Cuma mengulang bagian yang kemarin lupa.</p>
+          </div>
+          <div class="rounded-md bg-light-surface-container-low border border-light-outline-variant/50 p-4 flex flex-col gap-1">
+            <span data-design-text-token="headline-md" class="font-mono text-headline-md text-light-secondary tabular-nums">0–100%</span>
+            <span data-design-text-token="label-md" class="font-label text-label-md text-light-on-surface">Tebak Nilai</span>
+            <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">Biar tahu bedanya benar paham vs merasa paham.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Final CTA Banner -->
+      <section id="mulai" class="px-gutter-md">
+        <div class="rounded-xl bg-light-primary text-light-on-primary p-gutter-lg flex flex-col gap-gutter-md shadow-sm">
+          <div class="flex flex-col gap-1.5">
+            <h2 data-design-text-token="headline-lg-mobile" class="font-headline text-headline-lg-mobile text-light-on-primary text-balance">
+              Siap Uji Pemahaman Aslimu Hari Ini?
+            </h2>
+            <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-primary-container text-pretty">
+              Siapkan selembar kertas dan pulpen. Yuk mulai belajar aktif pertamamu sekarang!
+            </p>
+          </div>
+          <button data-component-id="button-secondary" data-component-type="button" data-component-variant="secondary" type="button" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-light-secondary text-light-on-secondary px-6 py-3 font-label text-label-lg shadow-sm transition-colors duration-state-change ease-state-change hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-on-primary">
+            <span class="material-symbols-outlined text-title-lg" aria-hidden="true">rocket_launch</span>
+            <span data-design-text-token="label-lg">Buat Akun Pelajar Gratis</span>
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-light-surface-container-low border-t border-light-outline-variant/60 px-gutter-md py-gutter-lg flex flex-col gap-3">
+      <div class="flex items-center justify-between">
+        <span data-design-text-token="title-md" class="font-headline text-title-md text-light-primary">REKSA</span>
+        <span data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">Teman Belajar Aktif Berbasis Kertas</span>
+      </div>
+      <div class="flex flex-wrap gap-4 font-label text-label-md text-light-on-surface-variant">
+        <a href="#cara-kerja" class="hover:text-light-primary">Ruang Belajar</a>
+        <a href="#cara-kerja" class="hover:text-light-primary">Untuk Guru</a>
+        <a href="#inklusif" class="hover:text-light-primary">Akses Mudah</a>
+      </div>
+      <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">
+        © 2026 REKSA. Belajar Aktif dari Kertas ke Pemahaman Nyata.
+      </p>
+    </footer>
+
+    <!-- Cookies & Privacy Popup -->
+    <aside id="cookie-banner" role="dialog" aria-labelledby="cookie-title" aria-modal="false" class="fixed inset-x-0 bottom-0 z-50 p-gutter-md">
+      <div class="rounded-xl bg-light-surface-container-lowest border border-light-outline-variant p-4 shadow-lg flex flex-col gap-3">
+        <div class="flex items-start justify-between gap-2.5">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-light-surface-variant text-light-primary flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">cookie</span>
+            </div>
+            <h2 id="cookie-title" data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">
+              Cookies &amp; Privasi Aman
+            </h2>
+          </div>
+          <button id="cookie-close-x" type="button" aria-label="Tutup pemberitahuan cookies" class="inline-flex items-center justify-center w-8 h-8 rounded-full text-light-on-surface-variant hover:bg-light-surface-container-low">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">close</span>
+          </button>
+        </div>
+
+        <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant text-pretty">
+          REKSA pakai cookies penting supaya waktu belajarmu tersimpan aman dan login tetap terjaga. Foto catatanmu juga tidak dibagikan ke pihak lain.
+        </p>
+
+        <div id="cookie-details" hidden class="rounded-md bg-light-surface-container-low border border-light-outline-variant/50 p-3 flex flex-col gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface">Cookies Login &amp; Waktu Fokus</span>
+            <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-primary">Selalu Aktif</span>
+          </div>
+          <label class="flex items-center justify-between gap-2 cursor-pointer">
+            <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Simpan Pengaturan Suara &amp; Tampilan</span>
+            <input type="checkbox" checked class="rounded text-light-primary focus:ring-light-primary">
+          </label>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <div class="grid grid-cols-2 gap-2">
+            <button id="cookie-essential-btn" type="button" class="inline-flex items-center justify-center rounded-full border border-light-outline-variant bg-light-surface-container-lowest text-light-primary px-4 py-2.5 font-label text-label-md transition-colors duration-state-change ease-state-change hover:bg-light-surface-container-low">
+              <span data-design-text-token="label-md">Hanya Penting</span>
+            </button>
+            <button id="cookie-accept-btn" type="button" class="inline-flex items-center justify-center rounded-full bg-light-primary text-light-on-primary px-4 py-2.5 font-label text-label-md shadow-sm transition-colors duration-state-change ease-state-change hover:bg-light-primary-container">
+              <span data-design-text-token="label-md">Terima Semua</span>
+            </button>
+          </div>
+          <button id="cookie-settings-toggle" type="button" class="font-label text-label-sm text-light-on-surface-variant hover:text-light-primary text-center py-0.5">
+            <span data-design-text-token="label-sm">Atur Pilihan Cookies</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  
+
+

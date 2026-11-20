@@ -1,0 +1,10 @@
+{
+  "description": "Aplikasi belajar aktif untuk pelajar dan guru yang menggabungkan fokus terarah, cek pemahaman, jadwal ulang materi, dan pemantauan bukti belajar TOGAF.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

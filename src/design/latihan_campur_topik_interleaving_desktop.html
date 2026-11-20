@@ -1,0 +1,103 @@
+
+  <div class="min-h-screen flex flex-col bg-light-surface" data-stitch-vh="min-h-screen===min-h-screen">
+
+    <!-- Desktop Contextual Top Bar -->
+    <header class="sticky top-0 z-30 bg-light-surface-container-lowest border-b border-light-outline-variant/60 px-gutter-lg py-3.5">
+      <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <a href="../landing-beranda-desktop/LandingBerandaDesktop.html" aria-label="Kembali ke Beranda" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-light-surface-container-low border border-light-outline-variant/70 text-light-on-surface transition-colors duration-state-change ease-state-change hover:bg-light-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">arrow_back</span>
+          </a>
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-md bg-light-primary text-light-on-primary flex items-center justify-center shadow-sm">
+              <span class="material-symbols-outlined text-title-lg" aria-hidden="true">merge_type</span>
+            </div>
+            <div class="flex flex-col">
+              <span data-design-text-token="title-md" class="font-headline text-title-md text-light-primary leading-none">REKSA</span>
+              <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Latihan Campur Topik • Interleaving</span>
+            </div>
+          </div>
+        </div>
+
+        <button id="shuffle-btn" type="button" class="inline-flex items-center gap-1.5 rounded-full bg-light-surface-container-low border border-light-outline-variant px-4 py-2 font-label text-label-md text-light-primary transition-colors duration-state-change ease-state-change hover:bg-light-surface-container whitespace-nowrap">
+          <span class="material-symbols-outlined text-title-md" aria-hidden="true">shuffle</span>
+          <span data-design-text-token="label-md">Acak Kombinasi Topik</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main 2-Column Workspace -->
+    <main class="flex-1 flex items-center justify-center px-gutter-lg py-gutter-xl">
+      <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-start">
+
+        <!-- Left Column: Two Combined Topics -->
+        <section aria-labelledby="topics-heading" class="lg:col-span-6 flex flex-col gap-gutter-md">
+          <h1 id="topics-heading" data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface">
+            2 Topik yang Digabung Hari Ini
+          </h1>
+
+          <article class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-gutter-lg shadow-sm flex items-start gap-3.5">
+            <div class="w-11 h-11 rounded-md bg-light-surface-variant text-light-primary flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-title-lg" aria-hidden="true">account_tree</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-primary">Topik Pertama</span>
+              <h2 data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">Arsitektur Enterprise — TOGAF ADM</h2>
+              <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant">Tahapan merancang sistem dari visi sampai tata kelola.</p>
+            </div>
+          </article>
+
+          <div class="flex items-center justify-center">
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-light-secondary-container/25 text-light-secondary px-4 py-1.5 font-label text-label-sm">
+              <span class="material-symbols-outlined text-body-md" aria-hidden="true">merge_type</span>
+              <span data-design-text-token="label-sm">Digabungkan Menjadi 1 Tantangan</span>
+            </span>
+          </div>
+
+          <article class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-gutter-lg shadow-sm flex items-start gap-3.5">
+            <div class="w-11 h-11 rounded-md bg-light-secondary-container/25 text-light-secondary flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-title-lg" aria-hidden="true">verified_user</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-secondary">Topik Kedua</span>
+              <h2 id="topic-b-title" data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">Keamanan &amp; Tata Kelola Data</h2>
+              <p id="topic-b-desc" data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant">Cara menjaga data pengguna tetap aman dan rapi.</p>
+            </div>
+          </article>
+        </section>
+
+        <!-- Right Column: Combined Challenge Prompt & Start CTA -->
+        <section aria-labelledby="challenge-heading" class="lg:col-span-6 flex flex-col gap-gutter-lg">
+          <article class="rounded-xl bg-light-primary text-light-on-primary p-gutter-xl shadow-sm flex flex-col gap-gutter-md">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-title-lg" aria-hidden="true">psychology</span>
+              <h2 id="challenge-heading" data-design-text-token="title-md" class="font-title text-title-md text-light-on-primary-container">Tantangan Esai Kertasmu</h2>
+            </div>
+
+            <p id="challenge-prompt" data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-primary text-pretty">
+              &#34;Jelaskan bagaimana langkah-langkah di TOGAF ADM ikut menjaga keamanan data saat organisasi membangun aplikasi baru!&#34;
+            </p>
+
+            <div class="pt-2">
+              <a href="../ruang-belajar-desktop/RuangBelajarDesktop.html" data-component-id="button-with-icon" data-component-type="button" data-component-variant="with-icon" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-light-secondary text-light-on-secondary px-7 py-3.5 font-label text-label-lg shadow-sm transition-colors duration-state-change ease-state-change hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-on-primary">
+                <span class="material-symbols-outlined text-title-lg" aria-hidden="true">play_arrow</span>
+                <span data-design-text-token="label-lg">Mulai Latihan Campuran</span>
+              </a>
+            </div>
+          </article>
+
+          <aside class="rounded-md bg-light-surface-container-low border border-light-outline-variant/50 p-4 flex items-start gap-3">
+            <span class="material-symbols-outlined text-light-primary text-title-lg shrink-0" aria-hidden="true">tips_and_updates</span>
+            <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+              Mencampur dua topik melatih otakmu menghubungkan ide lintas bab, supaya tidak mudah lupa saat ujian!
+            </p>
+          </aside>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  
+
+
