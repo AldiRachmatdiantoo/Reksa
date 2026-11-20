@@ -28,7 +28,7 @@ Vite memproksi `/api` ke backend supaya browser dan API berada di satu origin. I
 
 - Desain awal dibuat di Figma Make; ekspor HTML-nya disimpan di `design-reference/` sebagai referensi, tidak dipakai langsung.
 - Token warna dan tipografi (`src/theme.css`) diambil dari ekspor yang sama.
-- Pola animasi diambil dari Watermelon UI: indikator tab bergeser (pola *Discrete Tabs*, spring `motion`) dan angka bergulir `@number-flow/react` (dipakai di *Run Widget*).
+- Animasi memakai library [`motion`](https://motion.dev) (sama dengan komponen [Watermelon UI](https://ui.watermelon.sh)). Dari Watermelon diambil pola indikator tab bergeser (*Discrete Tabs*) dan angka bergulir `@number-flow/react` (*Run Widget*). Primitif animasi lain ada di `src/shared/motion.tsx`.
 - Ilustrasi di `public/assets/` disediakan pemilik produk.
 
 Status dan rencana: lihat [`docs/CHECKPOINT.md`](docs/CHECKPOINT.md) dan [`docs/BACKLOG.md`](docs/BACKLOG.md).
