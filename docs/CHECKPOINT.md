@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 21 November 2026, branch coverage `study-sessions` 100% (Adli, branch `feat/adli-sessions-coverage`)
+**Checkpoint terakhir:** 21 November 2026, perbaikan hasil uji PR #16 sampai #20 (Aldi, branch `fix/aldi-docker-build-bugs`)
 
 ---
 
@@ -16,6 +16,21 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #18 · Uji menyeluruh setelah PR #16 sampai #20, delapan perbaikan · branch `fix/aldi-docker-build-bugs`
+
+Semua suite lulus di `main`, tapi uji manual di stack Docker (nginx) menemukan masalah yang tidak tertangkap test:
+
+1. **Layar kosong saat pindah menu di dalam `/belajar`** (build produksi). `AnimatePresence mode="wait"` bersarang di `App.tsx` tidak pernah memasang halaman baru. Diganti outlet ber-key tanpa `AnimatePresence` kedua.
+2. **CSP memblokir `<style>` NumberFlow:** timer tampil sebagai deretan `0123456789...` dan halaman melebar. Hash-nya masuk `style-src`.
+3. **Font teks dari Google diblokir CSP:** di-self-host lewat `@fontsource`; `build.assetsInlineLimit` mencegah font kecil menjadi `data:` URI.
+4. **Header keamanan dobel di respons API** (helmet + nginx, termasuk dua CSP dan `X-Frame-Options` DENY vs SAMEORIGIN). nginx mengosongkan header itu untuk `/api/` lewat `map`; helmet diset `frameguard: deny` dan `no-referrer`.
+5. **Drift Prisma** FK `auth_tokens` (`ON UPDATE CASCADE`): migrasi `20261121000400_auth_tokens_fk_sync`; `prisma migrate diff` kosong.
+6. **`frontend/.gitattributes`** (aturan LFS ekspor Figma) membuat jpg selalu "modified"; dihapus, root `.gitattributes` sudah menandai gambar sebagai binary.
+7. **Dokumen migrate** butuh `--build` (README root dan `frontend/tests/e2e/README.md`).
+8. **CI:** job `frontend` menjalankan `npm test`; job baru `e2e` menyalakan stack Docker dengan `.env` acak sekali pakai lalu menjalankan Playwright + axe. E2E baru `navigation.spec.ts` menjaga poin 1 sampai 3.
+
+**Hasil:** E2E 4/4 lulus di stack Docker; backend 233 unit + integrasi lulus; frontend typecheck, 33 unit, build.
 
 ### #17 · Branch coverage `study-sessions` 81,65% → 100% · branch `feat/adli-sessions-coverage`
 

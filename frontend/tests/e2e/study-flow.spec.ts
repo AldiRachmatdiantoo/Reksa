@@ -1,5 +1,5 @@
 import { devices, expect, test } from '@playwright/test';
-import { createMaterial, expectAccessible, expectResult, PHOTO, reachPhotoStep, registerStudent } from './helpers';
+import { createMaterial, dismissCookieNotice, expectAccessible, expectResult, PHOTO, reachPhotoStep, registerStudent } from './helpers';
 
 // Alur pelajar lengkap terhadap backend asli (PRD §11.1 E2E):
 // materi → fokus → tebak nilai → foto → hasil cek, plus QR bridge laptop ↔ HP dan pemulihan sesi.
@@ -69,6 +69,7 @@ test('a running session survives a reload and is restored in a new tab; "Ulangi"
   await createMaterial(page.request, 'Homeostasis Pulih');
 
   await page.goto('/belajar');
+  await dismissCookieNotice(page);
   await page.getByRole('button', { name: /Homeostasis Pulih/ }).click();
   await page.getByRole('button', { name: 'Mulai waktu fokus' }).click();
   await expect(page.getByRole('heading', { name: 'Bacaan ditutup sementara' })).toBeVisible();

@@ -1,5 +1,20 @@
 # Checkpoint Frontend REKSA
 
+## #10 · 2026-11-21 · Perbaikan build produksi di balik nginx
+
+Branch: `fix/aldi-docker-build-bugs`.
+
+- **Navigasi `/belajar`:** pindah menu (Belajar, Materi, Kelas) tidak lagi membuat layar kosong di build produksi. `AnimatedOutlet` diganti `KeyedOutlet` (outlet ber-key, tanpa `AnimatePresence` bersarang). Animasi masuk tetap dari `motion.main` tiap halaman.
+- **CSP:** hash `<style>` NumberFlow ditambahkan di `nginx.conf`; timer dan skor tampil normal. Hash ini berubah kalau NumberFlow di-upgrade.
+- **Font:** Plus Jakarta Sans, Radio Canada Big, Spline Sans Mono di-self-host (`@fontsource`, diimpor di `main.tsx`), `<link>` Google dihapus dari `index.html`. `vite.config.ts` tidak menjadikan font `data:` URI.
+- **`.gitattributes` LFS dihapus** (aturan bawaan ekspor, tidak pernah dipakai).
+- **E2E baru** `tests/e2e/navigation.spec.ts`; CI menjalankan unit test dan E2E (job `e2e`).
+- **Kontras beranda (desktop):** bab "Cara kerja" yang belum aktif dipudarkan ke 35% sehingga teksnya 1,7:1 (gagal WCAG AA). Sekarang bab aktif ditandai warna label saja, teks tetap penuh. Diaudit axe di setiap posisi gulir.
+- **Hasil Cek tanpa sesi:** penanda langkah disembunyikan; sebelumnya langkah 1 dan 2 tampil centang padahal belum dikerjakan.
+- **Sapu semua halaman** (desktop dan HP, anonim, pelajar, guru) di stack Docker: tidak ada pelanggaran CSP, error JavaScript, atau halaman melebar; font termuat; axe lulus. Job CI `e2e` disimulasikan dari stack kosong dengan `.env` acak: 4/4 lulus.
+
+Diverifikasi: E2E 4/4 lulus di stack Docker (termasuk stack bersih seperti CI), typecheck, 33 unit test, build.
+
 ## #9 · 2026-11-21 · Alur belajar tersambung ke backend asli + E2E (dikerjakan Adli)
 
 Branch: `feat/adli-frontend-scans` (repo Reksa, monorepo). Area frontend milik Aldi; dikerjakan Adli atas persetujuan pengguna, rinciannya di `../../docs/UNTUK-ALDI.md`.
@@ -14,7 +29,7 @@ Branch: `feat/adli-frontend-scans` (repo Reksa, monorepo). Area frontend milik A
 
 Diverifikasi: 3 E2E lulus terhadap stack Docker lewat nginx `:8080`, screenshot halaman QR dan hasil dicek manual, typecheck, 33 unit test, build, `npm audit` 0.
 
-**Masih rusak di stack nginx (area Aldi, belum diubah):** angka `NumberFlow` tampil sebagai deretan `0123456789...` dan melebarkan halaman (CSP `style-src 'self'` memblokir style inline), dan font teks (Plus Jakarta Sans, Radio Canada Big, Spline Sans Mono) tidak termuat dari Google Fonts. Usulan perbaikan di `UNTUK-ALDI.md`.
+**Masih rusak di stack nginx (area Aldi, diperbaiki di checkpoint #10):** angka `NumberFlow` tampil sebagai deretan `0123456789...` dan melebarkan halaman (CSP `style-src 'self'` memblokir style inline), dan font teks (Plus Jakarta Sans, Radio Canada Big, Spline Sans Mono) tidak termuat dari Google Fonts. Usulan perbaikan di `UNTUK-ALDI.md`.
 
 ## #8 · 2026-11-21 · Akun dasar (FR-14)
 

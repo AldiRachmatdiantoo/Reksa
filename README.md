@@ -194,7 +194,7 @@ cd reksa
 
 cp .env.example .env                              # ganti semua CHANGE_ME (openssl rand -hex 32)
 docker compose up -d postgres redis storage-init  # database, cache, storage + bucket privat
-docker compose --profile tools run --rm migrate   # migrasi sebagai pemilik skema
+docker compose --profile tools run --rm --build migrate   # migrasi sebagai pemilik skema; --build agar image memuat migrasi terbaru
 docker compose up -d --build                      # backend + frontend (nginx)
 ```
 

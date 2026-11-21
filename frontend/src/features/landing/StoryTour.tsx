@@ -151,12 +151,12 @@ function ChapterBlock({ chapter, index, active, onEnter }: { chapter: Chapter; i
 
   return (
     <li ref={ref} className="flex flex-col justify-center gap-4 lg:min-h-[80dvh]">
-      <motion.div
-        animate={{ opacity: active ? 1 : 0.35 }}
-        transition={{ duration: 0.3 }}
-        className="flex flex-col gap-4 max-lg:!opacity-100"
-      >
-        <p className="flex items-center gap-3 text-label-lg text-teal">
+      {/* Bab aktif ditandai warna label, bukan dengan memudarkan teks: teks yang dipudarkan
+          gagal kontras WCAG (1,7:1) padahal tetap dibaca orang saat menggulir. */}
+      <div className="flex flex-col gap-4">
+        <p
+          className={`flex items-center gap-3 text-label-lg transition-colors duration-300 ${active ? 'text-teal' : 'max-lg:text-teal lg:text-ink-muted'}`}
+        >
           <span className="font-mono text-mono-md tabular-nums" aria-hidden="true">
             {String(index).padStart(2, '0')}
           </span>
@@ -169,7 +169,7 @@ function ChapterBlock({ chapter, index, active, onEnter }: { chapter: Chapter; i
             {p}
           </p>
         ))}
-      </motion.div>
+      </div>
       <Reveal className="pt-2 lg:hidden" aria-hidden="true">
         {chapter.visual()}
       </Reveal>

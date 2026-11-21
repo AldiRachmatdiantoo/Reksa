@@ -24,17 +24,15 @@ import { ThemeProvider } from '@/shared/theme';
 import { CookieNotice } from '@/shared/ui/CookieNotice';
 
 /**
- * Halaman di dalam /belajar berganti dengan animasi keluar-masuk, tapi provider sesi
- * tetap hidup (foto hanya ada di memori, jadi provider tidak boleh ikut dibongkar).
+ * Halaman di dalam /belajar diberi key per path supaya animasi masuk motion.main jalan
+ * lagi, tapi provider sesi tetap hidup (foto hanya ada di memori). Sengaja tanpa
+ * AnimatePresence bersarang: di build produksi AnimatePresence mode="wait" di dalam
+ * AnimatePresence tingkat atas tidak pernah memasang halaman baru, layarnya kosong.
  */
-function AnimatedOutlet() {
+function KeyedOutlet() {
   const location = useLocation();
   const outlet = useOutlet();
-  return (
-    <AnimatePresence mode="wait" initial={false}>
-      {outlet && cloneElement(outlet as ReactElement, { key: location.pathname })}
-    </AnimatePresence>
-  );
+  return outlet ? cloneElement(outlet as ReactElement, { key: location.pathname }) : null;
 }
 
 /** Kunci transisi tingkat atas: /masuk dan /daftar satu kunci supaya tab-nya bergeser, bukan halaman diganti. */
@@ -89,7 +87,7 @@ function StudentArea() {
   return (
     <RequireAuth roles={['STUDENT']}>
       <StudySessionProvider>
-        <AnimatedOutlet />
+        <KeyedOutlet />
       </StudySessionProvider>
     </RequireAuth>
   );

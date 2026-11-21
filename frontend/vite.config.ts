@@ -15,6 +15,11 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: { '@': path.resolve(import.meta.dirname, 'src') },
     },
+    build: {
+      // Font kecil jangan dijadikan data: URI. CSP produksi hanya mengizinkan
+      // font-src 'self', jadi font harus berupa file terpisah.
+      assetsInlineLimit: (file: string) => (/\.(woff2?|ttf|otf)$/.test(file) ? false : undefined),
+    },
     server: {
       port: 5173,
       strictPort: true,

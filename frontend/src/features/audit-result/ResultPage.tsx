@@ -100,11 +100,12 @@ export function ResultPage() {
     navigate('/belajar');
   };
 
-  const shell = (content: ReactNode) => (
+  // Tanpa sesi, penanda langkah disembunyikan supaya langkah 1 dan 2 tidak tampil "selesai".
+  const shell = (content: ReactNode, showSteps = true) => (
     <>
       <AppHeader subtitle="Hasil Cek Catatan" />
       <motion.main {...pageTransition} className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
-        <StepIndicator current={3} />
+        {showSteps && <StepIndicator current={3} />}
         {content}
       </motion.main>
     </>
@@ -121,6 +122,7 @@ export function ResultPage() {
       >
         Hasil muncul setelah kamu selesai waktu fokus, menyimpan tebakan nilai, dan mengirim foto catatan.
       </StateBlock>,
+      false,
     );
   }
 

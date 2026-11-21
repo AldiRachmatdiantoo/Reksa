@@ -25,7 +25,8 @@ Contoh format:
 **Mendesak?** Ya, memblokir integration test sessions.
 -->
 
-### ⏳ 2026-11-21 — CSP nginx merusak angka `NumberFlow` dan font teks (area kamu, ditemukan E2E)
+### ✅ 2026-11-21 — CSP nginx merusak angka `NumberFlow` dan font teks (area kamu, ditemukan E2E)
+**Selesai (Aldi, branch `fix/aldi-docker-build-bugs`):** hash style NumberFlow masuk `style-src`, font teks di-self-host lewat `@fontsource` dan `<link>` Google dihapus, Vite tidak lagi menjadikan font kecil `data:` URI. Dijaga E2E baru `tests/e2e/navigation.spec.ts` (gagal bila ada pelanggaran CSP atau halaman melebar).
 **Bukti** (stack Docker lewat nginx `:8080`, console browser):
 - `Applying inline style violates ... 'style-src 'self''`: `NumberFlow` menyuntikkan style inline, jadi timer di Ruang Belajar dan skor di Hasil Cek tampil sebagai deretan `0123456789...` dan halaman melebar (1390px di layar 1280px).
 - `Loading the stylesheet 'https://fonts.googleapis.com/...' violates ...`: Plus Jakarta Sans, Radio Canada Big, Spline Sans Mono tidak pernah termuat; aplikasi memakai font sistem.
@@ -81,7 +82,8 @@ Kamu belum sempat memutuskan, jadi atas persetujuan saya (Adli) Claude mengerjak
 **Mendesak?** Tidak. Backend sudah mengirim `X-Accel-Buffering: no` dan ping tiap 15 detik, jadi SSE tetap jalan lewat `location /api/` biasa. Perubahan ini hanya merapikan aturan lama yang sekarang tidak terpakai.
 **Catatan deploy:** rewrite Vercel ke Render bisa membatasi durasi respons stream. Kalau SSE terputus di produksi, frontend cukup jatuh ke polling `GET /sessions/:id` (`hasSubmission`) tiap 3 detik.
 
-### ⏳ 2026-11-21 — Usulan: satukan `reksa-frontend` ke `frontend/` (monorepo)
+### ✅ 2026-11-21 — Usulan: satukan `reksa-frontend` ke `frontend/` (monorepo)
+**Selesai:** di-merge lewat PR #14.
 **Butuh untuk:** satu tempat untuk menjalankan, menguji, dan me-review frontend + backend; kontrak API dan UI berubah dalam satu PR.
 **Yang sudah saya lakukan** di branch `feat/adli-frontend-monorepo` (belum di-merge, menyentuh area kamu, jadi butuh persetujuanmu):
 - *Subtree merge* `reksa-frontend` `main` (`b6e1792`, 15 commit, riwayat tetap utuh) ke `frontend/`. Tidak ada file yang bentrok: `frontend/Dockerfile`, `nginx.conf`, `.dockerignore` milikmu tidak berubah.

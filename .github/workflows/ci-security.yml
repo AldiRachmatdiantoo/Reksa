@@ -129,6 +129,7 @@ jobs:
           nginxinc/nginx-unprivileged:stable-alpine nginx -t
 
   frontend:
+    # Nama job jangan diubah: "Frontend · build" terdaftar sebagai required check di ruleset main.
     name: Frontend · build
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -156,4 +157,54 @@ jobs:
         run: npm ci
       - if: steps.detect.outputs.exists == 'true'
         working-directory: frontend
+        run: npm test
+      - if: steps.detect.outputs.exists == 'true'
+        working-directory: frontend
         run: npm run build
+
+  # Stack lengkap (nginx + backend + worker + Postgres + Redis + S3) persis seperti
+  # produksi lokal, lalu Playwright + axe. Menangkap bug yang hanya muncul di build
+  # produksi di balik nginx (CSP, navigasi), bukan di `npm run dev`.
+  e2e:
+    name: E2E · Playwright + axe (Docker stack)
+    needs: frontend
+    # Dikunci ke 24.04: ubuntu-latest sudah 26.04 dan Playwright 1.59 belum mendukungnya
+    # ("Playwright does not support chromium on ubuntu26.04-x64"). Naikkan setelah
+    # Playwright mendukung 26.04.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Generate throwaway .env
+        # Setiap CHANGE_ME diganti rahasia acak sekali pakai; stack hanya hidup selama job.
+        run: |
+          while IFS= read -r line; do
+            if [[ "$line" == *=CHANGE_ME ]]; then
+              echo "${line%CHANGE_ME}$(openssl rand -hex 24)"
+            else
+              echo "$line"
+            fi
+          done < .env.example > .env
+      - name: Start database and cache
+        run: docker compose up -d --wait postgres redis
+      - name: Run migrations
+        run: docker compose --profile tools run --rm --build migrate
+      - name: Start full stack
+        run: docker compose up -d --build --wait backend frontend
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - working-directory: frontend
+        run: npm ci
+      - working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Playwright E2E
+        working-directory: frontend
+        run: npm run test:e2e
+      - name: Stack logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail=200 backend frontend

@@ -9,7 +9,7 @@ Sebelum kerja: baca `docs/CHECKPOINT.md` (posisi terakhir) dan `docs/BACKLOG.md`
 - Vite 8, React 19, TypeScript, Tailwind CSS 4 (`@theme inline` di `src/index.css`, token dari `src/theme.css`)
 - react-router-dom 7, motion 12, `@number-flow/react` (angka timer dan skor)
 - Vitest + happy-dom untuk unit test di `tests/unit/`
-- Ikon: Material Symbols Outlined (font Google), bukan Lucide
+- Font dan ikon di-host sendiri lewat `@fontsource` (CSP `font-src 'self'`): Plus Jakarta Sans, Radio Canada Big, Spline Sans Mono, Material Symbols Outlined. Bukan Lucide, bukan Google Fonts
 
 ## Perintah
 
