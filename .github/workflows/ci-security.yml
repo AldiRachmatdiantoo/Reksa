@@ -129,7 +129,8 @@ jobs:
           nginxinc/nginx-unprivileged:stable-alpine nginx -t
 
   frontend:
-    name: Frontend · typecheck, test, build
+    # Nama job jangan diubah: "Frontend · build" terdaftar sebagai required check di ruleset main.
+    name: Frontend · build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
