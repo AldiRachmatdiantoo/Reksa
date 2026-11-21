@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 21 November 2026, modul `classes` FR-09 (Aldi, branch `feat/aldi-classes` di kedua repo)
+**Checkpoint terakhir:** 21 November 2026, akun dasar FR-14 (Aldi, branch `feat/aldi-account` di kedua repo)
 
 ---
 
@@ -12,10 +12,33 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | :--- | :--- | :--- |
 | Langkah 0 | ✅ Selesai, di `main` (PR #1) | ⏳ Belum mulai (bagian frontend diambil alih Aldi) |
 | Fase 1 | ✅ Selesai: `auth` (PR #2, #3), CI + branch protection (PR #4) | — |
-| Fase 2 | ✅ Storage (PR #6) · ✅ `materials` (PR #8) · ✅ PRD v1.3 (PR #9) · 🟡 `classes` FR-09 (branch `feat/aldi-classes`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | ⬜ |
+| Fase 2 | ✅ Storage (PR #6) · ✅ `materials` (PR #8) · ✅ PRD v1.3 (PR #9) · ✅ `classes` FR-09 (PR #10) · 🟡 akun dasar FR-14 (branch `feat/aldi-account`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | ⬜ |
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #8 · Akun dasar (FR-14) · branch `feat/aldi-account`
+
+**Migrasi** `20261121000100_account_basics`: kolom `users.email_verified_at`, enum `AuthTokenPurpose` (`EMAIL_VERIFY`, `PASSWORD_RESET`), tabel `auth_tokens` (hanya hash SHA-256 token yang disimpan, unik, index parsial untuk token yang belum dipakai), grant DML ke `app_service_user`.
+
+**Email:** antarmuka `IEmailService` di `src/config/email.ts`. `SmtpEmailService` (nodemailer) dipakai bila `SMTP_URL` diisi, selain itu `LogEmailService` hanya mencatat penerima dan subjek ke log. Production wajib `SMTP_URL`. Docker Compose punya service `mailpit` (SMTP `127.0.0.1:1025`, kotak masuk http://localhost:8025). Tautan di email memakai `APP_URL`, jatuh ke `CORS_ORIGIN` bila kosong. Pengiriman tidak ditunggu oleh request; kegagalan dicatat sebagai warning.
+
+**Endpoint**
+- `POST /auth/verify-email {token}` 204 (20/jam per IP) · `POST /auth/verify-email/resend` 202, butuh login, 3/jam per user, 409 bila sudah terverifikasi. Token verifikasi berlaku 24 jam, dikirim juga saat register.
+- `POST /auth/password/forgot {email}` selalu 202 dengan pesan yang sama (10/jam per IP + 3/jam per email) · `POST /auth/password/reset {token,newPassword}` 204 (10 per 15 menit per IP). Token reset berlaku 30 menit. Reset juga menandai email terverifikasi, karena pemilik tautan terbukti memegang kotak masuknya.
+- `PATCH /me {fullName}` · `PATCH /me/password {currentPassword,newPassword}` (5 per 15 menit per user). Password lama salah dijawab **400** `INVALID_CURRENT_PASSWORD`, bukan 401, supaya `apiClient` tidak mencoba refresh. Perangkat ini mendapat cookie sesi baru.
+- Token sekali pakai: `updateMany` atomik dengan syarat `used_at IS NULL` dan belum kedaluwarsa. Tautan salah, terpakai, atau kedaluwarsa dijawab 400 `INVALID_TOKEN` dengan pesan yang sama. Token baru menghapus token lama dengan tujuan yang sama.
+- `GET /auth/me` dan semua respons user bertambah `emailVerified`.
+
+**FR-09:** `POST /classes/join` kini menolak siswa yang belum verifikasi dengan 403 `EMAIL_NOT_VERIFIED`, dicek sebelum kode kelas supaya tidak membocorkan kode yang valid.
+
+**Keputusan:** saat ganti atau reset password, refresh token **dihapus**, bukan ditandai `revoked`. Kalau ditandai, refresh dari perangkat lain terbaca sebagai reuse dan ikut mencabut sesi baru di perangkat yang baru saja mengganti password (ditemukan oleh test integrasi).
+
+**Catatan:** akun yang dibuat sebelum migrasi ini berstatus belum terverifikasi, jadi siswa lama perlu verifikasi dari halaman Akun sebelum bisa bergabung ke kelas. Belum ada data produksi, jadi tidak ada backfill.
+
+**Test:** unit `auth.service.test.ts` (verifikasi, kirim ulang, lupa/reset, profil, ganti password, email gagal tidak menggagalkan register) dan `env.test.ts`; integrasi `tests/integration/account.test.ts`; security `tests/security/account.security.test.ts` (token dipakai ulang, token kedaluwarsa, enumerasi akun lewat lupa password, rate limit, sesi lain dicabut setelah reset dan ganti password, field asing ditolak) + kasus join tanpa verifikasi di `classes.security.test.ts`. Email di test ditangkap `tests/support/memoryEmail.ts`. Hasil: 96 unit, 130 integrasi + security, semua lulus.
+
+**Frontend** (`reksa-frontend`, branch `feat/aldi-account`): halaman `/verifikasi-email`, `/lupa-password`, `/atur-ulang-password`, dan `/akun`; tautan "Lupa kata sandi?" di halaman masuk; pemberitahuan verifikasi di halaman Kelas siswa. Diverifikasi di browser bersama Mailpit.
 
 ### #7 · Kelola kelas & keanggotaan (FR-09) · branch `feat/aldi-classes`
 
@@ -165,7 +188,7 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 ## Berikutnya
 
 **Aldi**
-1. Merge PR `feat/aldi-materials` di kedua repo (PR frontend ikut membawa commit animasi dan pop up yang belum masuk `main`)
+1. Merge PR `feat/aldi-account` di kedua repo
 2. Modul `spaced-repetition` (jadwal H+3/H+7) lalu `governance`
 3. Persiapan deploy: migrasi pencabutan hak `anon`/`authenticated` Supabase, `vercel.json` di reksa-frontend (rewrite + header), konfigurasi Render
 4. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
@@ -182,3 +205,4 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 - Advisory *moderate* tersisa hanya di dev tooling (`testcontainers` → `glob`); dependency produksi 0 vulnerability.
 - Uji integration butuh Docker Desktop berjalan (Postgres, Redis, SeaweedFS ditarik otomatis).
 - Image `minio/minio` sudah tidak tersedia; jangan kembali ke MinIO.
+- Backend lokal di luar Docker: pakai `SMTP_URL=smtp://127.0.0.1:1025`, bukan `localhost`. Node me-resolve `localhost` ke `::1`, sedangkan port Mailpit hanya dibuka di `127.0.0.1`.

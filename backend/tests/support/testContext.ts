@@ -7,6 +7,7 @@ import { MockAiProvider } from '../../src/common/ai/mockAi.provider.js';
 import { buildRoutes } from '../../src/container.js';
 import { createPrismaClient, type PrismaClient } from '../../src/config/prisma.js';
 import { S3StorageService } from '../../src/config/storage.js';
+import { MemoryEmailService } from './memoryEmail.js';
 
 export const TEST_ENV = {
   CORS_ORIGIN: 'http://localhost:8080',
@@ -24,6 +25,8 @@ export type TestContext = {
   redis: Redis;
   /** Real S3 bucket (SeaweedFS; same S3 API as Supabase Storage). */
   storage: S3StorageService;
+  /** Email yang "terkirim" (verifikasi, reset password). */
+  emails: MemoryEmailService;
   reset(): Promise<void>;
   close(): Promise<void>;
 };
@@ -35,6 +38,7 @@ export function createTestContext(): TestContext {
   const redis = new Redis(inject('redisUrl'));
   const storageConfig = inject('storage');
   const storage = new S3StorageService({ ...storageConfig, region: 'us-east-1', forcePathStyle: true });
+  const emails = new MemoryEmailService();
 
   const routes = buildRoutes({
     env: TEST_ENV,
@@ -42,6 +46,7 @@ export function createTestContext(): TestContext {
     prisma,
     redis,
     storage,
+    email: emails,
     ai: new MockAiProvider({ latencyMs: 0 }),
   });
   const app = createApp({ env: TEST_ENV, logger, routes });
@@ -52,7 +57,9 @@ export function createTestContext(): TestContext {
     owner,
     redis,
     storage,
+    emails,
     async reset() {
+      emails.clear();
       await owner.$executeRaw`TRUNCATE TABLE users, institutions RESTART IDENTITY CASCADE`;
       await redis.flushdb();
     },

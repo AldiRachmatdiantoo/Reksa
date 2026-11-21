@@ -33,6 +33,7 @@ export type DeleteClassResult = 'deleted' | 'not_found' | 'has_members';
  */
 export interface ClassesRepository {
   getInstitutionId(userId: string): Promise<string | null>;
+  isEmailVerified(userId: string): Promise<boolean>;
   /** Melempar ClassCodeTakenError bila kode bentrok. */
   create(data: CreateClassData): Promise<ClassRecord>;
   listForEducator(educatorId: string, limit: number): Promise<ClassRecord[]>;
@@ -88,6 +89,11 @@ export class PrismaClassesRepository implements ClassesRepository {
   async getInstitutionId(userId: string): Promise<string | null> {
     const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { institutionId: true } });
     return user?.institutionId ?? null;
+  }
+
+  async isEmailVerified(userId: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { emailVerifiedAt: true } });
+    return Boolean(user?.emailVerifiedAt);
   }
 
   async create(data: CreateClassData): Promise<ClassRecord> {

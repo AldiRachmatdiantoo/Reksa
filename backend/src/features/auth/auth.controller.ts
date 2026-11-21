@@ -2,8 +2,19 @@ import type { Request, Response } from 'express';
 import { getAuth } from '../../common/middlewares/auth.middleware.js';
 import { getValidated } from '../../common/middlewares/validate.middleware.js';
 import { clearAuthCookies, REFRESH_COOKIE, setAuthCookies } from '../../common/utils/authCookies.js';
-import { LoginSchema, RegisterSchema } from './auth.schema.js';
+import {
+  ChangePasswordSchema,
+  ForgotPasswordSchema,
+  LoginSchema,
+  RegisterSchema,
+  ResetPasswordSchema,
+  UpdateProfileSchema,
+  VerifyEmailSchema,
+} from './auth.schema.js';
 import type { AuthService } from './auth.service.js';
+
+/** Satu pesan untuk semua permintaan reset, terdaftar atau tidak (anti enumerasi akun). */
+const FORGOT_MESSAGE = 'Kalau email itu terdaftar, tautan untuk mengatur ulang kata sandi sudah dikirim. Cek kotak masuk dan folder spam.';
 
 export class AuthController {
   constructor(private readonly service: AuthService) {}
@@ -42,6 +53,41 @@ export class AuthController {
   me = async (_req: Request, res: Response): Promise<void> => {
     const user = await this.service.getCurrentUser(getAuth(res).userId);
     res.json({ user });
+  };
+
+  verifyEmail = async (_req: Request, res: Response): Promise<void> => {
+    const { body } = getValidated(res, { body: VerifyEmailSchema });
+    await this.service.verifyEmail(body.token);
+    res.status(204).end();
+  };
+
+  resendVerification = async (_req: Request, res: Response): Promise<void> => {
+    await this.service.resendVerification(getAuth(res).userId);
+    res.status(202).json({ message: 'Tautan verifikasi sudah dikirim ulang.' });
+  };
+
+  forgotPassword = async (_req: Request, res: Response): Promise<void> => {
+    const { body } = getValidated(res, { body: ForgotPasswordSchema });
+    await this.service.requestPasswordReset(body.email);
+    res.status(202).json({ message: FORGOT_MESSAGE });
+  };
+
+  resetPassword = async (_req: Request, res: Response): Promise<void> => {
+    const { body } = getValidated(res, { body: ResetPasswordSchema });
+    await this.service.resetPassword(body.token, body.newPassword);
+    res.status(204).end();
+  };
+
+  updateProfile = async (_req: Request, res: Response): Promise<void> => {
+    const { body } = getValidated(res, { body: UpdateProfileSchema });
+    res.json({ user: await this.service.updateProfile(getAuth(res).userId, body.fullName) });
+  };
+
+  changePassword = async (_req: Request, res: Response): Promise<void> => {
+    const { body } = getValidated(res, { body: ChangePasswordSchema });
+    const result = await this.service.changePassword(getAuth(res).userId, body.currentPassword, body.newPassword);
+    setAuthCookies(res, result);
+    res.json({ user: result.user });
   };
 }
 

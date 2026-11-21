@@ -207,6 +207,7 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
   * **Verifikasi email:** dikirim saat mendaftar, bisa dikirim ulang (maks. 3 kali per jam). Akun yang belum terverifikasi tetap bisa belajar mandiri, tetapi belum bisa bergabung ke kelas (FR-09) atau menukar kode Pro (FR-11).
   * **Lupa password:** `POST /auth/password/forgot { email }` selalu menjawab `202` dengan pesan yang sama, baik email terdaftar maupun tidak, supaya keberadaan akun tidak bocor. Rate limit 3 per jam per email dan 10 per jam per IP. `POST /auth/password/reset { token, newPassword }` memakai aturan password yang sama dengan register dan mencabut seluruh refresh token user.
   * **Ganti password** saat login: wajib password lama, lalu semua sesi di perangkat lain dicabut.
+  * *(Implementasi)* Saat ganti atau reset password, refresh token lama dihapus, bukan ditandai dicabut. Kalau ditandai, refresh dari perangkat lain terbaca sebagai *reuse* dan ikut mencabut sesi baru. Password lama yang salah dijawab `400 INVALID_CURRENT_PASSWORD`, bukan `401`, supaya klien tidak mengira sesinya habis.
   * **Ubah nama:** `PATCH /me { fullName }`. Ganti email ditunda ke pasca-MVP karena butuh verifikasi ke alamat baru.
 
 ### 4.5 Peta Jalan Pengembangan Fitur (Pasca-MVP)
@@ -321,7 +322,7 @@ reksa-platform/
 Seluruh tabel menggunakan tipe primary key `UUID` (`gen_random_uuid()`) untuk mencegah enumerasi ID berurutan (*predictable ID enumeration*).
 
 ### 7.1 Spesifikasi Tabel Inti
-1. **`users`**: `id (UUID PK)`, `email (VARCHAR UNIQUE)`, `password_hash (TEXT - Argon2id)`, `full_name (VARCHAR)`, `role (ENUM: STUDENT, EDUCATOR, INSTITUTION_ADMIN)`, `tier (ENUM: FREE, PRO)`, `institution_id (UUID FK nullable)`, `daily_scan_count (INT DEFAULT 0)`, `last_scan_reset_at (TIMESTAMPTZ)`, `created_at (TIMESTAMPTZ)`. *(v1.2, belum dimigrasi)* `pro_expires_at (TIMESTAMPTZ nullable)`: sumber tier efektif (FR-11). *(v1.3, belum dimigrasi)* `email_verified_at (TIMESTAMPTZ nullable)`, `birth_year (SMALLINT)`, `terms_version (VARCHAR)`, `privacy_version (VARCHAR)`, `consented_at (TIMESTAMPTZ)`, `guardian_consent (BOOLEAN DEFAULT FALSE)` (FR-13, FR-14).
+1. **`users`**: `id (UUID PK)`, `email (VARCHAR UNIQUE)`, `password_hash (TEXT - Argon2id)`, `full_name (VARCHAR)`, `role (ENUM: STUDENT, EDUCATOR, INSTITUTION_ADMIN)`, `tier (ENUM: FREE, PRO)`, `institution_id (UUID FK nullable)`, `daily_scan_count (INT DEFAULT 0)`, `last_scan_reset_at (TIMESTAMPTZ)`, `created_at (TIMESTAMPTZ)`. *(v1.2, belum dimigrasi)* `pro_expires_at (TIMESTAMPTZ nullable)`: sumber tier efektif (FR-11). *(v1.3, sudah dimigrasi)* `email_verified_at (TIMESTAMPTZ nullable)` (FR-14). *(v1.3, belum dimigrasi)* `birth_year (SMALLINT)`, `terms_version (VARCHAR)`, `privacy_version (VARCHAR)`, `consented_at (TIMESTAMPTZ)`, `guardian_consent (BOOLEAN DEFAULT FALSE)` (FR-13).
 2. **`refresh_tokens`**: `id (UUID PK)`, `user_id (UUID FK)`, `token_hash (VARCHAR UNIQUE)`, `family_id (UUID)`, `is_revoked (BOOLEAN DEFAULT FALSE)`, `expires_at (TIMESTAMPTZ)`, `created_at (TIMESTAMPTZ)`.
 3. **`institutions`**: `id (UUID PK)`, `name (VARCHAR)`, `created_at (TIMESTAMPTZ)`.
 4. **`classes`**: `id (UUID PK)`, `institution_id (UUID FK nullable)`, `educator_id (UUID FK)`, `class_code (VARCHAR UNIQUE)`, `name (VARCHAR)`, `created_at (TIMESTAMPTZ)`.
@@ -332,7 +333,7 @@ Seluruh tabel menggunakan tipe primary key `UUID` (`gen_random_uuid()`) untuk me
 *Tabel baru v1.2 (belum dimigrasi):*
 * **`activation_codes`** (FR-11): `id (UUID PK)`, `code_hash (VARCHAR(64) UNIQUE)`, `institution_id (UUID FK nullable)`, `duration_days (INT)`, `max_redemptions (INT)`, `redeemed_count (INT DEFAULT 0)`, `expires_at (TIMESTAMPTZ)`, `created_at (TIMESTAMPTZ)`.
 * **`activation_redemptions`** (FR-11): `id (UUID PK)`, `code_id (UUID FK)`, `user_id (UUID FK)`, `redeemed_at (TIMESTAMPTZ)`, `UNIQUE (code_id, user_id)`.
-* **`auth_tokens`** (v1.3, FR-14): `id (UUID PK)`, `user_id (UUID FK)`, `purpose (ENUM: EMAIL_VERIFY, PASSWORD_RESET)`, `token_hash (VARCHAR(64) UNIQUE)`, `expires_at (TIMESTAMPTZ)`, `used_at (TIMESTAMPTZ nullable)`.
+* **`auth_tokens`** (v1.3, FR-14, sudah dimigrasi): `id (UUID PK)`, `user_id (UUID FK)`, `purpose (ENUM: EMAIL_VERIFY, PASSWORD_RESET)`, `token_hash (VARCHAR(64) UNIQUE)`, `expires_at (TIMESTAMPTZ)`, `used_at (TIMESTAMPTZ nullable)`.
 * *(v1.3)* **`study_sessions`** ditambah `validity (ENUM: VALID, SHORT_FOCUS)` dan *partial unique index* `(user_id) WHERE status IN ('FOCUS_ACTIVE','AWAITING_SCAN')` untuk menjamin satu sesi aktif (FR-02).
 * *(v1.3)* **`essay_submissions`** ditambah `audit_status (ENUM: PENDING, PROCESSING, DONE, FAILED)`, `audit_attempts (INT DEFAULT 0)`, `audit_error_code (VARCHAR nullable)`; kolom hasil (`actual_ai_score`, `*_json`, `ledger_hash`) menjadi nullable sampai `DONE` (FR-05).
 * **`educator_invites`** (FR-10): `id (UUID PK)`, `institution_id (UUID FK)`, `token_hash (VARCHAR(64) UNIQUE)`, `created_by (UUID FK)`, `expires_at (TIMESTAMPTZ)`, `revoked_at (TIMESTAMPTZ nullable)`.

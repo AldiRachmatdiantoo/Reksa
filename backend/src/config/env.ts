@@ -25,6 +25,13 @@ export const EnvSchema = z
     STORAGE_SECRET_ACCESS_KEY: z.string().min(1),
     STORAGE_FORCE_PATH_STYLE: z.stringbool().default(true),
 
+    // Email transaksional (FR-14). Lokal: Mailpit (smtp://localhost:1025). Produksi: SMTP penyedia
+    // email (mis. smtps://resend:<api-key>@smtp.resend.com:465). Kosong di development = email hanya dicatat di log.
+    SMTP_URL: z.url({ protocol: /^smtps?$/ }).optional(),
+    EMAIL_FROM: z.string().min(3).default('REKSA <no-reply@reksa.local>'),
+    // Origin frontend untuk tautan di email. Default: CORS_ORIGIN.
+    APP_URL: z.url({ protocol: /^https?$/ }).optional(),
+
     AI_PROVIDER_MODE: z.enum(['mock', 'gemini']).default('mock'),
     MOCK_AI_LATENCY_MS: z.coerce.number().int().min(0).max(10_000).default(300),
     GEMINI_API_KEY: z.string().optional(),
@@ -35,6 +42,13 @@ export const EnvSchema = z
         code: 'custom',
         path: ['GEMINI_API_KEY'],
         message: 'GEMINI_API_KEY wajib diisi saat AI_PROVIDER_MODE=gemini',
+      });
+    }
+    if (env.NODE_ENV === 'production' && !env.SMTP_URL) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['SMTP_URL'],
+        message: 'SMTP_URL wajib diisi di production (email verifikasi dan reset password)',
       });
     }
     if (env.JWT_ACCESS_SECRET === env.JWT_REFRESH_SECRET) {
