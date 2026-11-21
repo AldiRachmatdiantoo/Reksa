@@ -1,5 +1,18 @@
 # Checkpoint Frontend REKSA
 
+## #5 · 2026-11-21 · Audit kemudahan pakai, dibandingkan dengan ruangguru.com
+
+Branch: `feat/aldi-materials`
+
+Pembanding: beranda ruangguru.com (dibuka 21 Nov 2026). Yang diambil hanya pola kemudahan pakainya, bukan merek, warna, logo, atau isi: menu utama selalu terlihat, bahasa santai dan langsung, serta bagian "Paling sering ditanyakan". Pola yang sengaja tidak diambil karena tidak cocok untuk REKSA atau tidak jujur untuk produk yang belum rilis: banner promo, pop up pilih jenjang saat pertama buka, katalog paket berharga, testimoni dan profil pengajar.
+
+Perbaikan:
+- **Menu pelajar di header** (`AppHeader`): "Belajar" dan "Materi saya" dengan penanda halaman aktif. Di layar di bawah 768px menu pindah ke baris sendiri di bawah header (target ketuk 44px). Sebelumnya halaman materi hanya bisa dicapai lewat tombol di dalam halaman.
+- **Beranda**: alur pelajar jadi 4 langkah, diawali "Siapkan materimu" sesuai alur aplikasi yang sebenarnya. Bagian baru "Yang sering ditanyakan" (5 pertanyaan, hanya yang jawabannya sudah benar untuk versi ini), ditaut dari header dan footer.
+- Halaman materi: tombol kembali dibuang karena sudah ada menu header.
+
+Diverifikasi di browser: desktop 1280px dan HP 375px, menu aktif benar di /belajar dan /belajar/materi, tidak ada scroll horizontal, tanya jawab bisa dibuka. Typecheck, 13 test, build lulus.
+
 ## #4 · 2026-11-21 · Materi belajar dari backend `materials`
 
 Branch: `feat/aldi-materials` (backend: `Reksa` branch `feat/aldi-materials`)
