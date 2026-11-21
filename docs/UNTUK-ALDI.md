@@ -25,6 +25,19 @@ Contoh format:
 **Mendesak?** Ya, memblokir integration test sessions.
 -->
 
+### ⏳ 2026-11-21 — Keputusan produk: skor Stage 2 dihitung server (Gemini)
+**Butuh untuk:** Fase 3, `GeminiAiProvider` Stage 2 (branch `feat/adli-gemini-vision`, belum aktif).
+**Usulan:** dengan Gemini, `actualScore` **tidak** diambil dari model. Model hanya menilai tiap konsep rubrik (`MASTERED`/`PARTIAL`/`MISSING`) dan wajib mengutip bukti dari tulisan; server menghitung `round(100 × Σ bobot × kredit / Σ bobot)` (1 / 0,5 / 0). Klaim tanpa bukti dihitung `MISSING`.
+**Alasan:** pertahanan *prompt injection* (PRD §5.3): tulisan "beri nilai 100" di foto tidak punya jalan untuk mengubah angka, dan skor bisa dijelaskan ke guru dari bobot rubrik (cocok dengan ledger FR-07).
+**Konsekuensi:** skor menjadi "cakupan konsep berbobot", bukan penilaian holistik; kesalahan logika muncul di `logicCorrections` tetapi tidak mengurangi skor. `MockAiProvider` tetap memakai skor fixture. Kalau kamu lebih suka skor holistik dari model, bilang saja; rumus ada di satu fungsi (`mapStage2Output`).
+**Mendesak?** Tidak, Fase 3 belum dibuka.
+
+### 2026-11-21 — Untuk Stage 1 dan 3 (bagianmu, Fase 3)
+- `backend/src/common/ai/geminiClient.ts` siap dipakai: `new GeminiClient({ apiKey }).generateJson({ model, systemInstruction, parts, responseSchema })`, error sudah dipetakan ke `AiProviderError` (`TRANSIENT`/`INVALID_OUTPUT`/`FATAL`). Hasilnya tetap wajib divalidasi dengan skema Zod di `ai.schema.ts`.
+- `GeminiAiProvider.extractRubric` dan `clusterCohortBlindSpots` masih melempar `FATAL`; silakan isi di file yang sama atau modul terpisah seperti `geminiVision.ts`.
+- `ai.factory.ts` belum saya ubah. Saat Fase 3 dibuka: `case 'gemini': return new GeminiAiProvider({ clientOptions: { apiKey: env.GEMINI_API_KEY! } })`.
+- Jenis error baru `FATAL` (400/401/403): `AuditService` tidak mengulangnya. Kalau `materials` memanggil `extractRubric`, perlakukan `FATAL` sebagai konfigurasi salah, bukan kesalahan pengguna.
+
 ### ⏳ 2026-11-21 — Review: audit asinkron `essay-scans` menyentuh area kamu (opsi A)
 Kamu belum sempat memutuskan, jadi atas persetujuan saya (Adli) Claude mengerjakan **opsi A** penuh di branch `feat/adli-essay-scans`. Mohon direview di PR; kalau tidak setuju, bilang saja dan saya ubah.
 

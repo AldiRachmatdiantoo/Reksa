@@ -44,8 +44,8 @@ class AiTimeoutError extends Error {
 
 type AiCallResult = { ok: true; audit: AiEssayAuditOutput } | { ok: false; code: AuditErrorCode };
 
-/** INVALID_OUTPUT: Zod/strukturnya salah. Selain itu (429/5xx/timeout/jaringan) dianggap sementara. */
-export function classifyAiError(err: unknown): 'TRANSIENT' | 'INVALID_OUTPUT' {
+/** INVALID_OUTPUT: Zod/strukturnya salah. FATAL: konfigurasi. Selain itu (429/5xx/timeout/jaringan) sementara. */
+export function classifyAiError(err: unknown): 'TRANSIENT' | 'INVALID_OUTPUT' | 'FATAL' {
   if (err instanceof AiProviderError) return err.kind;
   if (err instanceof ZodError) return 'INVALID_OUTPUT';
   return 'TRANSIENT';
@@ -205,6 +205,7 @@ export class AuditService {
         return { ok: true, audit: AiEssayAuditOutputSchema.parse(await withTimeout(call(), this.timeoutMs)) };
       } catch (err) {
         const kind = classifyAiError(err);
+        if (kind === 'FATAL') return { ok: false, code: 'AI_UNAVAILABLE' };
         if (kind === 'INVALID_OUTPUT') {
           if (invalidRetries++ < AI_INVALID_OUTPUT_RETRIES) continue;
           return { ok: false, code: 'AI_INVALID_OUTPUT' };

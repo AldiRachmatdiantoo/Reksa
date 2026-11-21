@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 21 November 2026, unggah foto + audit asinkron FR-05 (Adli, branch `feat/adli-essay-scans`)
+**Checkpoint terakhir:** 21 November 2026, persiapan Fase 3: Gemini Stage 2 Vision (Adli, branch `feat/adli-gemini-vision`, di atas `feat/adli-essay-scans`)
 
 ---
 
@@ -16,6 +16,19 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #14 · Persiapan Fase 3: Gemini Stage 2 Vision + pertahanan prompt injection · branch `feat/adli-gemini-vision`
+
+Branch ini dibuat **di atas** `feat/adli-essay-scans` (PR belum di-merge), jadi PR-nya menyusul setelah PR itu.
+
+**Selesai** di `backend/src/common/ai/`
+- `geminiClient.ts`: klien REST `generateContent` tanpa SDK (tanpa dependency baru), structured JSON output (`responseSchema`), batas waktu `AbortSignal`, API key di header `x-goog-api-key` (tidak pernah di URL atau pesan error). Error → `AiProviderError`: 408/429/5xx/jaringan/timeout `TRANSIENT`, 400/401/403/404 `FATAL`, diblokir/terpotong/bukan JSON `INVALID_OUTPUT`. Bisa dipakai Aldi untuk Stage 1 dan 3.
+- `geminiVision.ts` (`GeminiVisionAuditor`): prompt sistem (rubrik inklusif disgrafia/disleksia/*code-switching* + aturan keamanan), rubrik sebagai data berpembatas `<rubric_json>`, `responseSchema` yang mengunci `conceptId` ke id rubrik (enum) dan status ke `MASTERED/PARTIAL/MISSING`, validasi Zod `.strict()`.
+- **Skor dihitung server:** `round(100 × Σ bobot × kredit / Σ bobot)` (MASTERED 1, PARTIAL 0,5, MISSING 0). Klaim dikuasai tanpa kutipan bukti diturunkan menjadi MISSING. Model tidak punya field skor, dan field asing ditolak. Blind spot = PARTIAL + MISSING, `importanceLevel` dari bobot (≥4 HIGH, 3 MEDIUM, ≤2 LOW).
+- `geminiAi.provider.ts` (`GeminiAiProvider`): Stage 2 jalan; Stage 1/3 menolak `FATAL` sampai Aldi mengisinya. **Belum dirangkai di `ai.factory.ts`** (CLAUDE.md: tanpa Gemini asli di Fase 1–2).
+- `ai.errors.ts`: jenis baru `FATAL`; `AuditService` tidak mengulang `FATAL`.
+
+**Test:** unit `geminiClient.test.ts` (bentuk permintaan, key tidak bocor, pemetaan semua error, timeout), `geminiVision.test.ts` (rumus skor, pemetaan, model "tertipu" tanpa bukti → skor 0, field `score: 100` ditolak, flag injeksi tidak mengubah skor, prompt sistem terpisah dari data, skema tanpa field skor). `gemini.live.test.ts` = uji injeksi ke Gemini asli (PRD §11.2), **dilewati** kecuali `RUN_LIVE_AI=1` + `GEMINI_API_KEY`. Hasil: 212 unit lulus (3 live dilewati), integrasi `scans` 9/9, `npm audit --omit=dev` 0, Semgrep 0, build lulus.
 
 ### #13 · Unggah foto + audit AI asinkron (FR-04, FR-05, FR-06 sebagian) · branch `feat/adli-essay-scans`
 
