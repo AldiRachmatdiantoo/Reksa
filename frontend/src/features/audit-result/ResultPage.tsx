@@ -1,17 +1,23 @@
 import NumberFlow from '@number-flow/react';
 import { motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ApiError } from '@/core/apiClient';
+import { auditFailureText, scansApi, uploadErrorMessage, type Scan } from '@/features/scanner/scansApi';
 import { useSpeech } from '@/shared/hooks/useSpeech';
 import { EASE_OUT, FillBar, pageTransition, Stagger, StaggerItem } from '@/shared/motion';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button, ButtonLink } from '@/shared/ui/Button';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { Icon } from '@/shared/ui/Icon';
-import { StateBlock } from '@/shared/ui/StateBlock';
+import { LoadingBlock, StateBlock } from '@/shared/ui/StateBlock';
 import { StepIndicator } from '@/features/studio/StepIndicator';
 import { useStudySession } from '@/features/studio/studySession';
-import { SAMPLE_AUDIT, type ImportanceLevel } from './sampleAudit';
+import type { ImportanceLevel } from './sampleAudit';
+
+/** PRD FR-05: cek status tiap 2 detik, paling lama 90 detik. */
+const POLL_MS = 2000;
+const POLL_LIMIT_MS = 90_000;
 
 const IMPORTANCE: Record<ImportanceLevel, { label: string; className: string }> = {
   HIGH: { label: 'Penting', className: 'bg-danger-wash text-on-danger-wash' },
@@ -30,57 +36,208 @@ function calibrationMessage(guess: number, actual: number) {
   return { title: 'Kamu lebih paham dari yang kamu kira', body: 'Pemahamanmu lebih kuat dari tebakanmu. Percaya diri saja.' };
 }
 
-function reviewDate(daysFromNow: number) {
-  const d = new Date();
-  d.setDate(d.getDate() + daysFromNow);
+function reviewDate(fromIso: string, days: number) {
+  const d = new Date(fromIso);
+  d.setDate(d.getDate() + days);
   return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+type Poll = { scan: Scan | null; error: ApiError | Error | null; slow: boolean };
+
+/** Memantau satu hasil cek sampai DONE/FAILED. Setelah 90 detik berhenti sendiri (`slow`); `restart` memulai lagi. */
+function useScanPolling(submissionId: string | null) {
+  const [poll, setPoll] = useState<Poll>({ scan: null, error: null, slow: false });
+  const [round, setRound] = useState(0);
+
+  useEffect(() => {
+    if (!submissionId) return;
+    const controller = new AbortController();
+    const startedAt = Date.now();
+    let timer: number | undefined;
+    setPoll((p) => ({ ...p, error: null, slow: false }));
+
+    const tick = async () => {
+      try {
+        const scan = await scansApi.get(submissionId, controller.signal);
+        setPoll({ scan, error: null, slow: false });
+        if (scan.auditStatus === 'DONE' || scan.auditStatus === 'FAILED') return;
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setPoll((p) => ({ ...p, error: err instanceof Error ? err : new Error(String(err)) }));
+        if (err instanceof ApiError && err.status === 404) return;
+      }
+      if (Date.now() - startedAt >= POLL_LIMIT_MS) {
+        setPoll((p) => ({ ...p, slow: true }));
+        return;
+      }
+      timer = window.setTimeout(() => void tick(), POLL_MS);
+    };
+    void tick();
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [submissionId, round]);
+
+  const restart = useCallback(() => setRound((r) => r + 1), []);
+  return { ...poll, restart };
 }
 
 export function ResultPage() {
   const navigate = useNavigate();
-  const { session, photoUrl, clear } = useStudySession();
-  const { state: speech, toggle: toggleSpeech } = useSpeech();
-  const audit = SAMPLE_AUDIT;
-  // Angka skor berangkat dari 0 lalu bergulir ke nilai asli setelah halaman tampil.
-  const [revealed, setRevealed] = useState(false);
-  const [confirmNew, setConfirmNew] = useState(false);
-  useEffect(() => {
-    const id = window.setTimeout(() => setRevealed(true), 350);
-    return () => window.clearTimeout(id);
-  }, []);
+  const { session, syncing, clear } = useStudySession();
+  const submissionId = session?.submissionId ?? null;
+  const { scan, error, slow, restart } = useScanPolling(submissionId);
+  const [retrying, setRetrying] = useState(false);
+  const [retryError, setRetryError] = useState('');
 
   useEffect(() => {
     document.title = 'Hasil Cek Catatan · REKSA';
   }, []);
 
-  if (!session || session.jolScore == null || session.photo == null) {
-    return (
-      <>
-        <AppHeader subtitle="Hasil Cek Catatan" />
-        <motion.main {...pageTransition} className="px-4 py-16">
-          <StateBlock
-            icon="fact_check"
-            title="Belum ada catatan yang dicek"
-            action={<ButtonLink to="/belajar" variant="accent">Mulai sesi belajar</ButtonLink>}
-          >
-            Hasil muncul setelah kamu selesai waktu fokus, menyimpan tebakan nilai, dan memilih foto catatan.
-          </StateBlock>
-        </motion.main>
-      </>
+  const leave = async () => {
+    await clear();
+    navigate('/belajar');
+  };
+
+  const shell = (content: ReactNode) => (
+    <>
+      <AppHeader subtitle="Hasil Cek Catatan" />
+      <motion.main {...pageTransition} className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
+        <StepIndicator current={3} />
+        {content}
+      </motion.main>
+    </>
+  );
+
+  if (syncing) return shell(<LoadingBlock label="Memeriksa sesi belajarmu..." />);
+
+  if (!submissionId) {
+    return shell(
+      <StateBlock
+        icon="fact_check"
+        title="Belum ada catatan yang dicek"
+        action={<ButtonLink to="/belajar" variant="accent">Mulai sesi belajar</ButtonLink>}
+      >
+        Hasil muncul setelah kamu selesai waktu fokus, menyimpan tebakan nilai, dan mengirim foto catatan.
+      </StateBlock>,
     );
   }
 
-  const guess = session.jolScore;
-  const diff = Math.abs(guess - audit.actualScore);
+  if (error instanceof ApiError && error.status === 404) {
+    return shell(
+      <StateBlock
+        icon="search_off"
+        title="Hasil cek ini tidak ditemukan"
+        action={
+          <Button variant="accent" onClick={() => void leave()}>
+            Kembali ke ruang belajar
+          </Button>
+        }
+      >
+        Mungkin kamu masuk dengan akun lain. Mulai sesi baru dari ruang belajar.
+      </StateBlock>,
+    );
+  }
+
+  if (scan?.auditStatus === 'FAILED') {
+    const onRetry = async () => {
+      setRetrying(true);
+      setRetryError('');
+      try {
+        await scansApi.retry(scan.id);
+        restart();
+      } catch (err) {
+        setRetryError(uploadErrorMessage(err));
+      } finally {
+        setRetrying(false);
+      }
+    };
+    return shell(
+      <StateBlock
+        icon="report"
+        tone="danger"
+        title="Catatanmu belum berhasil dicek"
+        action={
+          <div className="flex flex-col items-stretch gap-2 sm:flex-row">
+            {scan.retriesLeft > 0 && (
+              <Button variant="accent" disabled={retrying} onClick={() => void onRetry()}>
+                <Icon name="refresh" />
+                {retrying ? 'Mengirim ulang...' : `Cek ulang (sisa ${scan.retriesLeft})`}
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => void leave()}>
+              Tinggalkan sesi ini
+            </Button>
+          </div>
+        }
+      >
+        <p>{auditFailureText(scan.errorCode)} Jatah cek hari ini sudah dikembalikan.</p>
+        {scan.retriesLeft > 0 ? (
+          <p className="mt-2">Foto yang sama bisa dicek ulang tanpa memotret lagi.</p>
+        ) : (
+          <p className="mt-2">Batas cek ulang untuk foto ini sudah habis. Mulai sesi baru untuk mencoba lagi.</p>
+        )}
+        {retryError && (
+          <p role="alert" className="mt-2 text-on-danger-wash">
+            {retryError}
+          </p>
+        )}
+      </StateBlock>,
+    );
+  }
+
+  if (!scan || scan.auditStatus !== 'DONE' || !scan.result) {
+    return shell(
+      <StateBlock
+        icon={slow ? 'hourglass_top' : 'fact_check'}
+        title={slow ? 'Pengecekan lebih lama dari biasanya' : 'Catatanmu sedang dicek'}
+        action={
+          slow ? (
+            <Button variant="outline" onClick={restart}>
+              <Icon name="refresh" />
+              Periksa lagi
+            </Button>
+          ) : undefined
+        }
+      >
+        <span aria-live="polite">
+          {slow
+            ? 'Hasilnya tetap tersimpan. Kamu boleh menutup halaman ini; buka lagi Ruang Belajar nanti untuk melihat hasilnya.'
+            : error
+              ? 'Koneksi sempat terputus. REKSA terus mencoba memeriksa hasilmu.'
+              : 'Pemeriksa membaca tulisan, panah, dan coretanmu. Biasanya selesai dalam beberapa detik.'}
+        </span>
+        {!slow && (
+          <span className="mx-auto mt-4 block size-8 animate-spin rounded-full border-[3px] border-line-soft border-t-teal motion-reduce:animate-none" aria-hidden="true" />
+        )}
+      </StateBlock>,
+    );
+  }
+
+  return <AuditResult scan={scan} materialTitle={session?.materialTitle ?? ''} onStartOver={leave} />;
+}
+
+function AuditResult({ scan, materialTitle, onStartOver }: { scan: Scan; materialTitle: string; onStartOver: () => Promise<void> }) {
+  const { state: speech, toggle: toggleSpeech } = useSpeech();
+  const audit = scan.result!;
+  // Angka skor berangkat dari 0 lalu bergulir ke nilai asli setelah halaman tampil.
+  const [revealed, setRevealed] = useState(false);
+  const [confirmNew, setConfirmNew] = useState(false);
+  const revealTimer = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    revealTimer.current = window.setTimeout(() => setRevealed(true), 350);
+    return () => window.clearTimeout(revealTimer.current);
+  }, []);
+
+  const guess = scan.predictedJolScore;
+  const diff = audit.jolDelta;
   const message = calibrationMessage(guess, audit.actualScore);
   const spokenText = `Nilai catatanmu ${audit.actualScore} persen. Tebakanmu ${guess} persen. ${audit.encouragingSummary} Yang masih terlewat: ${audit.blindSpots
     .map((b) => b.concept)
     .join(', ')}.`;
 
-  const startOver = () => {
-    clear();
-    navigate('/belajar');
-  };
+  const auditedAt = scan.auditedAt ?? scan.createdAt;
 
   return (
     <>
@@ -90,14 +247,6 @@ export function ResultPage() {
         className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8"
       >
         <StepIndicator current={3} />
-
-        <p role="note" className="flex items-start gap-2.5 rounded-md border border-line bg-wash px-4 py-3 text-body-md text-ink">
-          <Icon name="science" className="mt-px text-teal" />
-          <span>
-            <strong>Hasil contoh.</strong> Nilai dan catatan di bawah memakai data contoh yang sama dengan backend, bukan hasil membaca fotomu.
-            Pengecekan foto asli aktif setelah modul pindai selesai.
-          </span>
-        </p>
 
         <motion.section
           initial={{ opacity: 0, scale: 0.97 }}
@@ -110,7 +259,7 @@ export function ResultPage() {
               {message.title}
             </h1>
             <p className="text-body-lg opacity-90 text-pretty">{message.body}</p>
-            <p className="text-body-md opacity-90">{session.materialTitle}</p>
+            <p className="text-body-md opacity-90">{materialTitle}</p>
             {/* Visual pembanding; angkanya sudah ada di daftar sebelah, jadi disembunyikan dari pembaca layar. */}
             <div aria-hidden="true" className="flex flex-col gap-2.5 pt-2">
               {[
@@ -167,6 +316,7 @@ export function ResultPage() {
               )}
             </section>
 
+            {audit.blindSpots.length > 0 && (
             <section aria-labelledby="blindspots-title" className="flex flex-col gap-3">
               <h2 id="blindspots-title" className="font-headline text-headline-md text-ink">
                 Yang masih terlewat ({audit.blindSpots.length})
@@ -185,7 +335,9 @@ export function ResultPage() {
                 ))}
               </Stagger>
             </section>
+            )}
 
+            {audit.accurateConcepts.length > 0 && (
             <section aria-labelledby="accurate-title" className="flex flex-col gap-3">
               <h2 id="accurate-title" className="font-headline text-headline-md text-ink">
                 Yang sudah tepat
@@ -205,6 +357,7 @@ export function ResultPage() {
                 ))}
               </Stagger>
             </section>
+            )}
 
             {audit.logicCorrections.length > 0 && (
               <section aria-labelledby="corrections-title" className="flex flex-col gap-3">
@@ -230,29 +383,34 @@ export function ResultPage() {
           </div>
 
           <aside className="flex flex-col gap-6 lg:sticky lg:top-24">
-            <section aria-labelledby="schedule-title" className="flex flex-col gap-4 rounded-lg border border-line-soft bg-card p-5 sm:p-6">
-              <h2 id="schedule-title" className="flex items-center gap-2 font-title text-title-lg text-ink">
-                <Icon name="event_repeat" className="text-teal" />
-                Rencana latihan ulang
-              </h2>
-              <p className="text-body-md text-ink-muted">Latihan singkat 3 sampai 5 menit khusus untuk bagian yang terlewat.</p>
-              <Stagger as="ol" className="flex flex-col gap-3">
-                {[3, 7].map((day) => (
-                  <StaggerItem as="li" key={day} className="flex items-center gap-4 rounded-md bg-wash px-4 py-3">
-                    <span className="font-mono text-mono-md text-teal tabular-nums">H+{day}</span>
-                    <span className="text-body-md text-ink">{reviewDate(day)}</span>
-                  </StaggerItem>
-                ))}
-              </Stagger>
-              <p className="text-body-sm text-ink-muted">Pengingat otomatis aktif setelah modul jadwal ulang selesai.</p>
-            </section>
-
-            {photoUrl && (
-              <figure className="overflow-hidden rounded-lg border border-line-soft bg-card">
-                <img src={photoUrl} alt="Foto catatan yang kamu pilih untuk sesi ini" className="max-h-64 w-full bg-wash object-contain" />
-                <figcaption className="px-4 py-2.5 text-body-sm text-ink-muted">Foto catatanmu (hanya tersimpan di perangkat ini)</figcaption>
-              </figure>
+            {audit.blindSpots.length > 0 ? (
+              <section aria-labelledby="schedule-title" className="flex flex-col gap-4 rounded-lg border border-line-soft bg-card p-5 sm:p-6">
+                <h2 id="schedule-title" className="flex items-center gap-2 font-title text-title-lg text-ink">
+                  <Icon name="event_repeat" className="text-teal" />
+                  Rencana latihan ulang
+                </h2>
+                <p className="text-body-md text-ink-muted">Latihan singkat 3 sampai 5 menit khusus untuk bagian yang terlewat.</p>
+                <Stagger as="ol" className="flex flex-col gap-3">
+                  {[3, 7].map((day) => (
+                    <StaggerItem as="li" key={day} className="flex items-center gap-4 rounded-md bg-wash px-4 py-3">
+                      <span className="font-mono text-mono-md text-teal tabular-nums">H+{day}</span>
+                      <span className="text-body-md text-ink">{reviewDate(auditedAt, day)}</span>
+                    </StaggerItem>
+                  ))}
+                </Stagger>
+                <p className="text-body-sm text-ink-muted">Jadwal ini sudah tersimpan. Pengingat otomatis menyusul.</p>
+              </section>
+            ) : (
+              <section className="flex items-start gap-3 rounded-lg border border-line-soft bg-card p-5 sm:p-6">
+                <Icon name="celebration" className="text-teal" />
+                <p className="text-body-md text-ink">Tidak ada konsep yang terlewat, jadi tidak perlu latihan ulang untuk materi ini.</p>
+              </section>
             )}
+
+            <figure className="overflow-hidden rounded-lg border border-line-soft bg-card">
+              <img src={scan.imageUrl} alt="Foto catatan yang dicek untuk sesi ini" className="max-h-64 w-full bg-wash object-contain" />
+              <figcaption className="px-4 py-2.5 text-body-sm text-ink-muted">Foto catatanmu, tanpa info lokasi dan kamera</figcaption>
+            </figure>
 
             <Button variant="accent" size="lg" onClick={() => setConfirmNew(true)}>
               Mulai sesi belajar baru
@@ -268,9 +426,9 @@ export function ResultPage() {
         confirmLabel="Ya, mulai baru"
         cancelLabel="Tetap di hasil"
         onCancel={() => setConfirmNew(false)}
-        onConfirm={startOver}
+        onConfirm={() => void onStartOver()}
       >
-        Hasil ini, tebakan nilaimu, dan foto catatan akan dihapus dari perangkat ini. Jadwal latihan ulang belum tersimpan di server.
+        Hasil ini tetap tersimpan di akunmu, termasuk jadwal latihan ulang. Layar ini akan kembali ke pemilihan materi.
       </ConfirmDialog>
     </>
   );

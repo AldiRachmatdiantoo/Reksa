@@ -25,6 +25,24 @@ Contoh format:
 **Mendesak?** Ya, memblokir integration test sessions.
 -->
 
+### ⏳ 2026-11-21 — CSP nginx merusak angka `NumberFlow` dan font teks (area kamu, ditemukan E2E)
+**Bukti** (stack Docker lewat nginx `:8080`, console browser):
+- `Applying inline style violates ... 'style-src 'self''`: `NumberFlow` menyuntikkan style inline, jadi timer di Ruang Belajar dan skor di Hasil Cek tampil sebagai deretan `0123456789...` dan halaman melebar (1390px di layar 1280px).
+- `Loading the stylesheet 'https://fonts.googleapis.com/...' violates ...`: Plus Jakarta Sans, Radio Canada Big, Spline Sans Mono tidak pernah termuat; aplikasi memakai font sistem.
+- Di `npm run dev` semuanya terlihat normal karena Vite tidak memasang CSP, jadi wajar belum ketahuan.
+**Usulan:**
+- `NumberFlow`: tambahkan hash style-nya ke `style-src` (console memberi hash `sha256-...`), atau `style-src 'self' 'unsafe-inline'` (risiko kecil dibanding `script-src`), atau ganti komponen angka. Perlu juga di `vercel.json` nanti kalau CSP-nya sama.
+- Font teks: self-host seperti ikon (`@fontsource/plus-jakarta-sans`, `@fontsource/radio-canada-big`, `@fontsource/spline-sans-mono`) lalu hapus `<link>` Google Fonts di `index.html`. Bonus privasi (FR-13): browser pelajar tidak menghubungi Google.
+**Mendesak?** Sedang: semua halaman yang memakai angka animasi rusak di Docker/produksi.
+
+### 2026-11-21 — ✅ Frontend alur belajar tersambung ke backend asli (dikerjakan di areamu, branch `feat/adli-frontend-scans`)
+Maaf tidak menunggu tawaran dibalas: saya (Adli) memutuskan langsung mengerjakannya karena backend sudah jadi dan halamannya masih memakai data contoh. Kalau ada yang tidak sesuai desainmu, bilang saja dan saya ubah.
+- **File yang berubah:** `src/core/apiClient.ts` (`ApiError.details`), `src/App.tsx` (rute publik `/unggah`), `src/main.tsx` + `src/index.css` (ikon self-host), `features/studio/StudioPage.tsx` + `studySession.tsx`, `features/scanner/CalibratePage.tsx`, `features/audit-result/ResultPage.tsx`. **Baru:** `features/studio/sessionsApi.ts`, `features/scanner/{scansApi.ts, QrBridgePanel.tsx, PhoneUploadPage.tsx}`, `tests/unit/scansApi.test.ts`, `tests/e2e/`, `playwright.config.ts`. Halaman lain (beranda, auth, materi, kelas, guru) tidak disentuh.
+- **Dependency baru:** `qrcode` 1.5.4, `@fontsource-variable/material-symbols-outlined` 5.3.9; dev: `@playwright/test` 1.59.1, `@axe-core/playwright` 4.14.0, `@types/qrcode`. `npm audit` 0.
+- **Perilaku:** sesi dibuat di server saat "Mulai waktu fokus"; "Ulangi" dan "Mulai sesi baru" membatalkannya di server; sesi aktif dipulihkan dari `GET /sessions/active`. `sampleAudit.ts` masih ada hanya untuk tipe `EssayAudit` (tur beranda tidak memakainya).
+- **Ikon:** di nginx, CSP memblokir Google Fonts sehingga ikon tampil sebagai kata. Saya self-host font ikonnya (varian `fill`, 1,1 MB) karena axe menggagalkannya (WCAG 2.5.3). `<link>` Google di `index.html` belum saya hapus (ikut keputusan font teks di atas).
+- **E2E:** `npm run test:e2e` terhadap stack Docker, cara jalan di `frontend/tests/e2e/README.md`. Belum masuk CI.
+
 ### ⏳ 2026-11-21 — Keputusan produk: skor Stage 2 dihitung server (Gemini)
 **Butuh untuk:** Fase 3, `GeminiAiProvider` Stage 2 (branch `feat/adli-gemini-vision`, belum aktif).
 **Usulan:** dengan Gemini, `actualScore` **tidak** diambil dari model. Model hanya menilai tiap konsep rubrik (`MASTERED`/`PARTIAL`/`MISSING`) dan wajib mengutip bukti dari tulisan; server menghitung `round(100 × Σ bobot × kredit / Σ bobot)` (1 / 0,5 / 0). Klaim tanpa bukti dihitung `MISSING`.

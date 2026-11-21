@@ -114,7 +114,8 @@
 }
 
 .material-symbols-outlined {
-  font-family: "Material Symbols Outlined";
+  /* Font di-self-host (main.tsx) supaya lolos CSP font-src 'self'; tanpa font, ligatur tampil sebagai kata. */
+  font-family: "Material Symbols Outlined Variable", "Material Symbols Outlined";
   font-weight: normal;
   font-style: normal;
   font-size: 1.375rem;

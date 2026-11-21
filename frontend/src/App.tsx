@@ -16,6 +16,7 @@ import { LandingPage } from '@/features/landing/LandingPage';
 import { NotFoundPage } from '@/features/landing/NotFoundPage';
 import { CalibratePage } from '@/features/scanner/CalibratePage';
 import { StudioPage } from '@/features/studio/StudioPage';
+import { PhoneUploadPage } from '@/features/scanner/PhoneUploadPage';
 import { StudySessionProvider } from '@/features/studio/studySession';
 import { ScrollToTop } from '@/shared/ScrollToTop';
 import { ConsentProvider } from '@/shared/consent';
@@ -53,6 +54,8 @@ function AnimatedRoutes() {
         <Route path="/lupa-password" element={<ForgotPasswordPage />} />
         <Route path="/atur-ulang-password" element={<ResetPasswordPage />} />
         <Route path="/verifikasi-email" element={<VerifyEmailPage />} />
+        {/* Halaman HP dari QR bridge: tanpa login, token QR di fragment URL (FR-04 skenario B). */}
+        <Route path="/unggah" element={<PhoneUploadPage />} />
         <Route
           path="/akun"
           element={

@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 21 November 2026, test loop worker audit (Adli, branch `feat/adli-audit-worker-tests`)
+**Checkpoint terakhir:** 21 November 2026, frontend alur belajar tersambung ke backend + E2E (Adli, branch `feat/adli-frontend-scans`)
 
 ---
 
@@ -16,6 +16,14 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #16 · Frontend tersambung ke `sessions` + `scans`, E2E Playwright + axe · branch `feat/adli-frontend-scans`
+
+Area frontend milik Aldi; dikerjakan Adli atas persetujuan pengguna tanpa menunggu tawaran dibalas, lalu dikabarkan di `UNTUK-ALDI.md`. Rincian lengkap di `frontend/docs/CHECKPOINT.md` #9.
+
+- Ruang Belajar, Tebak & Foto, dan Hasil Cek memakai endpoint asli (`/sessions`, `/scans`, `/me/quota`); data contoh dan label "Hasil contoh" dihapus. QR bridge laptop ↔ HP + halaman publik `/unggah`.
+- E2E `frontend/tests/e2e/` (3 skenario, axe WCAG 2.1 A/AA): lulus terhadap stack Docker lewat nginx.
+- Temuan saat E2E: di stack nginx, CSP memblokir Google Fonts (ikon tampil sebagai kata, font teks fallback) dan style inline (`NumberFlow` rusak). Ikon diperbaiki (self-host); font teks dan `NumberFlow` diusulkan ke Aldi (`nginx.conf` area Aldi).
 
 ### #15 · Test loop worker audit · branch `feat/adli-audit-worker-tests`
 
