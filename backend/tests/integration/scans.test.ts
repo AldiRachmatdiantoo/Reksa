@@ -9,7 +9,7 @@ import { buildAuditWorker } from '../../src/container.js';
 import { AuditService } from '../../src/features/essay-scans/audit.service.js';
 import { RedisQrBridge } from '../../src/features/essay-scans/qrBridge.gateway.js';
 import { PrismaScansRepository } from '../../src/features/essay-scans/scans.repository.js';
-import { cookieHeader, createTestContext, parseSetCookies, VALID_PASSWORD } from '../support/testContext.js';
+import { CONSENT, cookieHeader, createTestContext, parseSetCookies, VALID_PASSWORD } from '../support/testContext.js';
 
 const ctx = createTestContext();
 const logger = pino({ level: 'silent' });
@@ -31,7 +31,7 @@ beforeEach(() => ctx.reset());
 afterAll(() => ctx.close());
 
 async function register(email: string) {
-  const res = await request(ctx.app).post('/api/v1/auth/register').send({ email, password: VALID_PASSWORD, fullName: 'Uji' });
+  const res = await request(ctx.app).post('/api/v1/auth/register').send({ ...CONSENT, email, password: VALID_PASSWORD, fullName: 'Uji' });
   expect(res.status).toBe(201);
   const cookie = cookieHeader({ [ACCESS_COOKIE]: parseSetCookies(res.headers['set-cookie'])[ACCESS_COOKIE]?.value ?? '' });
   return { cookie, userId: res.body.user.id as string };

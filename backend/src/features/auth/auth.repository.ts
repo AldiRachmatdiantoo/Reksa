@@ -11,6 +11,20 @@ export type UserRecord = {
   role: Role;
   tier: 'FREE' | 'PRO';
   emailVerifiedAt: Date | null;
+  birthYear: number | null;
+  termsVersion: string | null;
+  privacyVersion: string | null;
+  guardianConsent: boolean;
+  proExpiresAt: Date | null;
+};
+
+/** FR-13: catatan persetujuan yang disimpan saat daftar dan saat setuju ulang. */
+export type ConsentRecord = {
+  birthYear: number;
+  termsVersion: string;
+  privacyVersion: string;
+  consentedAt: Date;
+  guardianConsent: boolean;
 };
 
 export type RefreshTokenRecord = {
@@ -27,7 +41,8 @@ export interface AuthRepository {
   findUserByEmail(email: string): Promise<UserRecord | null>;
   findUserById(id: string): Promise<UserRecord | null>;
   /** Throws ConflictError when the email is already registered. */
-  createUser(data: { email: string; passwordHash: string; fullName: string; role: Role }): Promise<UserRecord>;
+  createUser(data: { email: string; passwordHash: string; fullName: string; role: Role } & ConsentRecord): Promise<UserRecord>;
+  recordConsent(userId: string, consent: ConsentRecord): Promise<UserRecord | null>;
   updateFullName(userId: string, fullName: string): Promise<UserRecord | null>;
   updatePasswordHash(userId: string, passwordHash: string): Promise<void>;
   /** Hanya mengisi bila masih kosong, supaya tanggal verifikasi pertama tidak tertimpa. */
@@ -68,6 +83,11 @@ const userSelect = {
   role: true,
   tier: true,
   emailVerifiedAt: true,
+  birthYear: true,
+  termsVersion: true,
+  privacyVersion: true,
+  guardianConsent: true,
+  proExpiresAt: true,
 } as const;
 
 export class PrismaAuthRepository implements AuthRepository {
@@ -84,7 +104,7 @@ export class PrismaAuthRepository implements AuthRepository {
     return this.db.user.findUnique({ where: { id }, select: userSelect });
   }
 
-  async createUser(data: { email: string; passwordHash: string; fullName: string; role: Role }): Promise<UserRecord> {
+  async createUser(data: { email: string; passwordHash: string; fullName: string; role: Role } & ConsentRecord): Promise<UserRecord> {
     try {
       return await this.db.user.create({ data, select: userSelect });
     } catch (err) {
@@ -97,6 +117,11 @@ export class PrismaAuthRepository implements AuthRepository {
 
   async updateFullName(userId: string, fullName: string): Promise<UserRecord | null> {
     const { count } = await this.db.user.updateMany({ where: { id: userId }, data: { fullName } });
+    return count === 0 ? null : this.findUserById(userId);
+  }
+
+  async recordConsent(userId: string, consent: ConsentRecord): Promise<UserRecord | null> {
+    const { count } = await this.db.user.updateMany({ where: { id: userId }, data: consent });
     return count === 0 ? null : this.findUserById(userId);
   }
 

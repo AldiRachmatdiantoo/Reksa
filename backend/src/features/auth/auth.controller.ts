@@ -4,6 +4,7 @@ import { getValidated } from '../../common/middlewares/validate.middleware.js';
 import { clearAuthCookies, REFRESH_COOKIE, setAuthCookies } from '../../common/utils/authCookies.js';
 import {
   ChangePasswordSchema,
+  ConsentSchema,
   ForgotPasswordSchema,
   LoginSchema,
   RegisterSchema,
@@ -81,6 +82,11 @@ export class AuthController {
   updateProfile = async (_req: Request, res: Response): Promise<void> => {
     const { body } = getValidated(res, { body: UpdateProfileSchema });
     res.json({ user: await this.service.updateProfile(getAuth(res).userId, body.fullName) });
+  };
+
+  recordConsent = async (_req: Request, res: Response): Promise<void> => {
+    const { body } = getValidated(res, { body: ConsentSchema });
+    res.json({ user: await this.service.recordConsent(getAuth(res).userId, body) });
   };
 
   changePassword = async (_req: Request, res: Response): Promise<void> => {

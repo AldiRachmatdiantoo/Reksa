@@ -3,6 +3,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { ACCESS_COOKIE, REFRESH_COOKIE } from '../../src/common/utils/authCookies.js';
 import {
+  CONSENT,
   cookieHeader,
   createTestContext,
   parseSetCookies,
@@ -15,7 +16,7 @@ const ctx = createTestContext();
 beforeEach(() => ctx.reset());
 afterAll(() => ctx.close());
 
-const student = { email: 'siswa@reksa.id', password: VALID_PASSWORD, fullName: 'Siswa Satu' };
+const student = { ...CONSENT, email: 'siswa@reksa.id', password: VALID_PASSWORD, fullName: 'Siswa Satu' };
 
 async function registerStudent() {
   const res = await request(ctx.app).post('/api/v1/auth/register').send(student);

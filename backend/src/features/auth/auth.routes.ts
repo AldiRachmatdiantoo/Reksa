@@ -8,6 +8,7 @@ import type { AccessTokenSigner } from '../../common/utils/jwt.js';
 import { AuthController } from './auth.controller.js';
 import {
   ChangePasswordSchema,
+  ConsentSchema,
   ForgotPasswordSchema,
   LoginSchema,
   RegisterSchema,
@@ -107,6 +108,7 @@ export function createAuthRouter({ service, signer, redis }: AuthRouterDeps): Ro
 
 /**
  * PATCH /me            { fullName }
+ * POST  /me/consent    { acceptTerms: true, birthYear?, guardianConsent? }; setuju versi dokumen terbaru (FR-13)
  * PATCH /me/password   { currentPassword, newPassword }; 5/15 menit per user; perangkat lain dikeluarkan
  */
 export function createMeRouter({ service, signer, redis }: AuthRouterDeps): Router {
@@ -115,6 +117,7 @@ export function createMeRouter({ service, signer, redis }: AuthRouterDeps): Rout
 
   router.use(requireAuth(signer));
   router.patch('/', validate({ body: UpdateProfileSchema }), controller.updateProfile);
+  router.post('/consent', validate({ body: ConsentSchema }), controller.recordConsent);
   router.patch(
     '/password',
     // Cegah tebak password lama lewat sesi yang tercuri.

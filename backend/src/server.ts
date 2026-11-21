@@ -2,7 +2,7 @@ import { createApp } from './app.js';
 import { createAiService } from './common/ai/ai.factory.js';
 import { createLogger } from './common/utils/logger.js';
 import { loadEnv } from './config/env.js';
-import { buildAuditWorker, buildRoutes } from './container.js';
+import { buildAuditWorker, buildRoutes, createPrivacyService } from './container.js';
 import { createEmailService } from './config/email.js';
 import { createPrismaClient } from './config/prisma.js';
 import { createRedisClient } from './config/redis.js';
@@ -27,6 +27,16 @@ async function main(): Promise<void> {
   // Worker audit AI (FR-05) di proses yang sama; berhenti sebelum koneksi DB/Redis ditutup.
   const auditWorker = buildAuditWorker({ prisma, redis, storage, ai, logger });
   auditWorker.start();
+  // File ekspor (FR-12, FR-13) dihapus setelah 24 jam. Tanpa cron: dicek tiap 15 menit di proses ini.
+  const privacy = createPrivacyService({ prisma, storage, logger });
+  const sweepExports = () =>
+    void privacy
+      .cleanupExpiredExports()
+      .then((removed) => removed > 0 && logger.info({ removed }, 'File ekspor kedaluwarsa dihapus'))
+      .catch((err: unknown) => logger.warn({ err }, 'Pembersihan file ekspor gagal'));
+  sweepExports();
+  const exportSweeper = setInterval(sweepExports, 15 * 60_000);
+  exportSweeper.unref();
   const app = createApp({ env, logger, routes });
   const server = app.listen(env.PORT, () => {
     logger.info({ port: env.PORT }, 'REKSA backend berjalan');
@@ -45,6 +55,7 @@ async function main(): Promise<void> {
     forceExit.unref();
 
     server.close(async () => {
+      clearInterval(exportSweeper);
       await auditWorker.stop();
       storage.destroy();
       await Promise.allSettled([prisma.$disconnect(), redis.quit()]);

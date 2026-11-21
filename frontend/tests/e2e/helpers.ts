@@ -8,7 +8,7 @@ export const PASSWORD = 'PasswordKuat123';
 /** Akun pelajar baru; cookie sesi tersimpan di konteks browser pemilik `request`. */
 export async function registerStudent(request: APIRequestContext, label: string) {
   const email = `e2e-${label}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@reksa.test`;
-  const res = await request.post('/api/v1/auth/register', { data: { email, password: PASSWORD, fullName: `Siswa ${label}` } });
+  const res = await request.post('/api/v1/auth/register', { data: { email, password: PASSWORD, fullName: `Siswa ${label}`, birthYear: 2000, acceptTerms: true } });
   expect(res.status(), await res.text()).toBe(201);
   return email;
 }

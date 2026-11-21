@@ -11,11 +11,14 @@ import { TextField } from '@/shared/ui/TextField';
 import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 import { useAuth } from './AuthProvider';
 import { homePathFor, PASSWORD_RULES } from './authApi';
+import { isPossiblyMinor } from '@/features/legal/policyVersions';
+import { GUARDIAN_MESSAGE, validateConsent } from './consent';
+import { ConsentFields } from './ConsentFields';
 import { PasswordRules } from './PasswordRules';
 
 type Mode = 'masuk' | 'daftar';
 type SignupRole = 'STUDENT' | 'EDUCATOR';
-type FieldErrors = Partial<Record<'fullName' | 'email' | 'password', string>>;
+type FieldErrors = Partial<Record<'fullName' | 'email' | 'password' | 'birthYear' | 'acceptTerms' | 'guardianConsent', string>>;
 
 const ROLE_OPTIONS: { value: SignupRole; label: string; icon: string; note: string }[] = [
   { value: 'STUDENT', label: 'Pelajar', icon: 'edit_note', note: 'Latihan menulis dan cek catatan' },
@@ -43,6 +46,9 @@ export function AuthPage({ mode }: { mode: Mode }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [birthYear, setBirthYear] = useState('');
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [guardianConsent, setGuardianConsent] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -66,6 +72,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
     if (!password) errors.password = 'Tulis kata sandimu.';
     else if (isRegister && !PASSWORD_RULES.every((r) => r.test(password)))
       errors.password = 'Kata sandi belum memenuhi semua syarat di bawah.';
+    if (isRegister) Object.assign(errors, validateConsent({ birthYear, acceptTerms, guardianConsent, needsBirthYear: true }));
     return errors;
   };
 
@@ -79,16 +86,29 @@ export function AuthPage({ mode }: { mode: Mode }) {
     setSubmitting(true);
     try {
       const user = isRegister
-        ? await auth.register({ fullName: fullName.trim(), email: email.trim(), password, role })
+        ? await auth.register({
+            fullName: fullName.trim(),
+            email: email.trim(),
+            password,
+            role,
+            birthYear: Number(birthYear),
+            acceptTerms: true,
+            guardianConsent: isPossiblyMinor(Number(birthYear)) && guardianConsent,
+          })
         : await auth.login({ email: email.trim(), password });
       navigate(from ?? homePathFor(user.role), { replace: true });
     } catch (err) {
       if (err instanceof ApiError && err.issues.length > 0) {
         const mapped: FieldErrors = {};
         for (const issue of err.issues) {
-          if (issue.path === 'fullName' || issue.path === 'email' || issue.path === 'password') mapped[issue.path] = issue.message;
+          if (issue.path === 'fullName' || issue.path === 'email' || issue.path === 'password' || issue.path === 'birthYear')
+            mapped[issue.path] = issue.message;
         }
         setFieldErrors(mapped);
+      }
+      if (err instanceof ApiError && err.code === 'GUARDIAN_CONSENT_REQUIRED') {
+        setFieldErrors({ guardianConsent: GUARDIAN_MESSAGE });
+        return;
       }
       setFormError(messageFor(err, mode));
     } finally {
@@ -243,6 +263,17 @@ export function AuthPage({ mode }: { mode: Mode }) {
               }
               hint={isRegister ? <PasswordRules value={password} /> : undefined}
             />
+            {isRegister && (
+              <ConsentFields
+                birthYear={birthYear}
+                onBirthYear={setBirthYear}
+                acceptTerms={acceptTerms}
+                onAcceptTerms={setAcceptTerms}
+                guardianConsent={guardianConsent}
+                onGuardianConsent={setGuardianConsent}
+                errors={fieldErrors}
+              />
+            )}
             {!isRegister && (
               <Link to="/lupa-password" className="-mt-2 self-end text-label-lg text-teal underline-offset-2 hover:underline">
                 Lupa kata sandi?

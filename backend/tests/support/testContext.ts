@@ -98,3 +98,6 @@ export function cookieHeader(cookies: Record<string, string>): string {
 }
 
 export const VALID_PASSWORD = 'PasswordKuat123';
+
+/** FR-13: data persetujuan wajib saat daftar (dewasa, jadi tidak butuh izin wali). */
+export const CONSENT = { birthYear: 2000, acceptTerms: true } as const;

@@ -4,6 +4,7 @@ import { Button } from '@/shared/ui/Button';
 import { LoadingBlock, StateBlock } from '@/shared/ui/StateBlock';
 import { useAuth } from './AuthProvider';
 import { homePathFor, type Role } from './authApi';
+import { ConsentGate } from './ConsentGate';
 
 /** Halaman khusus user login dengan peran tertentu. Peran lain diarahkan ke halamannya sendiri. */
 export function RequireAuth({ roles, children }: { roles: Role[]; children: ReactNode }) {
@@ -30,6 +31,8 @@ export function RequireAuth({ roles, children }: { roles: Role[]; children: Reac
   if (auth.status === 'anonymous') {
     return <Navigate to="/masuk" replace state={{ from: location.pathname }} />;
   }
+
+  if (auth.user.consentRequired) return <ConsentGate user={auth.user} />;
 
   if (!roles.includes(auth.user.role)) return <Navigate to={homePathFor(auth.user.role)} replace />;
 

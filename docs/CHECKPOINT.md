@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 21 November 2026, perbaikan hasil uji PR #16 sampai #20 (Aldi, branch `fix/aldi-docker-build-bugs`)
+**Checkpoint terakhir:** 22 November 2026, FR-13 privasi dan FR-11 kode aktivasi Pro (Aldi, branch `feat/aldi-privacy-pro`)
 
 ---
 
@@ -16,6 +16,24 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #19 · FR-13 privasi dan data anak + FR-11 kode aktivasi Pro · branch `feat/aldi-privacy-pro`
+
+**Backend**
+- Migrasi `20261122000100_privacy_pro`: kolom persetujuan di `users` (`birth_year`, `terms_version`, `privacy_version`, `consented_at`, `guardian_consent`, `pro_expires_at`), tabel `data_exports`, `pro_activation_codes`, `pro_code_redemptions`. `app_service_user` tidak bisa membuat kode aktivasi.
+- `POST /auth/register` wajib `birthYear` dan `acceptTerms: true`; di bawah 18 tahun wajib `guardianConsent: true` (400 `GUARDIAN_CONSENT_REQUIRED`). Respons user menambah `proExpiresAt`, `birthYear`, `consentRequired`.
+- `POST /me/consent`: persetujuan ulang saat versi dokumen naik (versi di `backend/src/config/policies.ts`, harus sama dengan `frontend/src/features/legal/policyVersions.ts`).
+- Modul baru `privacy`: `POST /me/export` (zip `data.json` + foto, signed URL 300 detik, file dihapus 24 jam lewat penyapu tiap 15 menit, 1 kali per 24 jam) dan `DELETE /me` (konfirmasi password; guru dengan kelas beranggota atau materi yang masih dipakai siswa lain dijawab 409).
+- Modul baru `subscriptions`: `POST /me/activate-pro` (hash SHA-256, `SELECT ... FOR UPDATE`, wajib email terverifikasi, satu pesan 404 untuk kode salah/kedaluwarsa/habis, 10 percobaan per jam). Kode dibuat admin lewat `npm run pro:create-code` dengan role owner.
+- Tier efektif = `tier = 'PRO'` atau `pro_expires_at > now()`; dipakai juga oleh kuota scan (`quota.repository.ts`, area Adli, perubahan minimal).
+
+**Frontend**
+- Form daftar: tahun lahir, centang izin wali (muncul jika mungkin di bawah 18), centang persetujuan dengan tautan dokumen.
+- Halaman publik `/privasi` dan `/syarat` bernomor versi, tautan di footer beranda. Isinya mengikuti perilaku aplikasi dan diberi catatan belum ditinjau ahli hukum.
+- `ConsentGate` di `RequireAuth`: akun lama atau versi dokumen baru harus setuju dulu.
+- Halaman Akun: bagian Paket (status, masa aktif, form kode), Unduh data saya, Hapus akun (kata sandi + dialog konfirmasi).
+
+**Hasil:** backend 262 unit + 201 integrasi/security lulus, `prisma migrate diff` kosong; frontend typecheck, 33 unit; E2E 6/6 di stack Docker (baru: `account-privacy.spec.ts`).
 
 ### #18 · Uji menyeluruh setelah PR #16 sampai #20, delapan perbaikan · branch `fix/aldi-docker-build-bugs`
 

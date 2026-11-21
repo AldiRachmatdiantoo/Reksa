@@ -6,6 +6,7 @@ import type { PasswordHasher } from '../../../../src/common/utils/passwordHasher
 import type {
   AuthRepository,
   AuthTokenPurpose,
+  ConsentRecord,
   RefreshTokenRecord,
   UserRecord,
 } from '../../../../src/features/auth/auth.repository.js';
@@ -16,6 +17,7 @@ import {
   PASSWORD_RESET_TTL_MS,
   type SecurityEvent,
 } from '../../../../src/features/auth/auth.service.js';
+import { PRIVACY_VERSION, TERMS_VERSION } from '../../../../src/config/policies.js';
 import { MemoryEmailService } from '../../../support/memoryEmail.js';
 
 /** Fast, deterministic stand-in for Argon2. */
@@ -38,10 +40,18 @@ class InMemoryAuthRepository implements AuthRepository {
   async findUserById(id: string) {
     return this.users.find((u) => u.id === id) ?? null;
   }
-  async createUser(data: Omit<UserRecord, 'id' | 'tier' | 'emailVerifiedAt'>) {
+  async createUser(data: Omit<UserRecord, 'id' | 'tier' | 'emailVerifiedAt' | 'proExpiresAt'> & { consentedAt: Date }) {
     if (this.users.some((u) => u.email === data.email)) throw new ConflictError('Email sudah terdaftar');
-    const user: UserRecord = { id: randomUUID(), tier: 'FREE', emailVerifiedAt: null, ...data };
+    const { consentedAt: _consentedAt, ...rest } = data;
+    const user: UserRecord = { id: randomUUID(), tier: 'FREE', emailVerifiedAt: null, proExpiresAt: null, ...rest };
     this.users.push(user);
+    return user;
+  }
+  async recordConsent(userId: string, consent: ConsentRecord) {
+    const user = this.users.find((u) => u.id === userId);
+    if (!user) return null;
+    const { consentedAt: _consentedAt, ...rest } = consent;
+    Object.assign(user, rest);
     return user;
   }
   async updateFullName(userId: string, fullName: string) {
@@ -104,6 +114,9 @@ const registerInput = {
   password: 'PasswordKuat123',
   fullName: 'Siswa Satu',
   role: 'STUDENT' as const,
+  birthYear: 2000,
+  acceptTerms: true as const,
+  guardianConsent: false,
 };
 
 describe('AuthService', () => {
@@ -142,6 +155,9 @@ describe('AuthService', () => {
         role: 'STUDENT',
         tier: 'FREE',
         emailVerified: false,
+        proExpiresAt: null,
+        birthYear: 2000,
+        consentRequired: false,
       });
       expect(JSON.stringify(result.user)).not.toContain('hashed');
       expect(await signer.verify(result.accessToken)).toEqual({ userId: result.user.id, role: 'STUDENT' });
@@ -162,6 +178,84 @@ describe('AuthService', () => {
     it('rejects a duplicate email', async () => {
       await service.register(registerInput);
       await expect(service.register(registerInput)).rejects.toBeInstanceOf(ConflictError);
+    });
+
+    it('stores the current policy versions and the birth year (FR-13)', async () => {
+      await service.register(registerInput);
+      expect(repo.users[0]).toMatchObject({
+        birthYear: 2000,
+        termsVersion: TERMS_VERSION,
+        privacyVersion: PRIVACY_VERSION,
+        guardianConsent: false,
+      });
+    });
+
+    it('requires a guardian statement from anyone who may be under 18', async () => {
+      // 2026 - 2008 - 1 = 17: bisa jadi masih 17 tahun.
+      const minor = { ...registerInput, birthYear: 2008 };
+      await expect(service.register(minor)).rejects.toMatchObject({ statusCode: 400, code: 'GUARDIAN_CONSENT_REQUIRED' });
+      expect(repo.users).toHaveLength(0);
+      const withConsent = await service.register({ ...minor, guardianConsent: true });
+      expect(repo.users[0]?.guardianConsent).toBe(true);
+      expect(withConsent.user.consentRequired).toBe(false);
+    });
+
+    it('does not ask an adult for a guardian statement and never stores one', async () => {
+      // 2026 - 2007 - 1 = 18.
+      await service.register({ ...registerInput, birthYear: 2007, guardianConsent: true });
+      expect(repo.users[0]?.guardianConsent).toBe(false);
+    });
+
+    it('rejects a birth year younger than 6', async () => {
+      await expect(service.register({ ...registerInput, birthYear: 2021, guardianConsent: true })).rejects.toBeInstanceOf(BadRequestError);
+      await service.register({ ...registerInput, birthYear: 2020, guardianConsent: true });
+      expect(repo.users).toHaveLength(1);
+    });
+  });
+
+  describe('consent (FR-13)', () => {
+    it('flags users who accepted an older version and clears the flag after re-consent', async () => {
+      const { user } = await service.register(registerInput);
+      repo.users[0]!.termsVersion = '2020-01-01';
+      expect((await service.getCurrentUser(user.id)).consentRequired).toBe(true);
+      const updated = await service.recordConsent(user.id, { acceptTerms: true, guardianConsent: false });
+      expect(updated.consentRequired).toBe(false);
+      expect(repo.users[0]?.termsVersion).toBe(TERMS_VERSION);
+    });
+
+    it('asks legacy accounts without a birth year to provide one', async () => {
+      const { user } = await service.register(registerInput);
+      Object.assign(repo.users[0]!, { birthYear: null, termsVersion: null, privacyVersion: null });
+      await expect(service.recordConsent(user.id, { acceptTerms: true, guardianConsent: false })).rejects.toBeInstanceOf(
+        BadRequestError,
+      );
+      await expect(
+        service.recordConsent(user.id, { acceptTerms: true, birthYear: 2010, guardianConsent: false }),
+      ).rejects.toMatchObject({ code: 'GUARDIAN_CONSENT_REQUIRED' });
+      await service.recordConsent(user.id, { acceptTerms: true, birthYear: 2010, guardianConsent: true });
+      expect(repo.users[0]).toMatchObject({ birthYear: 2010, guardianConsent: true });
+    });
+
+    it('keeps the stored birth year even if another one is sent', async () => {
+      const { user } = await service.register(registerInput);
+      await service.recordConsent(user.id, { acceptTerms: true, birthYear: 2015, guardianConsent: true });
+      expect(repo.users[0]?.birthYear).toBe(2000);
+    });
+
+    it('rejects an unknown user', async () => {
+      await expect(service.recordConsent(randomUUID(), { acceptTerms: true, guardianConsent: false })).rejects.toBeInstanceOf(
+        UnauthorizedError,
+      );
+    });
+  });
+
+  describe('effective tier (FR-11)', () => {
+    it('is PRO while pro_expires_at is in the future and FREE after it passes', async () => {
+      const { user } = await service.register(registerInput);
+      repo.users[0]!.proExpiresAt = new Date('2026-12-01T00:00:00Z');
+      expect(await service.getCurrentUser(user.id)).toMatchObject({ tier: 'PRO', proExpiresAt: '2026-12-01T00:00:00.000Z' });
+      now = new Date('2026-12-01T00:00:01Z');
+      expect((await service.getCurrentUser(user.id)).tier).toBe('FREE');
     });
   });
 

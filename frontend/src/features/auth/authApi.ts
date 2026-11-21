@@ -11,6 +11,12 @@ export type AuthUser = {
   tier: 'FREE' | 'PRO';
   /** Wajib true untuk bergabung ke kelas (FR-14). */
   emailVerified: boolean;
+  /** Akhir masa Pro dari kode aktivasi (FR-11). null jika tidak pernah aktif. */
+  proExpiresAt: string | null;
+  /** null pada akun lama yang dibuat sebelum FR-13. */
+  birthYear: number | null;
+  /** true jika user belum menyetujui versi syarat dan kebijakan privasi terbaru (FR-13). */
+  consentRequired: boolean;
 };
 
 export type RegisterInput = {
@@ -18,7 +24,16 @@ export type RegisterInput = {
   password: string;
   fullName: string;
   role: 'STUDENT' | 'EDUCATOR';
+  birthYear: number;
+  acceptTerms: true;
+  guardianConsent: boolean;
 };
+
+export type ConsentInput = { acceptTerms: true; birthYear?: number; guardianConsent: boolean };
+
+export type ProStatus = { tier: 'FREE' | 'PRO'; proExpiresAt: string | null };
+
+export type DataExport = { url: string; expiresAt: string };
 
 export type LoginInput = { email: string; password: string };
 
@@ -44,6 +59,14 @@ export const authApi = {
   /** Perangkat lain dikeluarkan; perangkat ini mendapat cookie sesi baru. */
   changePassword: (currentPassword: string, newPassword: string) =>
     apiRequest<UserResponse>('/me/password', { method: 'PATCH', body: { currentPassword, newPassword } }).then((r) => r.user),
+  recordConsent: (input: ConsentInput) =>
+    apiRequest<UserResponse>('/me/consent', { method: 'POST', body: input }).then((r) => r.user),
+  activatePro: (code: string) =>
+    apiRequest<{ pro: ProStatus }>('/me/activate-pro', { method: 'POST', body: { code } }).then((r) => r.pro),
+  /** Arsip zip berisi data.json dan foto tulisan. Link berlaku 5 menit, file dihapus setelah 24 jam. */
+  exportData: () => apiRequest<{ export: DataExport }>('/me/export', { method: 'POST', body: {} }).then((r) => r.export),
+  /** Permanen. Server ikut menghapus cookie sesi. */
+  deleteAccount: (password: string) => apiRequest<void>('/me', { method: 'DELETE', body: { password } }),
 };
 
 /** Aturan password sama persis dengan StrongPasswordSchema di backend. */
