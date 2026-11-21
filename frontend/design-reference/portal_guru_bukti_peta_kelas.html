@@ -1,0 +1,172 @@
+
+  <div class="min-h-screen flex flex-col bg-light-surface" data-stitch-vh="min-h-screen===min-h-screen">
+
+    <!-- Contextual Header -->
+    <header class="sticky top-0 z-30 bg-light-surface-container-lowest border-b border-light-outline-variant/60 px-gutter-md py-3">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <a href="../landing-beranda/LandingBeranda.html" aria-label="Kembali ke Beranda" class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-light-surface-container-low border border-light-outline-variant/70 text-light-on-surface transition-colors duration-state-change ease-state-change hover:bg-light-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">arrow_back</span>
+          </a>
+          <div class="flex flex-col">
+            <h1 data-design-text-token="title-md" class="font-headline text-title-md text-light-on-surface leading-none">Portal Guru</h1>
+            <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Kelas IF-4B • Arsitektur Enterprise</span>
+          </div>
+        </div>
+
+        <span data-component-id="chip-action" data-component-type="chip" data-component-variant="action" class="inline-flex items-center gap-1 rounded-full bg-light-surface-container-low border border-light-outline-variant px-3 py-1 font-label text-label-sm text-light-primary tabular-nums whitespace-nowrap">
+          <span data-design-text-token="label-sm">32 Siswa</span>
+        </span>
+      </div>
+    </header>
+
+    <main class="flex-1 flex flex-col gap-gutter-lg px-gutter-md py-gutter-lg">
+
+      <!-- Quick Class Summary -->
+      <section aria-label="Ringkasan kelas" class="grid grid-cols-2 gap-3">
+        <div class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-3.5 shadow-sm flex flex-col gap-0.5">
+          <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Sudah Mengumpulkan</span>
+          <span data-design-text-token="headline-md" class="font-mono text-headline-md text-light-primary tabular-nums">28/32</span>
+        </div>
+        <div class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-3.5 shadow-sm flex flex-col gap-0.5">
+          <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Rata-Rata Nilai</span>
+          <span data-design-text-token="headline-md" class="font-mono text-headline-md text-light-secondary tabular-nums">74%</span>
+        </div>
+      </section>
+
+      <!-- Tabs: Bukti Belajar Asli vs Bagian Sulit Kelas -->
+      <!-- COMPONENT: tabs-horizontal -->
+      <div data-component-id="tabs-horizontal" data-component-type="tabs" data-component-variant="horizontal" class="flex flex-col gap-gutter-md">
+        <div role="tablist" aria-label="Menu Portal Guru" class="grid grid-cols-2 gap-1 rounded-full bg-light-surface-container p-1 border border-light-outline-variant/50">
+          <button role="tab" id="tab-bukti" aria-selected="true" aria-controls="panel-bukti" tabindex="0" class="guru-tab rounded-full bg-light-surface-container-lowest text-light-primary py-2.5 px-3 font-label text-label-md shadow-sm transition-colors duration-state-change ease-state-change whitespace-nowrap">
+            <span data-design-text-token="label-md">Bukti Belajar Asli</span>
+          </button>
+          <button role="tab" id="tab-kesulitan" aria-selected="false" aria-controls="panel-kesulitan" tabindex="-1" class="guru-tab rounded-full text-light-on-surface-variant py-2.5 px-3 font-label text-label-md transition-colors duration-state-change ease-state-change hover:text-light-on-surface whitespace-nowrap">
+            <span data-design-text-token="label-md">Bagian Sulit Kelas</span>
+          </button>
+        </div>
+
+        <!-- FR-07: Panel Bukti Belajar Asli (Proof of Understanding Ledger) -->
+        <div role="tabpanel" id="panel-bukti" aria-labelledby="tab-bukti" tabindex="0" class="flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-2">
+            <h2 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">
+              Catatan Jujur Terbaru
+            </h2>
+            <span data-design-text-token="label-sm" class="font-label text-label-sm text-success flex items-center gap-1 whitespace-nowrap">
+              <span class="material-symbols-outlined text-body-md" aria-hidden="true">verified_user</span>
+              Terverifikasi
+            </span>
+          </div>
+
+          <!-- Student 1 -->
+          <article data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-4 shadow-sm flex flex-col gap-3">
+            <header class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-full bg-light-surface-variant text-light-primary flex items-center justify-center font-label text-label-md shrink-0">RP</div>
+                <div class="flex flex-col">
+                  <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Raka Pratama</h3>
+                  <span data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">Hari ini, 09:14 • Fokus 24m 42d</span>
+                </div>
+              </div>
+              <span class="rounded-full bg-light-surface-container-low border border-light-outline-variant px-2.5 py-0.5 font-label text-label-sm text-success whitespace-nowrap">Asli</span>
+            </header>
+
+            <div class="grid grid-cols-2 gap-2 rounded bg-light-surface-container-low p-2.5">
+              <div class="flex flex-col">
+                <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Tebakan Siswa</span>
+                <span data-design-text-token="mono-md" class="font-mono text-mono-md text-light-on-surface tabular-nums">75%</span>
+              </div>
+              <div class="flex flex-col">
+                <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Nilai Asli</span>
+                <span data-design-text-token="mono-md" class="font-mono text-mono-md text-light-primary tabular-nums">68%</span>
+              </div>
+            </div>
+
+            <button type="button" data-component-id="button-tertiary" data-component-type="button" data-component-variant="tertiary" class="w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-light-outline-variant bg-light-surface-container-lowest text-light-primary px-6 py-3 font-label text-label-lg transition-colors duration-state-change ease-state-change hover:bg-light-surface-container-low">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">image</span>
+              <span data-design-text-token="label-lg">Lihat Foto Tulisan Tangan</span>
+            </button>
+          </article>
+
+          <!-- Student 2 -->
+          <article data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-4 shadow-sm flex flex-col gap-3">
+            <header class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-full bg-light-surface-variant text-light-primary flex items-center justify-center font-label text-label-md shrink-0">SN</div>
+                <div class="flex flex-col">
+                  <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Siti Nurhaliza</h3>
+                  <span data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">Hari ini, 08:50 • Fokus 15m 10d</span>
+                </div>
+              </div>
+              <span class="rounded-full bg-light-surface-container-low border border-light-outline-variant px-2.5 py-0.5 font-label text-label-sm text-success whitespace-nowrap">Asli</span>
+            </header>
+
+            <div class="grid grid-cols-2 gap-2 rounded bg-light-surface-container-low p-2.5">
+              <div class="flex flex-col">
+                <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Tebakan Siswa</span>
+                <span data-design-text-token="mono-md" class="font-mono text-mono-md text-light-on-surface tabular-nums">80%</span>
+              </div>
+              <div class="flex flex-col">
+                <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Nilai Asli</span>
+                <span data-design-text-token="mono-md" class="font-mono text-mono-md text-light-primary tabular-nums">84%</span>
+              </div>
+            </div>
+
+            <button type="button" data-component-id="button-tertiary" data-component-type="button" data-component-variant="tertiary" class="w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-light-outline-variant bg-light-surface-container-lowest text-light-primary px-6 py-3 font-label text-label-lg transition-colors duration-state-change ease-state-change hover:bg-light-surface-container-low">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">image</span>
+              <span data-design-text-token="label-lg">Lihat Foto Tulisan Tangan</span>
+            </button>
+          </article>
+        </div>
+
+        <!-- FR-08: Panel Bagian Sulit Kelas (Cohort Blind-Spots) -->
+        <div role="tabpanel" id="panel-kesulitan" aria-labelledby="tab-kesulitan" tabindex="0" hidden class="flex flex-col gap-3">
+          <h2 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">
+            Topik yang Paling Sering Terlewat
+          </h2>
+
+          <article data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-4 shadow-sm flex flex-col gap-2">
+            <header class="flex items-center justify-between gap-2">
+              <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Tahapan TOGAF ADM</h3>
+              <span data-design-text-token="mono-md" class="font-mono text-mono-md text-light-error tabular-nums whitespace-nowrap">72% Lupa</span>
+            </header>
+            <div class="w-full h-2 rounded-full bg-light-surface-container-high overflow-hidden">
+              <div class="h-full w-3/4 rounded-full bg-light-error"></div>
+            </div>
+            <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant text-pretty">
+              20 dari 28 siswa belum menuliskan urutan lengkap dari Visi Arsitektur sampai Implementasi.
+            </p>
+          </article>
+
+          <article data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-4 shadow-sm flex flex-col gap-2">
+            <header class="flex items-center justify-between gap-2">
+              <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Arsitektur Teknologi</h3>
+              <span data-design-text-token="mono-md" class="font-mono text-mono-md text-light-secondary tabular-nums whitespace-nowrap">48% Lupa</span>
+            </header>
+            <div class="w-full h-2 rounded-full bg-light-surface-container-high overflow-hidden">
+              <div class="h-full w-1/2 rounded-full bg-light-secondary"></div>
+            </div>
+            <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant text-pretty">
+              Banyak yang tertukar antara perangkat keras server dengan layanan aplikasi.
+            </p>
+          </article>
+
+          <!-- Saran Perbaikan Materi -->
+          <article class="rounded-md bg-light-primary text-light-on-primary p-4 flex flex-col gap-2 shadow-sm">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-title-lg" aria-hidden="true">lightbulb</span>
+              <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-primary">Saran untuk Pertemuan Berikutnya</h3>
+            </div>
+            <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-primary-container text-pretty">
+              Coba tambahkan contoh studi kasus nyata alur TOGAF ADM di perusahaan ritel sebelum tugas minggu depan agar siswa lebih mudah membayangkan urutannya.
+            </p>
+          </article>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  
+
+

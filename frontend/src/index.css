@@ -1,0 +1,152 @@
+@import "tailwindcss";
+/* Skala tipografi, radius, dan spacing dari desain REKSA (Figma). */
+@import "./theme.css";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * Token semantik. Nilainya diambil dari palet desain (theme.css) dan berganti
+ * lewat [data-theme] di <html>. Komponen hanya memakai nama di bawah ini,
+ * jadi tema gelap tidak perlu kelas `dark:` di setiap elemen.
+ */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-wash: var(--wash);
+  --color-wash-strong: var(--wash-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-teal: var(--teal);
+  --color-on-teal: var(--on-teal);
+  --color-teal-wash: var(--teal-wash);
+  --color-ember: var(--ember);
+  --color-on-ember: var(--on-ember);
+  --color-ember-ink: var(--ember-ink);
+  --color-danger: var(--danger);
+  --color-danger-wash: var(--danger-wash);
+  --color-on-danger-wash: var(--on-danger-wash);
+  --color-ruled: var(--ruled);
+  --color-margin: var(--margin);
+}
+
+:root {
+  color-scheme: light;
+  --paper: #f6faf9;
+  --card: #ffffff;
+  --wash: #f0f5f3;
+  --wash-strong: #e4e9e8;
+  --ink: #171d1c;
+  --ink-muted: #3d4948;
+  --line: #bcc9c7;
+  --line-soft: #d8e5e3;
+  --teal: #006763;
+  --on-teal: #ffffff;
+  --teal-wash: #e2f1ef;
+  --ember: #fe7a29;
+  --on-ember: #3d210f;
+  --ember-ink: #9e4200;
+  --danger: #ba1a1a;
+  --danger-wash: #ffdad6;
+  --on-danger-wash: #93000a;
+  /* Garis buku tulis: motif identitas REKSA (belajar di atas kertas). */
+  --ruled: #d6e6f0;
+  --margin: #f2b8a8;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0f1414;
+  --card: #171d1c;
+  --wash: #1b2120;
+  --wash-strong: #262b2a;
+  --ink: #dfe3e2;
+  --ink-muted: #bcc9c7;
+  --line: #3d4948;
+  --line-soft: #2a3231;
+  --teal: #6fd7d1;
+  --on-teal: #003735;
+  --teal-wash: #12302e;
+  --ember: #fe7a29;
+  --on-ember: #3d210f;
+  --ember-ink: #ffb691;
+  --danger: #ffb4ab;
+  --danger-wash: #5c1513;
+  --on-danger-wash: #ffdad6;
+  --ruled: #22343a;
+  --margin: #6b3b30;
+}
+
+@layer base {
+  html {
+    background: var(--paper);
+    scroll-padding-top: 88px;
+  }
+  body {
+    font-family: var(--font-body);
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  a[href],
+  button:not(:disabled),
+  summary,
+  select,
+  label[for],
+  [role="tab"],
+  input[type="range"]:not(:disabled),
+  input[type="checkbox"]:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled,
+  input:disabled {
+    cursor: not-allowed;
+  }
+  :focus-visible {
+    outline: 3px solid var(--teal);
+    outline-offset: 3px;
+  }
+  ::selection {
+    background: var(--ember);
+    color: var(--on-ember);
+  }
+}
+
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 1.375rem;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  direction: ltr;
+  font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  user-select: none;
+}
+.material-symbols-outlined[data-fill="true"] {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+/*
+ * Lembar bergaris: dipakai di tempat siswa diminta menulis atau mengingat
+ * (kartu waktu fokus, kutipan dari catatan). Alasannya: REKSA menilai catatan
+ * kertas, jadi garis buku tulis menandai "ini bagian kertasmu".
+ */
+.ruled-sheet {
+  background-color: var(--card);
+  background-image:
+    linear-gradient(to right, transparent 2.25rem, var(--margin) 2.25rem, var(--margin) calc(2.25rem + 1px), transparent calc(2.25rem + 1px)),
+    repeating-linear-gradient(to bottom, transparent 0, transparent calc(1.75rem - 1px), var(--ruled) calc(1.75rem - 1px), var(--ruled) 1.75rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

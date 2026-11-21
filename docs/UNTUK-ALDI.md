@@ -25,6 +25,18 @@ Contoh format:
 **Mendesak?** Ya, memblokir integration test sessions.
 -->
 
+### ⏳ 2026-11-21 — Usulan: satukan `reksa-frontend` ke `frontend/` (monorepo)
+**Butuh untuk:** satu tempat untuk menjalankan, menguji, dan me-review frontend + backend; kontrak API dan UI berubah dalam satu PR.
+**Yang sudah saya lakukan** di branch `feat/adli-frontend-monorepo` (belum di-merge, menyentuh area kamu, jadi butuh persetujuanmu):
+- *Subtree merge* `reksa-frontend` `main` (`b6e1792`, 15 commit, riwayat tetap utuh) ke `frontend/`. Tidak ada file yang bentrok: `frontend/Dockerfile`, `nginx.conf`, `.dockerignore` milikmu tidak berubah.
+- Dicek lokal: `npm ci` + `npm run build` + 22 test frontend lulus, `npm audit --audit-level=high` 0, Semgrep (aturan CI) 0 temuan, `docker build frontend` jalan sebagai non-root.
+- `CLAUDE.md` §1 dan `frontend/AGENTS.md` diberi catatan monorepo.
+**Yang perlu kamu putuskan / lakukan kalau setuju:**
+- Semua branch `reksa-frontend` (`feat/aldi-account`, `-classes`, `-frontend-app`, `-landing-story`, `-materials`) sudah ada di `main` repo itu, jadi tidak ada pekerjaan yang tertinggal. Commit baru di repo lama sebelum PR ini di-merge bisa ditarik dengan `git subtree pull --prefix=frontend https://github.com/AldiRachmatdiantoo/reksa-frontend main`, lalu repo lama diarsipkan.
+- Vercel: *Root Directory* proyek diganti ke `frontend` (rencana `vercel.json` ikut pindah ke `frontend/`).
+- Kalau tidak setuju, PR cukup ditutup; tidak ada yang berubah di repo mana pun.
+**Mendesak?** Tidak. Kerja `study-sessions` ada di PR terpisah (`feat/adli-sessions`).
+
 ### ⏳ 2026-11-21 — Keputusan: `essay_submissions` append-only vs audit asinkron (FR-05)
 **Butuh untuk:** `essay-scans` (unggah 202 → worker audit)
 **Masalah:** `security_hardening` mencabut `UPDATE, DELETE ON essay_submissions` dari `app_service_user`. PRD v1.3 FR-05 justru membuat baris saat unggah (`audit_status = PENDING`) lalu mengubahnya ke `PROCESSING` dan `DONE`/`FAILED`, sambil mengisi skor, `*_json`, dan `ledger_hash` saat `DONE`. Dengan grant sekarang, worker tidak bisa menulis hasil audit.
