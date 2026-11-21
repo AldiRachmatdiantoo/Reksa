@@ -15,6 +15,10 @@ type Audience = 'pelajar' | 'guru';
 
 const STUDENT_STEPS = [
   {
+    title: 'Siapkan materimu',
+    body: 'Tempel teks atau unggah PDF bab yang mau dipelajari. REKSA menyusun konsep kunci yang nanti jadi patokan penilaian.',
+  },
+  {
     title: 'Fokus dan tulis di kertas',
     body: 'Pilih waktu 15, 25, atau 45 menit. Bahan bacaan ditutup selama waktu berjalan, jadi kamu menulis dari ingatan sendiri.',
   },
@@ -26,6 +30,30 @@ const STUDENT_STEPS = [
   {
     title: 'Lihat yang terlewat, ulangi singkat',
     body: 'Hasil menunjukkan konsep yang sudah tepat, yang masih terlewat, dan latihan ulang 3 sampai 5 menit di hari ke-3 dan ke-7.',
+  },
+];
+
+/** Hanya pertanyaan yang jawabannya sudah benar untuk versi saat ini. */
+const FAQ = [
+  {
+    q: 'Materi apa saja yang bisa dipakai?',
+    a: 'Teks yang kamu tempel (sampai 15.000 karakter) atau file PDF berisi teks, maksimal 10 MB. PDF hasil scan foto belum bisa dibaca, jadi unggah versi teksnya atau tempel isinya.',
+  },
+  {
+    q: 'Tulisanku berantakan. Apakah nilainya turun?',
+    a: 'Tidak. Yang dicek adalah konsep dan hubungan sebab-akibat di catatanmu. Panah, singkatan, dan coretan tetap dihitung sebagai ide.',
+  },
+  {
+    q: 'Kenapa harus menebak nilai sebelum dicek?',
+    a: 'Supaya kamu tahu bedanya merasa paham dan benar-benar paham. Di halaman hasil, tebakanmu dibandingkan dengan hasil cek.',
+  },
+  {
+    q: 'Butuh alat apa saja?',
+    a: 'Kertas, pulpen, dan kamera HP. Kalau belajar di laptop, foto catatan bisa diunggah dari laptop juga.',
+  },
+  {
+    q: 'Materi yang sudah diunggah bisa dihapus?',
+    a: 'Bisa, dari halaman Materi saya. Materi yang sudah dipakai di sesi belajar tetap disimpan supaya riwayat belajarmu utuh.',
   },
 ];
 
@@ -73,6 +101,9 @@ export function LandingPage() {
             </a>
             <a href="#penilaian" className="text-label-lg text-ink-muted hover:text-teal">
               Cara menilai
+            </a>
+            <a href="#tanya-jawab" className="text-label-lg text-ink-muted hover:text-teal">
+              Tanya jawab
             </a>
           </nav>
           <div className="flex items-center gap-1 sm:gap-2">
@@ -169,7 +200,7 @@ export function LandingPage() {
                     key="pelajar"
                     gap={0.1}
                     exit={{ opacity: 0, x: -16, transition: { duration: 0.15 } }}
-                    className="grid gap-px overflow-hidden rounded-lg border border-line-soft bg-line-soft md:grid-cols-3"
+                    className="grid gap-px overflow-hidden rounded-lg border border-line-soft bg-line-soft md:grid-cols-2 lg:grid-cols-4"
                   >
                     {STUDENT_STEPS.map((step, i) => (
                       <StaggerItem
@@ -257,6 +288,33 @@ export function LandingPage() {
           </div>
         </section>
 
+        <section id="tanya-jawab" aria-labelledby="faq-title" className="px-4 pt-14 sm:px-6 lg:pt-20">
+          <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-12">
+            <Reveal className="flex flex-col gap-2 lg:col-span-4">
+              <h2 id="faq-title" className="font-headline text-headline-lg-mobile text-ink text-balance sm:text-headline-lg">
+                Yang sering ditanyakan
+              </h2>
+              <p className="text-body-lg text-ink-muted text-pretty">Jawaban singkat sebelum kamu mulai sesi pertama.</p>
+            </Reveal>
+            <Stagger as="ul" gap={0.06} className="flex flex-col divide-y divide-line-soft border-y border-line-soft lg:col-span-8">
+              {FAQ.map((item) => (
+                <StaggerItem as="li" key={item.q}>
+                  <details className="group">
+                    <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 text-title-md text-ink hover:text-teal [&::-webkit-details-marker]:hidden">
+                      {item.q}
+                      <Icon
+                        name="expand_more"
+                        className="shrink-0 text-ink-muted transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
+                      />
+                    </summary>
+                    <p className="max-w-prose pb-5 text-body-md text-ink-muted text-pretty">{item.a}</p>
+                  </details>
+                </StaggerItem>
+              ))}
+            </Stagger>
+          </div>
+        </section>
+
         <section className="px-4 py-14 sm:px-6 lg:py-20">
           <motion.div
             initial={{ opacity: 0, y: 32, scale: 0.97 }}
@@ -266,7 +324,7 @@ export function LandingPage() {
             className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 rounded-xl bg-teal p-8 text-on-teal sm:p-10 md:flex-row md:items-center dark:border dark:border-line dark:bg-teal-wash dark:text-ink">
             <div className="flex max-w-xl flex-col gap-2">
               <h2 className="font-headline text-headline-md text-balance sm:text-headline-lg">Siap uji pemahamanmu hari ini?</h2>
-              <p className="text-body-lg opacity-90 text-pretty">Siapkan selembar kertas dan pulpen. Sesi pertama selesai dalam 15 menit.</p>
+              <p className="text-body-lg opacity-90 text-pretty">Siapkan selembar kertas dan pulpen. Siapkan materi, lalu sesi pertama selesai dalam 15 menit.</p>
             </div>
             <ButtonLink to={user ? homePathFor(user.role) : '/daftar'} variant="accent" size="lg" className="shrink-0">
               {user ? 'Buka ruang belajar' : 'Buat akun gratis'}
@@ -283,6 +341,9 @@ export function LandingPage() {
           <nav aria-label="Tautan bawah" className="flex flex-wrap gap-x-6">
             <a href="#cara-kerja" className="inline-flex min-h-11 items-center hover:text-teal">
               Cara kerja
+            </a>
+            <a href="#tanya-jawab" className="inline-flex min-h-11 items-center hover:text-teal">
+              Tanya jawab
             </a>
             <Link to="/masuk" className="inline-flex min-h-11 items-center hover:text-teal">
               Masuk

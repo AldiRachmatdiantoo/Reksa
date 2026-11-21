@@ -5,7 +5,7 @@ import { ApiError } from '@/core/apiClient';
 import { useStudySession } from '@/features/studio/studySession';
 import { EASE_OUT, pageTransition, Stagger, StaggerItem } from '@/shared/motion';
 import { AppHeader } from '@/shared/ui/AppHeader';
-import { Button, ButtonLink } from '@/shared/ui/Button';
+import { Button } from '@/shared/ui/Button';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { Icon } from '@/shared/ui/Icon';
 import { LoadingBlock, StateBlock } from '@/shared/ui/StateBlock';
@@ -88,10 +88,6 @@ export function MaterialsPage() {
       <AppHeader subtitle="Materi Belajar" />
       <motion.main {...pageTransition} className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
         <div className="flex flex-col gap-3">
-          <ButtonLink to="/belajar" variant="ghost" className="self-start px-3">
-            <Icon name="arrow_back" />
-            Ruang belajar
-          </ButtonLink>
           <h1 className="font-display text-headline-lg-mobile text-ink sm:text-headline-lg">Materi belajarmu</h1>
           <p className="max-w-prose text-body-lg text-ink-muted text-pretty">
             REKSA menyusun konsep kunci dari materimu. Konsep inilah yang jadi patokan saat foto catatanmu dicek nanti.
