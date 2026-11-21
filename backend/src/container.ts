@@ -10,6 +10,9 @@ import type { IStorageService } from './config/storage.js';
 import { PrismaAuthRepository } from './features/auth/auth.repository.js';
 import { createAuthRouter } from './features/auth/auth.routes.js';
 import { AuthService } from './features/auth/auth.service.js';
+import { PrismaClassesRepository } from './features/classes/classes.repository.js';
+import { createClassesRouter } from './features/classes/classes.routes.js';
+import { ClassesService } from './features/classes/classes.service.js';
 import { UnpdfTextExtractor, type PdfTextExtractor } from './common/utils/pdfText.js';
 import { PrismaMaterialsRepository } from './features/materials/materials.repository.js';
 import { createMaterialsRouter } from './features/materials/materials.routes.js';
@@ -54,8 +57,11 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     onWarning: (message, data) => deps.logger.warn(data, message),
   });
 
+  const classesService = new ClassesService({ repo: new PrismaClassesRepository(deps.prisma) });
+
   return {
     '/auth': createAuthRouter({ service: authService, signer, redis: deps.redis }),
     '/materials': createMaterialsRouter({ service: materialsService, signer, redis: deps.redis }),
+    '/classes': createClassesRouter({ service: classesService, signer, redis: deps.redis }),
   };
 }

@@ -42,6 +42,10 @@ export type MaterialView = {
   id: string;
   title: string;
   classId: string | null;
+  /** Nama kelas bila materi dibagikan ke kelas. */
+  className: string | null;
+  /** false untuk materi kelas yang dibaca anggota: hanya baca, tidak bisa dihapus. */
+  isOwner: boolean;
   source: MaterialSource;
   createdAt: string;
   rubric: AiRubricOutput;
@@ -52,6 +56,8 @@ export type MaterialSummaryView = {
   id: string;
   title: string;
   classId: string | null;
+  className: string | null;
+  isOwner: boolean;
   source: MaterialSource;
   createdAt: string;
   conceptCount: number;

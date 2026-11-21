@@ -44,7 +44,7 @@ Agar kedua developer dapat bekerja paralel tanpa saling menunggu (*zero blocking
 - **Konvensi Git Branch:** Wajib bekerja di branch `feat/aldi-<nama-fitur>` atau `fix/aldi-<nama-bug>`.
 - **Area Folder Eksklusif Aldi:**
   - `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile`, `frontend/nginx.conf`, `backend/prisma/`, `backend/src/config/`, `backend/src/common/middlewares/`
-  - `backend/src/features/auth/`, `backend/src/features/materials/`, `backend/src/features/spaced-repetition/`, `backend/src/features/governance/`
+  - `backend/src/features/auth/`, `backend/src/features/materials/`, `backend/src/features/classes/`, `backend/src/features/spaced-repetition/`, `backend/src/features/governance/`
   - `frontend/src/features/auth/`, `frontend/src/features/materials/`, `frontend/src/features/spaced-repetition/`, `frontend/src/features/governance/`
   - `backend/tests/security/`
 

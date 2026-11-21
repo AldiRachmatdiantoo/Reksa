@@ -148,7 +148,7 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
 * **User Story:** Sebagai guru, saya ingin membuat kelas dan membagikan kodenya supaya siswa bisa bergabung, sehingga materi, ledger, dan peta *blind spots* hanya mencakup siswa di kelas saya.
 * **Acceptance Criteria:**
   * `EDUCATOR` membuat kelas dengan nama (1 sampai 100 karakter). Server membuat `class_code` 8 karakter acak dari alfabet tanpa huruf/angka yang mirip (tanpa `0 O 1 I L`), unik, dan tidak bisa dipilih sendiri. Jika guru terhubung ke institusi, `classes.institution_id` diisi otomatis dari `users.institution_id`.
-  * Guru bisa mengganti nama kelas dan membuat kode baru (kode lama langsung tidak berlaku). Kelas hanya bisa dihapus selama belum ada sesi belajar yang memakainya; jika sudah ada, dijawab `409`.
+  * Guru bisa mengganti nama kelas dan membuat kode baru (kode lama langsung tidak berlaku). Kelas hanya bisa dihapus selama belum punya anggota; jika masih ada, dijawab `409` dan guru diminta mengeluarkan siswa dulu. (Sesi siswa yang sudah keluar tidak terlihat oleh guru karena RLS, jadi aturan "belum ada sesi" tidak bisa dicek dari sisi guru. `study_sessions.class_id` dan `study_materials.class_id` menjadi `NULL` saat kelas dihapus, jadi data siswa tetap utuh.)
   * `STUDENT` bergabung dengan memasukkan kode. Kode salah dijawab `404` dengan pesan yang sama apa pun alasannya. Rate limit 10 percobaan per jam per user untuk mencegah tebak kode. Bergabung dua kali tidak membuat baris ganda (`UNIQUE (class_id, student_id)`).
   * Guru melihat daftar anggota dan bisa mengeluarkan siswa. Siswa bisa keluar sendiri. Data sesi dan scan siswa tetap miliknya setelah keluar, tetapi tidak lagi terlihat oleh guru kelas itu.
   * Materi dengan `class_id` bisa dibaca semua anggota kelas (hanya baca), dan sesi boleh diberi `class_id` hanya jika pelajar adalah anggota kelas tersebut. Ini mengubah aturan baca `materials` dan kebijakan RLS `study_materials` yang saat ini hanya untuk pengunggah.
@@ -380,7 +380,7 @@ Seluruh endpoint berada di bawah prefix `/api/v1` dan menggunakan middleware val
 | :--- | :--- | :--- | :--- |
 | `POST` | `/classes` | `EDUCATOR` | Membuat kelas; server membuat `class_code` (FR-09). |
 | `GET` | `/classes` | Authenticated | Guru: kelas yang diampu. Siswa: kelas yang diikuti. |
-| `GET` / `PATCH` / `DELETE` | `/classes/:id` | `EDUCATOR` (Owner); `GET` juga anggota | Detail, ganti nama, hapus (409 jika sudah ada sesi). |
+| `GET` / `PATCH` / `DELETE` | `/classes/:id` | `EDUCATOR` (Owner); `GET` juga anggota | Detail, ganti nama, hapus (409 jika masih ada anggota). |
 | `POST` | `/classes/:id/code` | `EDUCATOR` (Owner) | Membuat kode kelas baru, kode lama tidak berlaku. |
 | `POST` | `/classes/join` | `STUDENT` (Rate-Limited) | Bergabung dengan `{ classCode }`. |
 | `GET` | `/classes/:id/members` | `EDUCATOR` (Owner) | Daftar anggota kelas. |
@@ -542,7 +542,7 @@ Pembangunan sistem wajib mengikuti tiga fase berurutan berikut agar fondasi infr
 * Membangun alur penuh Portal Pelajar: unggah materi & Redis SHA-256 cache, timer Pomodoro dengan *concealed material state*, *JOL Slider*, *Adaptive Image Capture* (kamera HP langsung vs. QR Bridge via Redis + SSE/WebSocket), pembersihan EXIF via `sharp`, kalkulasi selisih metakognisi, *Web Speech API Text-to-Speech*, serta penjadwalan otomatis *Spaced Re-Blurting* H+3 dan H+7.
 * Membangun Portal Pendidik: *Proof of Understanding Ledger* (dengan *Signed URL* dan verifikasi `ledger_hash`) serta *Cohort Blind-Spots Dashboard*.
 * *(v1.2)* Kelola kelas & keanggotaan (FR-09) dibangun **sebelum** ledger dan *Cohort Blind-Spots*, karena keduanya bergantung pada `class_members`. Lalu portal admin institusi (FR-10), kuota & kode aktivasi Pro (FR-11), dan ekspor PDF (FR-12).
-* *(v1.2)* Usulan pembagian: FR-09, FR-10, FR-12, dan kode aktivasi Pro dipegang Aldi (berdekatan dengan `auth` dan `governance`); pemotongan kuota dan `GET /me/quota` dipegang Adli karena terjadi di `essay-scans`. Folder baru (`features/classes/`, `features/institution/`) perlu ditambahkan ke daftar area di `CLAUDE.md` setelah disepakati.
+* *(v1.2)* Usulan pembagian: FR-09, FR-10, FR-12, dan kode aktivasi Pro dipegang Aldi (berdekatan dengan `auth` dan `governance`); pemotongan kuota dan `GET /me/quota` dipegang Adli karena terjadi di `essay-scans`. Folder baru (`features/classes/`, `features/institution/`) perlu ditambahkan ke daftar area di `CLAUDE.md` setelah disepakati. *(Update 21 Nov 2026: FR-09 selesai dibangun Aldi di `backend/src/features/classes/`, sudah masuk daftar area Aldi.)*
 * *(v1.3)* Aturan sesi sah (FR-02) dan audit asinkron (FR-05) masuk ke `study-sessions` dan `essay-scans` (Adli). Infrastruktur pendukungnya (antrean *worker* di Redis, layanan email + Mailpit di Docker) disiapkan Aldi, begitu juga FR-13 dan FR-14 karena berada di `auth`. Halaman `/privasi` dan `/syarat` wajib ada sebelum deploy publik.
 * Menuntaskan seluruh **Unit Testing**, **Integration Testing (Testcontainers)**, **E2E & Accessibility Testing (Playwright + axe-core)**, dan **Automated Security/Pen-Testing Suite**.
 

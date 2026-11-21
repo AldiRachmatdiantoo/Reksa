@@ -69,7 +69,7 @@ export class MaterialsService {
       storageKey: null,
       rubric,
     });
-    return { material: toView(record), rubricCached: cached };
+    return { material: toView(record, userId), rubricCached: cached };
   }
 
   async createFromPdf(userId: string, fields: CreatePdfMaterialFields, file: UploadedPdf): Promise<CreateMaterialResult> {
@@ -113,26 +113,26 @@ export class MaterialsService {
       });
       throw err;
     }
-    return { material: toView(record), rubricCached: cached };
+    return { material: toView(record, userId), rubricCached: cached };
   }
 
   async list(userId: string): Promise<MaterialSummaryView[]> {
-    const records = await this.deps.repo.listByOwner(userId, MATERIAL_LIST_LIMIT);
+    const records = await this.deps.repo.listAccessible(userId, MATERIAL_LIST_LIMIT);
     return records.map((r) => {
-      const { rubric, ...view } = toView(r);
+      const { rubric, ...view } = toView(r, userId);
       return { ...view, conceptCount: rubric.keyConcepts.length };
     });
   }
 
   async get(userId: string, id: string): Promise<MaterialView> {
-    const record = await this.deps.repo.findByIdForOwner(userId, id);
+    const record = await this.deps.repo.findByIdAccessible(userId, id);
     if (!record) throw new NotFoundError('Materi tidak ditemukan');
-    return toView(record);
+    return toView(record, userId);
   }
 
-  /** Signed URL berumur pendek untuk membuka PDF asli. Materi teks tidak punya file. */
+  /** Signed URL berumur pendek untuk membuka PDF asli (pemilik atau anggota kelas). Materi teks tidak punya file. */
   async getFileUrl(userId: string, id: string): Promise<{ url: string; expiresInSec: number }> {
-    const record = await this.deps.repo.findByIdForOwner(userId, id);
+    const record = await this.deps.repo.findByIdAccessible(userId, id);
     if (!record?.storageKey) throw new NotFoundError('File materi tidak ditemukan');
     const url = await this.deps.storage.getSignedUrl(record.storageKey, { expiresInSec: SIGNED_URL_MAX_TTL_SEC });
     return { url, expiresInSec: SIGNED_URL_MAX_TTL_SEC };
@@ -178,11 +178,13 @@ export class MaterialsService {
   }
 }
 
-function toView(record: MaterialRecord): MaterialView {
+function toView(record: MaterialRecord, viewerId: string): MaterialView {
   return {
     id: record.id,
     title: record.title,
     classId: record.classId,
+    className: record.className,
+    isOwner: record.uploaderId === viewerId,
     source: record.storageKey ? 'PDF' : 'TEXT',
     createdAt: record.createdAt.toISOString(),
     rubric: AiRubricOutputSchema.parse(record.extractedRubricJson),
