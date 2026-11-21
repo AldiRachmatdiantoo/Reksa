@@ -64,6 +64,15 @@ Landasan ilmiah: *retrieval practice*, *generation effect*, *dual-coding*, *judg
 | :--- | :--- | :--- |
 | FR-07 | *Proof of Understanding Ledger* | Timestamp sesi, durasi fokus, foto asli via *signed URL*, JOL vs. skor AI, verifikasi `ledger_hash` |
 | FR-08 | *Cohort Blind-Spots* | Persentase kegagalan per konsep dalam satu kelas + rekomendasi perbaikan modul dari AI |
+| FR-09 | Kelola kelas | Guru membuat kelas dengan kode 8 karakter, siswa bergabung lewat kode, materi kelas terbaca anggota |
+| FR-10 | Portal admin institusi | Kode undangan pengajar, daftar pengajar & kelas, analitik agregat (kelompok < 5 siswa disembunyikan) |
+
+### Akun & Langganan
+
+| Kode | Fitur | Inti |
+| :--- | :--- | :--- |
+| FR-11 | Tier Free/Pro & kuota | Free 3 scan/hari (reset 00.00 WIB), Pro lewat kode aktivasi; payment gateway pasca-MVP |
+| FR-12 | Ekspor PDF *Proof of Understanding* | PDF milik sendiri (Pro) lewat *signed URL*, verifikasi publik `ledger_hash` tanpa data pribadi |
 
 ### Peran (RBAC)
 

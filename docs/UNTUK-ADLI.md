@@ -68,6 +68,16 @@ const url = await storage.getSignedUrl(submission.imageStorageKey); // berlaku 5
 - **Middleware unggah bisa kamu pakai** untuk foto esai: `singleFileUpload({ field: 'photo', maxBytes })` dari `common/middlewares/upload.middleware.ts`. File masuk ke `req.file.buffer` (memori), ukuran lebih dari batas otomatis 413. Magic bytes tetap kamu cek di service (contoh: `materials.service.ts` `createFromPdf`).
 - Error baru di `common/errors/AppError.ts`: `PayloadTooLargeError` (413), `UnsupportedMediaTypeError` (415), `UnprocessableEntityError` (422). Pakai ini supaya frontend menampilkan pesan yang sama.
 
+## 1e. PRD v1.2: empat fitur baru (FR-09 sampai FR-12)
+
+Saya menambahkan ke [PRD.md](../PRD.md) fitur yang sebelumnya belum dirancang: kelola kelas (FR-09), portal admin institusi (FR-10), tier Free/Pro & kuota (FR-11), dan ekspor PDF (FR-12). Yang menyentuh area kamu:
+
+- **Kuota scan (FR-11)** usulnya kamu pegang karena terjadi di `POST /scans/upload`: Free 3 scan per hari, reset 00.00 WIB dari `last_scan_reset_at`, `SELECT ... FOR UPDATE`, kuota dikembalikan kalau audit AI gagal, kuota habis `429 QUOTA_EXCEEDED` + `resetAt`. Respons unggah memuat `{ tier, used, limit, remaining, resetAt }`, sama dengan `GET /me/quota`.
+- **Tier efektif** nanti dihitung dari `users.pro_expires_at` (kolom baru, saya yang migrasi bersama kode aktivasi). Sampai kolom itu ada, pakai `users.tier`.
+- **`classId` di `POST /sessions`** hanya boleh kelas yang pelajar itu ikuti (cek `class_members`). Tabelnya sudah ada; endpoint kelasnya saya buat.
+
+Kalau pembagian ini tidak cocok, tulis di `UNTUK-ALDI.md`.
+
 ## 2. Yang perlu kamu lakukan
 
 ### a. Pull dan cek file di foldermu
