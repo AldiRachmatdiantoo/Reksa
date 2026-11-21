@@ -16,6 +16,7 @@ import { LegalPage } from '@/features/legal/LegalPage';
 import { LandingPage } from '@/features/landing/LandingPage';
 import { NotFoundPage } from '@/features/landing/NotFoundPage';
 import { CalibratePage } from '@/features/scanner/CalibratePage';
+import { ReviewPage } from '@/features/spaced-repetition/ReviewPage';
 import { StudioPage } from '@/features/studio/StudioPage';
 import { PhoneUploadPage } from '@/features/scanner/PhoneUploadPage';
 import { StudySessionProvider } from '@/features/studio/studySession';
@@ -69,6 +70,7 @@ function AnimatedRoutes() {
           <Route index element={<StudioPage />} />
           <Route path="materi" element={<MaterialsPage />} />
           <Route path="kelas" element={<StudentClassesPage />} />
+          <Route path="ulang" element={<ReviewPage />} />
           <Route path="foto" element={<CalibratePage />} />
           <Route path="hasil" element={<ResultPage />} />
         </Route>

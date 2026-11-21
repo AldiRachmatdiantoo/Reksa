@@ -1,5 +1,14 @@
 # Checkpoint Frontend REKSA
 
+## #12 · 2026-11-22 · Latihan ulang (FR-06)
+
+Branch: `feat/aldi-spaced-review`.
+
+- Halaman `/belajar/ulang` (`features/spaced-repetition/ReviewPage.tsx`) dan menu **Ulang** di header pelajar.
+- Kartu jatuh tempo: buka latihan, tulis di kertas, lihat penjelasan, tandai selesai. Daftar "Berikutnya" untuk jadwal yang belum jatuh tempo.
+- Teks "Pengingat otomatis menyusul" di Hasil Cek dan tur beranda diganti tautan ke menu Ulang.
+- Unit test `spacedApi.test.ts`, E2E `review.spec.ts`.
+
 ## #11 · 2026-11-22 · Privasi (FR-13) dan kode aktivasi Pro (FR-11)
 
 Branch: `feat/aldi-privacy-pro`.

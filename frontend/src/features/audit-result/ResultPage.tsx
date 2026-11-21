@@ -1,7 +1,7 @@
 import NumberFlow from '@number-flow/react';
 import { motion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/core/apiClient';
 import { auditFailureText, scansApi, uploadErrorMessage, type Scan } from '@/features/scanner/scansApi';
 import { useSpeech } from '@/shared/hooks/useSpeech';
@@ -400,7 +400,13 @@ function AuditResult({ scan, materialTitle, onStartOver }: { scan: Scan; materia
                     </StaggerItem>
                   ))}
                 </Stagger>
-                <p className="text-body-sm text-ink-muted">Jadwal ini sudah tersimpan. Pengingat otomatis menyusul.</p>
+                <p className="text-body-sm text-ink-muted">
+                  Jadwal ini sudah tersimpan. Saat jatuh tempo, latihannya muncul di menu{' '}
+                  <Link to="/belajar/ulang" className="text-teal underline underline-offset-2">
+                    Ulang
+                  </Link>
+                  .
+                </p>
               </section>
             ) : (
               <section className="flex items-start gap-3 rounded-lg border border-line-soft bg-card p-5 sm:p-6">
