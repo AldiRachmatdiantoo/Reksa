@@ -9,8 +9,11 @@ Branch: `fix/aldi-docker-build-bugs`.
 - **Font:** Plus Jakarta Sans, Radio Canada Big, Spline Sans Mono di-self-host (`@fontsource`, diimpor di `main.tsx`), `<link>` Google dihapus dari `index.html`. `vite.config.ts` tidak menjadikan font `data:` URI.
 - **`.gitattributes` LFS dihapus** (aturan bawaan ekspor, tidak pernah dipakai).
 - **E2E baru** `tests/e2e/navigation.spec.ts`; CI menjalankan unit test dan E2E (job `e2e`).
+- **Kontras beranda (desktop):** bab "Cara kerja" yang belum aktif dipudarkan ke 35% sehingga teksnya 1,7:1 (gagal WCAG AA). Sekarang bab aktif ditandai warna label saja, teks tetap penuh. Diaudit axe di setiap posisi gulir.
+- **Hasil Cek tanpa sesi:** penanda langkah disembunyikan; sebelumnya langkah 1 dan 2 tampil centang padahal belum dikerjakan.
+- **Sapu semua halaman** (desktop dan HP, anonim, pelajar, guru) di stack Docker: tidak ada pelanggaran CSP, error JavaScript, atau halaman melebar; font termuat; axe lulus. Job CI `e2e` disimulasikan dari stack kosong dengan `.env` acak: 4/4 lulus.
 
-Diverifikasi: E2E 4/4 lulus di stack Docker, typecheck, 33 unit test, build.
+Diverifikasi: E2E 4/4 lulus di stack Docker (termasuk stack bersih seperti CI), typecheck, 33 unit test, build.
 
 ## #9 · 2026-11-21 · Alur belajar tersambung ke backend asli + E2E (dikerjakan Adli)
 
