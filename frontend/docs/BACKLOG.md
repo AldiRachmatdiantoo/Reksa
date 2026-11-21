@@ -16,12 +16,12 @@ Urutan kasar sesuai ketergantungan ke backend. Tandai `✅` saat selesai dan cat
 
 ## Bisa dikerjakan sekarang
 
-- [ ] **CSP vs `NumberFlow`**: angka timer/skor rusak di stack nginx karena `style-src 'self'` memblokir style inline (lihat checkpoint #9).
-- [ ] **Font teks di-self-host** (Plus Jakarta Sans, Radio Canada Big, Spline Sans Mono) seperti ikon; `<link>` Google Fonts di `index.html` diblokir CSP dan mengirim IP pelajar ke Google.
+- [x] **CSP vs `NumberFlow`** (checkpoint #10): angka timer/skor rusak di stack nginx karena `style-src 'self'` memblokir style inline (lihat checkpoint #9).
+- [x] **Font teks di-self-host** (checkpoint #10) (Plus Jakarta Sans, Radio Canada Big, Spline Sans Mono) seperti ikon; `<link>` Google Fonts di `index.html` diblokir CSP dan mengirim IP pelajar ke Google.
 
 - [ ] `vercel.json`: rewrite `/api/*` ke Render (satu origin untuk cookie `SameSite=Strict`), header keamanan (CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`).
-- [x] E2E Playwright + `@axe-core/playwright` di `tests/e2e/` untuk alur sesi, foto, QR, hasil (checkpoint #9, Adli). Belum: alur daftar/kelas/materi, dan job CI (butuh stack Docker).
-- [ ] CI GitHub Actions: typecheck, test, build.
+- [x] E2E Playwright + `@axe-core/playwright` di `tests/e2e/` untuk alur sesi, foto, QR, hasil (checkpoint #9, Adli). Job CI `e2e` jalan sejak checkpoint #10; navigasi menu ikut diuji. Belum: alur daftar/kelas/materi.
+- [x] CI GitHub Actions: typecheck, test, build, E2E (checkpoint #10).
 - [ ] Logo final (saat ini tanda sementara dari desain Figma).
 
 ## Pasca-MVP (ditunda)

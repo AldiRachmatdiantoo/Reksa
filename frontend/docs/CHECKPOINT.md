@@ -1,5 +1,17 @@
 # Checkpoint Frontend REKSA
 
+## #10 · 2026-11-21 · Perbaikan build produksi di balik nginx
+
+Branch: `fix/aldi-docker-build-bugs`.
+
+- **Navigasi `/belajar`:** pindah menu (Belajar, Materi, Kelas) tidak lagi membuat layar kosong di build produksi. `AnimatedOutlet` diganti `KeyedOutlet` (outlet ber-key, tanpa `AnimatePresence` bersarang). Animasi masuk tetap dari `motion.main` tiap halaman.
+- **CSP:** hash `<style>` NumberFlow ditambahkan di `nginx.conf`; timer dan skor tampil normal. Hash ini berubah kalau NumberFlow di-upgrade.
+- **Font:** Plus Jakarta Sans, Radio Canada Big, Spline Sans Mono di-self-host (`@fontsource`, diimpor di `main.tsx`), `<link>` Google dihapus dari `index.html`. `vite.config.ts` tidak menjadikan font `data:` URI.
+- **`.gitattributes` LFS dihapus** (aturan bawaan ekspor, tidak pernah dipakai).
+- **E2E baru** `tests/e2e/navigation.spec.ts`; CI menjalankan unit test dan E2E (job `e2e`).
+
+Diverifikasi: E2E 4/4 lulus di stack Docker, typecheck, 33 unit test, build.
+
 ## #9 · 2026-11-21 · Alur belajar tersambung ke backend asli + E2E (dikerjakan Adli)
 
 Branch: `feat/adli-frontend-scans` (repo Reksa, monorepo). Area frontend milik Aldi; dikerjakan Adli atas persetujuan pengguna, rinciannya di `../../docs/UNTUK-ALDI.md`.
@@ -14,7 +26,7 @@ Branch: `feat/adli-frontend-scans` (repo Reksa, monorepo). Area frontend milik A
 
 Diverifikasi: 3 E2E lulus terhadap stack Docker lewat nginx `:8080`, screenshot halaman QR dan hasil dicek manual, typecheck, 33 unit test, build, `npm audit` 0.
 
-**Masih rusak di stack nginx (area Aldi, belum diubah):** angka `NumberFlow` tampil sebagai deretan `0123456789...` dan melebarkan halaman (CSP `style-src 'self'` memblokir style inline), dan font teks (Plus Jakarta Sans, Radio Canada Big, Spline Sans Mono) tidak termuat dari Google Fonts. Usulan perbaikan di `UNTUK-ALDI.md`.
+**Masih rusak di stack nginx (area Aldi, diperbaiki di checkpoint #10):** angka `NumberFlow` tampil sebagai deretan `0123456789...` dan melebarkan halaman (CSP `style-src 'self'` memblokir style inline), dan font teks (Plus Jakarta Sans, Radio Canada Big, Spline Sans Mono) tidak termuat dari Google Fonts. Usulan perbaikan di `UNTUK-ALDI.md`.
 
 ## #8 · 2026-11-21 · Akun dasar (FR-14)
 

@@ -21,7 +21,14 @@ export function createApp({ env, logger, routes = {} }: AppDeps): Express {
   // req.ip berisi IP klien asli untuk rate limiting.
   app.set('trust proxy', 1);
 
-  app.use(helmet());
+  // Satu-satunya sumber header keamanan untuk respons API (nginx mengosongkan
+  // header yang sama untuk /api/). Nilainya disamakan dengan header halaman di nginx.
+  app.use(
+    helmet({
+      frameguard: { action: 'deny' },
+      referrerPolicy: { policy: 'no-referrer' },
+    }),
+  );
   app.use(
     cors({
       origin: env.CORS_ORIGIN,

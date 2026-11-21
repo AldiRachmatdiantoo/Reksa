@@ -31,6 +31,16 @@ git rebase --onto origin/main c2b6fb8 nama-branch
 
 Cek terakhir: `git branch --contains 55c5172` harus kosong. Kalau masih ada branch di daftar itu, jangan di-push, kabari saya.
 
+## 21 Nov 2026: hasil uji PR #16 sampai #20 dan perbaikannya (branch `fix/aldi-docker-build-bugs`)
+
+Semua test kamu lulus. Yang rusak ternyata hampir semuanya di area saya, sudah saya perbaiki:
+- **Layar kosong saat pindah menu di dalam `/belajar`** (build produksi saja; di dev tertutup `StrictMode`). Penyebabnya `AnimatePresence` bersarang di `App.tsx`, sudah ada sebelum PR-mu. Sekarang outlet hanya diberi key, tanpa `AnimatePresence` kedua.
+- **CSP:** hash style NumberFlow masuk `style-src`, font teks di-self-host, `<link>` Google dihapus. Respons `/api/` tidak lagi membawa header keamanan dobel (nginx mengosongkannya, helmet jadi satu-satunya sumber).
+- **Drift Prisma:** migrasi baru `20261121000400_auth_tokens_fk_sync` (FK `auth_tokens` milik saya). Jalankan migrate dengan `--build`.
+- **`frontend/.gitattributes` dihapus:** aturan LFS bawaan ekspor Figma membuat `catatan.jpg` dan dua ilustrasi selalu tampil "modified". Kalau masih tampil, jalankan `git checkout -- frontend` sekali setelah pull.
+- **Di file E2E-mu:** saya menambah satu baris `dismissCookieNotice(page)` di tes "pulihkan sesi". Setelah font asli termuat, kotak cookie menutupi tombol "Mulai waktu fokus". Ada juga spec baru `navigation.spec.ts`, jadi satu run sekarang mendaftarkan 4 akun.
+- **CI:** job `frontend` sekarang menjalankan `npm test`, dan ada job baru `e2e` yang menyalakan stack Docker penuh lalu menjalankan Playwright.
+
 ## 0. Penting: frontend pindah repo dan sekarang dipegang saya
 
 Frontend dibangun di repo terpisah https://github.com/AldiRachmatdiantoo/reksa-frontend dari desain Figma Make. Jadi kamu **tidak perlu** membuat kerangka `frontend/`, `apiClient`, atau halaman Login/Register (checklist poin 3 di CLAUDE.md gugur). Halaman Ruang Belajar, Tebak & Foto, dan Hasil Cek sudah ada di sana dengan data contoh yang sama dengan `MockAiProvider`.
