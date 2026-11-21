@@ -19,6 +19,9 @@ import { PrismaMaterialsRepository } from './features/materials/materials.reposi
 import { createMaterialsRouter } from './features/materials/materials.routes.js';
 import { MaterialsService } from './features/materials/materials.service.js';
 import { RedisRubricCache } from './features/materials/rubricCache.js';
+import { PrismaQuotaRepository } from './features/essay-scans/quota.repository.js';
+import { createQuotaRouter } from './features/essay-scans/quota.routes.js';
+import { QuotaService } from './features/essay-scans/quota.service.js';
 import { PrismaSessionsRepository } from './features/study-sessions/sessions.repository.js';
 import { createSessionsRouter } from './features/study-sessions/sessions.routes.js';
 import { SessionsService } from './features/study-sessions/sessions.service.js';
@@ -68,6 +71,7 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
 
   const classesService = new ClassesService({ repo: new PrismaClassesRepository(deps.prisma) });
   const sessionsService = new SessionsService({ repo: new PrismaSessionsRepository(deps.prisma) });
+  const quotaService = new QuotaService({ repo: new PrismaQuotaRepository(deps.prisma) });
 
   return {
     '/auth': createAuthRouter({ service: authService, signer, redis: deps.redis }),
@@ -75,5 +79,7 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     '/materials': createMaterialsRouter({ service: materialsService, signer, redis: deps.redis }),
     '/classes': createClassesRouter({ service: classesService, signer, redis: deps.redis }),
     '/sessions': createSessionsRouter({ service: sessionsService, signer, redis: deps.redis }),
+    // Dipasang setelah '/me' (auth). Router '/me' tidak punya GET /quota, jadi permintaan diteruskan ke sini.
+    '/me/quota': createQuotaRouter({ service: quotaService, signer }),
   };
 }

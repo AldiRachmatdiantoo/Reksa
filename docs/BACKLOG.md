@@ -9,12 +9,13 @@ Tugas Adli menuju MVP (PRD v1.3): `study-sessions`, `essay-scans`, Gemini Stage 
 - [x] Variasi data `MockAiProvider` (skor tinggi/sedang/rendah, materi fotosintesis) + simulasi gagal `auditFailureRate` (PR #13, checkpoint #9)
 - [x] `study-sessions` FR-01 sampai FR-03: mulai, sesi aktif, detail, JOL, batal; aturan sesi sah FR-02 (PR #13, checkpoint #9)
 - [x] `common/utils/imageProcessor.ts`: magic bytes, hapus EXIF/GPS, orientasi, lebar maks. 1600px, WebP, batas piksel (checkpoint #10)
+- [x] Kuota scan harian FR-11 (`quota.*`, 00.00 WIB, `FOR UPDATE`, 429 `QUOTA_EXCEEDED`, refund) + `GET /me/quota` (checkpoint #11)
 
 ## Bisa dikerjakan sekarang
 
-- [ ] **Kuota scan harian** (FR-11): `QuotaService` (reset 00.00 WIB dari `last_scan_reset_at`, `SELECT ... FOR UPDATE`, 429 `QUOTA_EXCEEDED` + `resetAt`, pengembalian kuota saat audit `FAILED`). Tier dari `users.tier` sampai `pro_expires_at` ada.
-- [ ] **`GET /me/quota`**: router `/me` milik Aldi (`auth`), sepakati tempat pemasangannya lewat `UNTUK-ALDI.md`.
 - [ ] **QR bridge** (FR-04 skenario B): `POST /sessions/:id/qr-bridge` (token Redis TTL 300 detik, sekali pakai) + SSE `/scans/qr-bridge/:token/events`. Kabari Aldi path final SSE untuk `nginx.conf`.
+
+- [ ] Tier efektif dari `users.pro_expires_at` begitu migrasi FR-11 Aldi masuk (sekarang `users.tier`).
 
 ## Menunggu Aldi (lihat `UNTUK-ALDI.md`)
 

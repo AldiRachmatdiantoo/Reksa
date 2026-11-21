@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 21 November 2026, `imageProcessor` untuk `essay-scans` (Adli, branch `feat/adli-image-processor`)
+**Checkpoint terakhir:** 21 November 2026, kuota scan harian FR-11 + `GET /me/quota` (Adli, branch `feat/adli-image-processor`)
 
 ---
 
@@ -12,10 +12,22 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | :--- | :--- | :--- |
 | Langkah 0 | ✅ Selesai, di `main` (PR #1) | ⏳ Belum mulai (bagian frontend diambil alih Aldi) |
 | Fase 1 | ✅ Selesai: `auth` (PR #2, #3), CI + branch protection (PR #4) | — |
-| Fase 2 | ✅ Storage (PR #6) · ✅ `materials` (PR #8) · ✅ PRD v1.3 (PR #9) · ✅ `classes` FR-09 (PR #10) · 🟡 akun dasar FR-14 (branch `feat/aldi-account`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | ✅ Variasi `MockAiProvider` + `study-sessions` (PR #13) · ✅ monorepo frontend (PR #14) · 🟡 `essay-scans`: `imageProcessor` (branch `feat/adli-image-processor`) |
+| Fase 2 | ✅ Storage (PR #6) · ✅ `materials` (PR #8) · ✅ PRD v1.3 (PR #9) · ✅ `classes` FR-09 (PR #10) · 🟡 akun dasar FR-14 (branch `feat/aldi-account`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | ✅ Variasi `MockAiProvider` + `study-sessions` (PR #13) · ✅ monorepo frontend (PR #14) · 🟡 `essay-scans`: `imageProcessor` + kuota (branch `feat/adli-image-processor`) |
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #11 · Kuota scan harian (FR-11, bagian Adli) · branch `feat/adli-image-processor`
+
+**Selesai** di `backend/src/features/essay-scans/`:
+- `quota.policy.ts`: aturan murni. Free 3 scan per hari WIB (00.00 WIB = 17.00 UTC, dihitung dari `last_scan_reset_at`, tanpa cron); Pro tanpa batas tapi tetap dihitung; pengembalian kuota hanya untuk scan yang dipotong di hari WIB yang sama.
+- `quota.repository.ts`: baris `users` dikunci `SELECT ... FOR UPDATE`. Helper `lockQuotaState(tx)` dan `writeQuotaCounters(tx)` diekspor supaya transaksi `POST /scans/upload` nanti bisa memotong kuota dan membuat submission secara atomik.
+- `quota.service.ts`: `get`, `consume` (429 `QUOTA_EXCEEDED` + `details.resetAt` + `details.quota`), `refund(userId, consumedAt)` untuk audit `FAILED`.
+- `GET /api/v1/me/quota` (STUDENT): `{ quota: { tier, used, limit, remaining, resetAt } }`, `Cache-Control: no-store`. Dipasang sebagai entri `'/me/quota'` di `container.ts`; router `/me` milik `auth` tidak diubah.
+
+**Test:** unit `tests/unit/features/essay-scans/quota.test.ts` (batas 00.00 WIB, batas Free, Pro, refund lintas hari); integrasi `tests/integration/quota.test.ts` (8 `consume` paralel → tepat 3 lolos, refund hanya baris pemilik, 403 guru, 401 tanpa login, `PATCH /me` tetap jalan). Hasil: 152 unit, 155 integrasi + security, `npm audit --omit=dev` 0.
+
+**Catatan:** tier masih dari `users.tier`; ganti ke `pro_expires_at` saat migrasi FR-11 Aldi masuk.
 
 ### #10 · `imageProcessor` foto esai (Adli) · branch `feat/adli-image-processor`
 
@@ -222,7 +234,7 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 **Adli** (lihat [UNTUK-ADLI.md](UNTUK-ADLI.md))
 1. ~~Review schema di foldernya, perkaya `mockAi.fixtures.ts`~~ ✅
 2. ~~Backend `study-sessions`~~ ✅ (PR #13)
-3. ~~`imageProcessor`~~ ✅ (`feat/adli-image-processor`); berikutnya kuota scan dan QR bridge, lihat [BACKLOG.md](BACKLOG.md)
+3. ~~`imageProcessor`~~ ✅ · ~~kuota scan + `GET /me/quota`~~ ✅ (`feat/adli-image-processor`); berikutnya QR bridge, lihat [BACKLOG.md](BACKLOG.md)
 4. Unggah + worker `essay-scans`: menunggu keputusan Aldi soal `essay_submissions` append-only dan infra antrean (lihat `UNTUK-ALDI.md`)
 
 ## Catatan teknis yang perlu diingat

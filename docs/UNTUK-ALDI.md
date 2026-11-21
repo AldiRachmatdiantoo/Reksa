@@ -72,6 +72,12 @@ Kalau kamu setuju opsi A di atas, saya bisa sekalian membuat migrasi ini di bran
 
 Hal yang perlu Aldi ketahui tapi tidak butuh tindakan (fitur selesai, perubahan kontrak di area Adli, keputusan desain).
 
+### 2026-11-21 — ✅ `GET /me/quota` siap (FR-11)
+- `GET /api/v1/me/quota` (STUDENT) → `{ quota: { tier, used, limit, remaining, resetAt } }`; Pro: `limit` dan `remaining` `null`. `resetAt` = 00.00 WIB berikutnya (ISO UTC).
+- Dipasang sebagai entri `'/me/quota'` tersendiri di `container.ts`, jadi `createMeRouter` di `auth.routes.ts` **tidak** saya ubah. Kalau nanti kamu menambah `GET /me/:sesuatu` dengan parameter dinamis, pastikan tidak menelan `/me/quota`.
+- Kuota habis nanti di `POST /scans/upload`: `429` dengan `error.code = 'QUOTA_EXCEEDED'` dan `error.details = { resetAt, quota }`. Bedakan dari `429 TOO_MANY_REQUESTS` rate limit (yang punya header `Retry-After`).
+- Tier masih dibaca dari `users.tier`. Begitu `pro_expires_at` kamu migrasi, kabari saya; cukup ubah `lockQuotaState`/`getState` di `quota.repository.ts`.
+
 ### 2026-11-21 — Kontrak foto esai: HEIC tidak diterima lagi
 - `SCAN_ALLOWED_MIME_TYPES` di `essay-scans/scans.schema.ts` kini hanya `image/jpeg`, `image/png`, `image/webp`. `sharp` versi npm tidak punya dekoder HEVC, jadi HEIC dari iPhone tidak bisa dibaca server.
 - **Untuk frontend:** pasang `accept="image/jpeg,image/png,image/webp"` di input foto (juga yang `capture="environment"`). Safari iOS otomatis mengonversi ke JPEG bila HEIC tidak diminta. File lain dijawab `415 UNSUPPORTED_MEDIA_TYPE`, foto rusak `422`.

@@ -6,7 +6,7 @@ Urutan kasar sesuai ketergantungan ke backend. Tandai `✅` saat selesai dan cat
 
 - [x] ✅ **Unggah materi** (`materials`): form PDF/teks, pratinjau rubrik, ganti `SAMPLE_MATERIAL` (checkpoint #4).
 - [ ] **Sesi belajar** (`POST /sessions`): simpan durasi fokus dan tebakan nilai ke server, validasi waktu di server. ✅ Endpoint backend siap (PR #13), kontraknya di `docs/UNTUK-ALDI.md` repo induk; tinggal disambungkan.
-- [ ] **Unggah foto** (`/scans/upload`): kirim foto, tampilkan sisa kuota harian, tangani 413/415/422/429. Input foto wajib `accept="image/jpeg,image/png,image/webp"` (HEIC tidak diterima server).
+- [ ] **Unggah foto** (`/scans/upload`): kirim foto, tampilkan sisa kuota harian, tangani 413/415/422/429. Input foto wajib `accept="image/jpeg,image/png,image/webp"` (HEIC tidak diterima server). ✅ Sisa kuota sudah bisa dibaca dari `GET /me/quota` (bedakan 429 `QUOTA_EXCEEDED` dari rate limit).
 - [ ] **Hasil cek asli**: ganti `SAMPLE_AUDIT` dengan hasil scan, tambah keadaan "sedang dicek".
 - [ ] **QR bridge laptop ke HP**: halaman QR + SSE, desain ada di `design-reference/qr_bridge_*`.
 - [ ] **Jadwal ulang** (`spaced-repetition`): daftar sesi jatuh tempo, ganti tanggal H+3/H+7 lokal.
