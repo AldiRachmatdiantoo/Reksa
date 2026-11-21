@@ -1,13 +1,14 @@
 import NumberFlow from '@number-flow/react';
 import { motion } from 'motion/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSpeech } from '@/shared/hooks/useSpeech';
+import { EASE_OUT, FillBar, pageTransition, Stagger, StaggerItem } from '@/shared/motion';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button, ButtonLink } from '@/shared/ui/Button';
+import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { Icon } from '@/shared/ui/Icon';
 import { StateBlock } from '@/shared/ui/StateBlock';
-import { SAMPLE_MATERIAL } from '@/features/studio/sampleMaterial';
 import { StepIndicator } from '@/features/studio/StepIndicator';
 import { useStudySession } from '@/features/studio/studySession';
 import { SAMPLE_AUDIT, type ImportanceLevel } from './sampleAudit';
@@ -40,6 +41,13 @@ export function ResultPage() {
   const { session, photoUrl, clear } = useStudySession();
   const { state: speech, toggle: toggleSpeech } = useSpeech();
   const audit = SAMPLE_AUDIT;
+  // Angka skor berangkat dari 0 lalu bergulir ke nilai asli setelah halaman tampil.
+  const [revealed, setRevealed] = useState(false);
+  const [confirmNew, setConfirmNew] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setRevealed(true), 350);
+    return () => window.clearTimeout(id);
+  }, []);
 
   useEffect(() => {
     document.title = 'Hasil Cek Catatan · REKSA';
@@ -49,7 +57,7 @@ export function ResultPage() {
     return (
       <>
         <AppHeader subtitle="Hasil Cek Catatan" />
-        <main className="px-4 py-16">
+        <motion.main {...pageTransition} className="px-4 py-16">
           <StateBlock
             icon="fact_check"
             title="Belum ada catatan yang dicek"
@@ -57,7 +65,7 @@ export function ResultPage() {
           >
             Hasil muncul setelah kamu selesai waktu fokus, menyimpan tebakan nilai, dan memilih foto catatan.
           </StateBlock>
-        </main>
+        </motion.main>
       </>
     );
   }
@@ -78,9 +86,7 @@ export function ResultPage() {
     <>
       <AppHeader subtitle="Hasil Cek Catatan" />
       <motion.main
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
+        {...pageTransition}
         className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8"
       >
         <StepIndicator current={3} />
@@ -93,13 +99,32 @@ export function ResultPage() {
           </span>
         </p>
 
-        <section aria-labelledby="calibration-title" className="grid gap-6 rounded-lg bg-teal p-6 text-on-teal sm:p-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] dark:border dark:border-line dark:bg-teal-wash dark:text-ink">
+        <motion.section
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.1, ease: EASE_OUT }}
+          aria-labelledby="calibration-title"
+          className="grid gap-6 rounded-lg bg-teal p-6 text-on-teal sm:p-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] dark:border dark:border-line dark:bg-teal-wash dark:text-ink">
           <div className="flex flex-col gap-3">
             <h1 id="calibration-title" className="font-display text-headline-lg-mobile sm:text-headline-lg text-balance">
               {message.title}
             </h1>
             <p className="text-body-lg opacity-90 text-pretty">{message.body}</p>
-            <p className="text-body-md opacity-90">{SAMPLE_MATERIAL.title}</p>
+            <p className="text-body-md opacity-90">{session.materialTitle}</p>
+            {/* Visual pembanding; angkanya sudah ada di daftar sebelah, jadi disembunyikan dari pembaca layar. */}
+            <div aria-hidden="true" className="flex flex-col gap-2.5 pt-2">
+              {[
+                { label: 'Tebakan', value: guess, bar: 'bg-on-teal/60 dark:bg-ink-muted' },
+                { label: 'Nilai asli', value: audit.actualScore, bar: 'bg-card dark:bg-teal' },
+              ].map((row, i) => (
+                <div key={row.label} className="grid grid-cols-[5.5rem_1fr] items-center gap-3 text-label-md">
+                  <span className="opacity-90">{row.label}</span>
+                  <span className="block h-2.5 overflow-hidden rounded-full bg-on-teal/15 dark:bg-wash-strong">
+                    <FillBar value={row.value} className={row.bar} delay={0.4 + i * 0.15} />
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
           <dl className="grid grid-cols-3 gap-3 self-center">
             {[
@@ -110,12 +135,12 @@ export function ResultPage() {
               <div key={item.label} className={`flex flex-col gap-1 rounded-md p-4 ${item.big ? 'bg-card text-ink' : 'bg-on-teal/10 dark:bg-card/60'}`}>
                 <dt className="text-label-md opacity-90">{item.label}</dt>
                 <dd className={`font-mono leading-none tabular-nums ${item.big ? 'text-[44px] text-teal' : 'text-[32px]'}`}>
-                  <NumberFlow value={item.value} suffix="%" />
+                  <NumberFlow value={revealed ? item.value : 0} suffix="%" />
                 </dd>
               </div>
             ))}
           </dl>
-        </section>
+        </motion.section>
 
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
           <div className="flex flex-col gap-6">
@@ -146,9 +171,9 @@ export function ResultPage() {
               <h2 id="blindspots-title" className="font-headline text-headline-md text-ink">
                 Yang masih terlewat ({audit.blindSpots.length})
               </h2>
-              <ul className="flex flex-col gap-3">
+              <Stagger as="ul" className="flex flex-col gap-3">
                 {audit.blindSpots.map((spot) => (
-                  <li key={spot.concept} className="flex flex-col gap-2 rounded-md border border-line-soft bg-card p-5">
+                  <StaggerItem as="li" key={spot.concept} className="flex flex-col gap-2 rounded-md border border-line-soft bg-card p-5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h3 className="font-title text-title-md text-ink">{spot.concept}</h3>
                       <span className={`rounded-full px-2.5 py-0.5 text-label-md ${IMPORTANCE[spot.importanceLevel].className}`}>
@@ -156,18 +181,18 @@ export function ResultPage() {
                       </span>
                     </div>
                     <p className="text-body-md text-ink-muted text-pretty">{spot.explanation}</p>
-                  </li>
+                  </StaggerItem>
                 ))}
-              </ul>
+              </Stagger>
             </section>
 
             <section aria-labelledby="accurate-title" className="flex flex-col gap-3">
               <h2 id="accurate-title" className="font-headline text-headline-md text-ink">
                 Yang sudah tepat
               </h2>
-              <ul className="flex flex-col gap-3">
+              <Stagger as="ul" className="flex flex-col gap-3">
                 {audit.accurateConcepts.map((c) => (
-                  <li key={c.concept} className="flex flex-col gap-2 rounded-md border border-line-soft bg-card p-5">
+                  <StaggerItem as="li" key={c.concept} className="flex flex-col gap-2 rounded-md border border-line-soft bg-card p-5">
                     <h3 className="flex items-center gap-2 font-title text-title-md text-ink">
                       <Icon name="check_circle" fill className="text-teal" />
                       {c.concept}
@@ -176,9 +201,9 @@ export function ResultPage() {
                       <span className="sr-only">Di catatanmu: </span>
                       {c.evidenceFromHandwriting}
                     </blockquote>
-                  </li>
+                  </StaggerItem>
                 ))}
-              </ul>
+              </Stagger>
             </section>
 
             {audit.logicCorrections.length > 0 && (
@@ -186,9 +211,9 @@ export function ResultPage() {
                 <h2 id="corrections-title" className="font-headline text-headline-md text-ink">
                   Perlu diluruskan
                 </h2>
-                <ul className="flex flex-col gap-3">
+                <Stagger as="ul" className="flex flex-col gap-3">
                   {audit.logicCorrections.map((c) => (
-                    <li key={c.studentStatement} className="grid gap-3 rounded-md border border-line-soft bg-card p-5 sm:grid-cols-2">
+                    <StaggerItem as="li" key={c.studentStatement} className="grid gap-3 rounded-md border border-line-soft bg-card p-5 sm:grid-cols-2">
                       <div className="flex flex-col gap-1">
                         <span className="text-label-md text-ink-muted">Kamu menulis</span>
                         <p className="text-body-md text-ink line-through decoration-danger/60">{c.studentStatement}</p>
@@ -197,9 +222,9 @@ export function ResultPage() {
                         <span className="text-label-md text-teal">Seharusnya</span>
                         <p className="text-body-md text-ink">{c.correction}</p>
                       </div>
-                    </li>
+                    </StaggerItem>
                   ))}
-                </ul>
+                </Stagger>
               </section>
             )}
           </div>
@@ -211,14 +236,14 @@ export function ResultPage() {
                 Rencana latihan ulang
               </h2>
               <p className="text-body-md text-ink-muted">Latihan singkat 3 sampai 5 menit khusus untuk bagian yang terlewat.</p>
-              <ol className="flex flex-col gap-3">
+              <Stagger as="ol" className="flex flex-col gap-3">
                 {[3, 7].map((day) => (
-                  <li key={day} className="flex items-center gap-4 rounded-md bg-wash px-4 py-3">
+                  <StaggerItem as="li" key={day} className="flex items-center gap-4 rounded-md bg-wash px-4 py-3">
                     <span className="font-mono text-mono-md text-teal tabular-nums">H+{day}</span>
                     <span className="text-body-md text-ink">{reviewDate(day)}</span>
-                  </li>
+                  </StaggerItem>
                 ))}
-              </ol>
+              </Stagger>
               <p className="text-body-sm text-ink-muted">Pengingat otomatis aktif setelah modul jadwal ulang selesai.</p>
             </section>
 
@@ -229,12 +254,24 @@ export function ResultPage() {
               </figure>
             )}
 
-            <Button variant="accent" size="lg" onClick={startOver}>
+            <Button variant="accent" size="lg" onClick={() => setConfirmNew(true)}>
               Mulai sesi belajar baru
             </Button>
           </aside>
         </div>
       </motion.main>
+
+      <ConfirmDialog
+        open={confirmNew}
+        icon="note_add"
+        title="Mulai sesi belajar baru?"
+        confirmLabel="Ya, mulai baru"
+        cancelLabel="Tetap di hasil"
+        onCancel={() => setConfirmNew(false)}
+        onConfirm={startOver}
+      >
+        Hasil ini, tebakan nilaimu, dan foto catatan akan dihapus dari perangkat ini. Jadwal latihan ulang belum tersimpan di server.
+      </ConfirmDialog>
     </>
   );
 }

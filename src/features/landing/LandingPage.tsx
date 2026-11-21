@@ -1,8 +1,10 @@
-import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { AnimatePresence, motion, useScroll, useTransform } from 'motion/react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { homePathFor } from '@/features/auth/authApi';
+import { useConsent } from '@/shared/consent';
+import { EASE_OUT, pageTransition, Reveal, Stagger, StaggerItem, WordReveal } from '@/shared/motion';
 import { Brand } from '@/shared/ui/Brand';
 import { ButtonLink } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
@@ -12,6 +14,10 @@ import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 type Audience = 'pelajar' | 'guru';
 
 const STUDENT_STEPS = [
+  {
+    title: 'Siapkan materimu',
+    body: 'Tempel teks atau unggah PDF bab yang mau dipelajari. REKSA menyusun konsep kunci yang nanti jadi patokan penilaian.',
+  },
   {
     title: 'Fokus dan tulis di kertas',
     body: 'Pilih waktu 15, 25, atau 45 menit. Bahan bacaan ditutup selama waktu berjalan, jadi kamu menulis dari ingatan sendiri.',
@@ -24,6 +30,30 @@ const STUDENT_STEPS = [
   {
     title: 'Lihat yang terlewat, ulangi singkat',
     body: 'Hasil menunjukkan konsep yang sudah tepat, yang masih terlewat, dan latihan ulang 3 sampai 5 menit di hari ke-3 dan ke-7.',
+  },
+];
+
+/** Hanya pertanyaan yang jawabannya sudah benar untuk versi saat ini. */
+const FAQ = [
+  {
+    q: 'Materi apa saja yang bisa dipakai?',
+    a: 'Teks yang kamu tempel (sampai 15.000 karakter) atau file PDF berisi teks, maksimal 10 MB. PDF hasil scan foto belum bisa dibaca, jadi unggah versi teksnya atau tempel isinya.',
+  },
+  {
+    q: 'Tulisanku berantakan. Apakah nilainya turun?',
+    a: 'Tidak. Yang dicek adalah konsep dan hubungan sebab-akibat di catatanmu. Panah, singkatan, dan coretan tetap dihitung sebagai ide.',
+  },
+  {
+    q: 'Kenapa harus menebak nilai sebelum dicek?',
+    a: 'Supaya kamu tahu bedanya merasa paham dan benar-benar paham. Di halaman hasil, tebakanmu dibandingkan dengan hasil cek.',
+  },
+  {
+    q: 'Butuh alat apa saja?',
+    a: 'Kertas, pulpen, dan kamera HP. Kalau belajar di laptop, foto catatan bisa diunggah dari laptop juga.',
+  },
+  {
+    q: 'Materi yang sudah diunggah bisa dihapus?',
+    a: 'Bisa, dari halaman Materi saya. Materi yang sudah dipakai di sesi belajar tetap disimpan supaya riwayat belajarmu utuh.',
   },
 ];
 
@@ -42,15 +72,20 @@ const TEACHER_POINTS = [
 
 export function LandingPage() {
   const auth = useAuth();
+  const { reopen: openCookieSettings } = useConsent();
   const [audience, setAudience] = useState<Audience>('pelajar');
   const user = auth.status === 'authenticated' ? auth.user : null;
+  // Parallax tipis pada foto hero: bergeser 40px selama hero digulir keluar layar.
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
+  const heroImageY = useTransform(scrollYProgress, [0, 1], [0, 40]);
 
   useEffect(() => {
     document.title = 'REKSA · Teman Belajar Aktif';
   }, []);
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <motion.div {...pageTransition} className="flex min-h-dvh flex-col">
       <a
         href="#isi"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-full focus:bg-card focus:px-4 focus:py-2 focus:text-label-lg"
@@ -66,6 +101,9 @@ export function LandingPage() {
             </a>
             <a href="#penilaian" className="text-label-lg text-ink-muted hover:text-teal">
               Cara menilai
+            </a>
+            <a href="#tanya-jawab" className="text-label-lg text-ink-muted hover:text-teal">
+              Tanya jawab
             </a>
           </nav>
           <div className="flex items-center gap-1 sm:gap-2">
@@ -89,17 +127,19 @@ export function LandingPage() {
       </header>
 
       <main id="isi" className="flex flex-1 flex-col">
-        <section className="border-b border-line-soft bg-card">
+        <section ref={heroRef} className="overflow-hidden border-b border-line-soft bg-card">
           <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-12 lg:py-16">
             <div className="flex flex-col gap-5 lg:col-span-6">
               <h1 className="font-display text-display-lg-mobile text-ink text-balance sm:text-display-lg">
-                Ubah catatan kertas jadi pemahaman nyata
+                <WordReveal text="Ubah catatan kertas jadi pemahaman nyata" delay={0.1} />
               </h1>
+              <Reveal delay={0.45}>
               <p className="max-w-prose text-body-lg text-ink-muted text-pretty">
                 Catat ulang pelajaran di kertas saat waktu fokus berjalan, lalu foto catatanmu. REKSA menunjukkan bagian yang sudah tepat
                 dan yang masih terlewat, tanpa tablet mahal.
               </p>
-              <div className="flex flex-wrap items-center gap-3 pt-1">
+              </Reveal>
+              <Reveal delay={0.6} className="flex flex-wrap items-center gap-3 pt-1">
                 <ButtonLink to={user ? homePathFor(user.role) : '/daftar'} variant="accent" size="lg">
                   {user ? 'Lanjut belajar' : 'Buat akun gratis'}
                 </ButtonLink>
@@ -107,10 +147,16 @@ export function LandingPage() {
                   Lihat alurnya
                   <Icon name="arrow_downward" className="text-[20px]" />
                 </a>
-              </div>
+              </Reveal>
             </div>
-            <figure className="lg:col-span-6">
-              <img
+            <motion.figure
+              className="lg:col-span-6"
+              initial={{ opacity: 0, clipPath: 'inset(12% 12% 12% 12% round 24px)' }}
+              animate={{ opacity: 1, clipPath: 'inset(0% 0% 0% 0% round 0px)' }}
+              transition={{ duration: 1, delay: 0.2, ease: EASE_OUT }}
+            >
+              <motion.img
+                style={{ y: heroImageY }}
                 src="/assets/active-learning.jpg"
                 alt="Pelajar menulis peta konsep di kertas sambil memotretnya dengan kamera HP"
                 width={1376}
@@ -122,13 +168,13 @@ export function LandingPage() {
                 <Icon name="edit" className="text-[18px] text-teal" />
                 Cukup kertas, pulpen, dan kamera HP.
               </figcaption>
-            </figure>
+            </motion.figure>
           </div>
         </section>
 
         <section id="cara-kerja" aria-labelledby="cara-kerja-title" className="px-4 py-14 sm:px-6 lg:py-20">
           <div className="mx-auto flex max-w-6xl flex-col gap-8">
-            <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+            <Reveal className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
               <div className="flex max-w-xl flex-col gap-2">
                 <h2 id="cara-kerja-title" className="font-headline text-headline-lg-mobile text-ink text-balance sm:text-headline-lg">
                   Satu tempat untuk belajar dan mengajar
@@ -144,21 +190,21 @@ export function LandingPage() {
                   { value: 'guru', label: 'Untuk guru', panelId: 'panel-audience' },
                 ]}
               />
-            </div>
+            </Reveal>
 
             <div id="panel-audience" role="tabpanel" aria-label={audience === 'pelajar' ? 'Alur untuk pelajar' : 'Manfaat untuk guru'}>
-              <AnimatePresence mode="wait" initial={false}>
+              <AnimatePresence mode="wait">
                 {audience === 'pelajar' ? (
-                  <motion.ol
+                  <Stagger
+                    as="ol"
                     key="pelajar"
-                    initial={{ opacity: 0, x: 12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -12 }}
-                    transition={{ duration: 0.2 }}
-                    className="grid gap-px overflow-hidden rounded-lg border border-line-soft bg-line-soft md:grid-cols-3"
+                    gap={0.1}
+                    exit={{ opacity: 0, x: -16, transition: { duration: 0.15 } }}
+                    className="grid gap-px overflow-hidden rounded-lg border border-line-soft bg-line-soft md:grid-cols-2 lg:grid-cols-4"
                   >
                     {STUDENT_STEPS.map((step, i) => (
-                      <li
+                      <StaggerItem
+                        as="li"
                         key={step.title}
                         className={`flex flex-col gap-3 p-6 sm:p-7 ${step.highlight ? 'bg-teal-wash' : 'bg-card'}`}
                       >
@@ -173,28 +219,27 @@ export function LandingPage() {
                         {step.highlight && (
                           <p className="mt-auto text-label-md text-teal">Langkah yang jarang ada di aplikasi belajar lain.</p>
                         )}
-                      </li>
+                      </StaggerItem>
                     ))}
-                  </motion.ol>
+                  </Stagger>
                 ) : (
-                  <motion.ul
+                  <Stagger
+                    as="ul"
                     key="guru"
-                    initial={{ opacity: 0, x: 12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -12 }}
-                    transition={{ duration: 0.2 }}
+                    gap={0.1}
+                    exit={{ opacity: 0, x: -16, transition: { duration: 0.15 } }}
                     className="grid gap-4 md:grid-cols-2"
                   >
                     {TEACHER_POINTS.map((point) => (
-                      <li key={point.title} className="flex gap-4 rounded-lg border border-line-soft bg-card p-6 sm:p-7">
+                      <StaggerItem as="li" key={point.title} className="flex gap-4 rounded-lg border border-line-soft bg-card p-6 sm:p-7">
                         <Icon name={point.icon} className="text-[32px] text-teal" />
                         <div className="flex flex-col gap-2">
                           <h3 className="font-title text-title-lg text-ink">{point.title}</h3>
                           <p className="text-body-md text-ink-muted text-pretty">{point.body}</p>
                         </div>
-                      </li>
+                      </StaggerItem>
                     ))}
-                  </motion.ul>
+                  </Stagger>
                 )}
               </AnimatePresence>
             </div>
@@ -203,7 +248,11 @@ export function LandingPage() {
 
         <section id="penilaian" aria-labelledby="penilaian-title" className="border-y border-line-soft bg-card px-4 py-14 sm:px-6 lg:py-20">
           <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-12">
-            <img
+            <motion.img
+              initial={{ opacity: 0, x: -32, rotate: -2 }}
+              whileInView={{ opacity: 1, x: 0, rotate: 0 }}
+              viewport={{ once: true, margin: '0px 0px -15% 0px' }}
+              transition={{ duration: 0.8, ease: EASE_OUT }}
               src="/assets/inclusive-learning.jpg"
               alt="Kertas berisi peta konsep dengan panah dan pensil, di samping HP yang memotretnya"
               width={1024}
@@ -211,7 +260,7 @@ export function LandingPage() {
               loading="lazy"
               className="aspect-square w-full max-w-md rounded-lg border border-line-soft object-cover lg:col-span-5"
             />
-            <div className="flex flex-col gap-5 lg:col-span-7">
+            <Reveal delay={0.1} className="flex flex-col gap-5 lg:col-span-7">
               <h2 id="penilaian-title" className="font-headline text-headline-lg-mobile text-ink text-balance sm:text-headline-lg">
                 Yang dinilai idemu, bukan rapinya tulisan
               </h2>
@@ -235,20 +284,52 @@ export function LandingPage() {
                   </span>
                 </li>
               </ul>
-            </div>
+            </Reveal>
+          </div>
+        </section>
+
+        <section id="tanya-jawab" aria-labelledby="faq-title" className="px-4 pt-14 sm:px-6 lg:pt-20">
+          <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-12">
+            <Reveal className="flex flex-col gap-2 lg:col-span-4">
+              <h2 id="faq-title" className="font-headline text-headline-lg-mobile text-ink text-balance sm:text-headline-lg">
+                Yang sering ditanyakan
+              </h2>
+              <p className="text-body-lg text-ink-muted text-pretty">Jawaban singkat sebelum kamu mulai sesi pertama.</p>
+            </Reveal>
+            <Stagger as="ul" gap={0.06} className="flex flex-col divide-y divide-line-soft border-y border-line-soft lg:col-span-8">
+              {FAQ.map((item) => (
+                <StaggerItem as="li" key={item.q}>
+                  <details className="group">
+                    <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 text-title-md text-ink hover:text-teal [&::-webkit-details-marker]:hidden">
+                      {item.q}
+                      <Icon
+                        name="expand_more"
+                        className="shrink-0 text-ink-muted transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
+                      />
+                    </summary>
+                    <p className="max-w-prose pb-5 text-body-md text-ink-muted text-pretty">{item.a}</p>
+                  </details>
+                </StaggerItem>
+              ))}
+            </Stagger>
           </div>
         </section>
 
         <section className="px-4 py-14 sm:px-6 lg:py-20">
-          <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 rounded-xl bg-teal p-8 text-on-teal sm:p-10 md:flex-row md:items-center dark:border dark:border-line dark:bg-teal-wash dark:text-ink">
+          <motion.div
+            initial={{ opacity: 0, y: 32, scale: 0.97 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, margin: '0px 0px -10% 0px' }}
+            transition={{ duration: 0.7, ease: EASE_OUT }}
+            className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 rounded-xl bg-teal p-8 text-on-teal sm:p-10 md:flex-row md:items-center dark:border dark:border-line dark:bg-teal-wash dark:text-ink">
             <div className="flex max-w-xl flex-col gap-2">
               <h2 className="font-headline text-headline-md text-balance sm:text-headline-lg">Siap uji pemahamanmu hari ini?</h2>
-              <p className="text-body-lg opacity-90 text-pretty">Siapkan selembar kertas dan pulpen. Sesi pertama selesai dalam 15 menit.</p>
+              <p className="text-body-lg opacity-90 text-pretty">Siapkan selembar kertas dan pulpen. Siapkan materi, lalu sesi pertama selesai dalam 15 menit.</p>
             </div>
             <ButtonLink to={user ? homePathFor(user.role) : '/daftar'} variant="accent" size="lg" className="shrink-0">
               {user ? 'Buka ruang belajar' : 'Buat akun gratis'}
             </ButtonLink>
-          </div>
+          </motion.div>
         </section>
       </main>
 
@@ -261,16 +342,22 @@ export function LandingPage() {
             <a href="#cara-kerja" className="inline-flex min-h-11 items-center hover:text-teal">
               Cara kerja
             </a>
+            <a href="#tanya-jawab" className="inline-flex min-h-11 items-center hover:text-teal">
+              Tanya jawab
+            </a>
             <Link to="/masuk" className="inline-flex min-h-11 items-center hover:text-teal">
               Masuk
             </Link>
             <Link to="/daftar" className="inline-flex min-h-11 items-center hover:text-teal">
               Daftar
             </Link>
+            <button type="button" onClick={openCookieSettings} className="inline-flex min-h-11 items-center hover:text-teal">
+              Pengaturan cookie
+            </button>
           </nav>
           <p>© 2026 REKSA</p>
         </div>
       </footer>
-    </div>
+    </motion.div>
   );
 }

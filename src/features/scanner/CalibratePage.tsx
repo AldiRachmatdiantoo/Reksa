@@ -2,11 +2,11 @@ import NumberFlow from '@number-flow/react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { pageTransition, Stagger, StaggerItem } from '@/shared/motion';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button, ButtonLink } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { StateBlock } from '@/shared/ui/StateBlock';
-import { SAMPLE_MATERIAL } from '@/features/studio/sampleMaterial';
 import { StepIndicator } from '@/features/studio/StepIndicator';
 import { formatDuration, useStudySession } from '@/features/studio/studySession';
 
@@ -42,7 +42,7 @@ export function CalibratePage() {
     return (
       <>
         <AppHeader subtitle="Tebak & Foto" />
-        <main className="px-4 py-16">
+        <motion.main {...pageTransition} className="px-4 py-16">
           <StateBlock
             icon="timer"
             title="Mulai dari waktu fokus dulu"
@@ -50,7 +50,7 @@ export function CalibratePage() {
           >
             Tebakan nilai dan foto catatan dibuat setelah kamu menulis di kertas selama waktu fokus.
           </StateBlock>
-        </main>
+        </motion.main>
       </>
     );
   }
@@ -78,9 +78,7 @@ export function CalibratePage() {
     <>
       <AppHeader subtitle="Tebak & Foto" />
       <motion.main
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
+        {...pageTransition}
         className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8"
       >
         <StepIndicator current={2} />
@@ -88,7 +86,7 @@ export function CalibratePage() {
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border border-line-soft bg-card px-5 py-4">
           <span className="flex items-center gap-2 text-body-md text-ink">
             <Icon name="menu_book" className="text-teal" />
-            {SAMPLE_MATERIAL.title}
+            {session.materialTitle}
           </span>
           <span className="flex items-center gap-2 text-body-md text-ink-muted">
             <Icon name="timer" className="text-teal" />
@@ -96,7 +94,8 @@ export function CalibratePage() {
           </span>
         </div>
 
-        <div className="grid items-start gap-6 lg:grid-cols-2">
+        <Stagger trigger="mount" gap={0.12} delay={0.1} className="grid items-start gap-6 lg:grid-cols-2">
+          <StaggerItem>
           <section aria-labelledby="jol-title" className="flex flex-col gap-5 rounded-lg border border-line-soft bg-card p-5 sm:p-6">
             <header className="flex flex-col gap-2">
               <h1 id="jol-title" className="font-headline text-headline-lg-mobile text-ink sm:text-headline-md">
@@ -134,19 +133,40 @@ export function CalibratePage() {
               <span>100%</span>
             </div>
 
-            {jolLocked ? (
-              <p className="flex items-center gap-2 rounded-md bg-teal-wash px-4 py-3 text-body-md text-teal">
-                <Icon name="check_circle" fill />
-                Tebakan {session.jolScore}% tersimpan. Tebakan tidak bisa diubah setelah disimpan.
-              </p>
-            ) : (
-              <Button variant="primary" size="lg" onClick={() => saveJol(guess)}>
-                Simpan tebakan
-              </Button>
-            )}
+            <AnimatePresence mode="wait" initial={false}>
+              {jolLocked ? (
+                <motion.p
+                  key="saved"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 rounded-md bg-teal-wash px-4 py-3 text-body-md text-teal"
+                >
+                  <motion.span
+                    className="flex"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 16, delay: 0.1 }}
+                  >
+                    <Icon name="check_circle" fill />
+                  </motion.span>
+                  Tebakan {session.jolScore}% tersimpan. Tebakan tidak bisa diubah setelah disimpan.
+                </motion.p>
+              ) : (
+                <motion.div key="save" exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.15 }} className="flex flex-col">
+                  <Button variant="primary" size="lg" onClick={() => saveJol(guess)}>
+                    Simpan tebakan
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </section>
+          </StaggerItem>
 
-          <section
+          <StaggerItem>
+          <motion.section
+            layout
+            animate={{ opacity: jolLocked ? 1 : 0.85 }}
+            transition={{ duration: 0.3 }}
             aria-labelledby="photo-title"
             aria-disabled={!jolLocked}
             className={`flex flex-col gap-5 rounded-lg border p-5 sm:p-6 ${jolLocked ? 'border-line-soft bg-card' : 'border-dashed border-line bg-wash'}`}
@@ -210,8 +230,9 @@ export function CalibratePage() {
               <Icon name="info" className="text-[18px]" />
               Di versi ini foto belum dikirim ke server dan hasil cek memakai contoh. Pengecekan otomatis aktif setelah modul pindai selesai.
             </p>
-          </section>
-        </div>
+          </motion.section>
+          </StaggerItem>
+        </Stagger>
 
         <div className="flex flex-col-reverse items-stretch justify-between gap-3 border-t border-line-soft pt-6 sm:flex-row sm:items-center">
           <ButtonLink to="/belajar" variant="ghost">
