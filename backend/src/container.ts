@@ -17,6 +17,9 @@ import { ClassesService } from './features/classes/classes.service.js';
 import { UnpdfTextExtractor, type PdfTextExtractor } from './common/utils/pdfText.js';
 import { MockAiProvider } from './common/ai/mockAi.provider.js';
 import { CohortService } from './features/governance/cohort.service.js';
+import { PrismaInstitutionRepository } from './features/institutions/institution.repository.js';
+import { createEducatorInstitutionRouter, createInstitutionRouter } from './features/institutions/institution.routes.js';
+import { InstitutionService } from './features/institutions/institution.service.js';
 import { RedisCohortCache } from './features/governance/cohortCache.js';
 import { PrismaGovernanceRepository } from './features/governance/governance.repository.js';
 import { createGovernanceRouter, createLedgerRouter } from './features/governance/governance.routes.js';
@@ -127,12 +130,14 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
 
   const privacyService = createPrivacyService(deps, hasher);
   const proService = new ProService({ repo: new PrismaProRepository(deps.prisma) });
+  const institutionService = new InstitutionService({ repo: new PrismaInstitutionRepository(deps.prisma) });
 
   // Semua yang ada di bawah /me: profil & persetujuan (auth), privasi (FR-13), Pro (FR-11).
   const me = Router();
   me.use(createMeRouter({ service: authService, signer, redis: deps.redis }));
   me.use(createPrivacyRouter({ service: privacyService, signer, redis: deps.redis }));
   me.use(createProRouter({ service: proService, signer, redis: deps.redis }));
+  me.use(createEducatorInstitutionRouter({ service: institutionService, signer, redis: deps.redis }));
 
   return {
     '/auth': createAuthRouter({ service: authService, signer, redis: deps.redis }),
@@ -148,6 +153,7 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     // Dipasang setelah '/me' (auth). Router '/me' tidak punya GET /quota, jadi permintaan diteruskan ke sini.
     '/me/quota': createQuotaRouter({ service: quotaService, signer }),
     '/scans': createScansRouter({ service: scansService, signer, redis: deps.redis }),
+    '/institution': createInstitutionRouter({ service: institutionService, signer, redis: deps.redis }),
     '/governance': createGovernanceRouter({ service: governanceService, cohort: cohortService, signer, redis: deps.redis }),
     '/ledger': createLedgerRouter({
       service: governanceService,

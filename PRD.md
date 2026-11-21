@@ -396,6 +396,13 @@ Seluruh endpoint berada di bawah prefix `/api/v1` dan menggunakan middleware val
 | `GET` | `/institution/analytics` | `INSTITUTION_ADMIN` | Agregat per kelas dan per konsep; kelompok di bawah 5 siswa disembunyikan. |
 | `GET` | `/me/quota` | `STUDENT` | `{ tier, used, limit, remaining, resetAt }` (FR-11). |
 | `POST` | `/me/activate-pro` | Authenticated (Rate-Limited) | Menukar kode aktivasi Pro `{ code }`. |
+| `GET` | `/me/institution` | `EDUCATOR` | Institusi tempat pengajar terhubung, atau `null` (FR-10). |
+| `POST` | `/me/institution` | `EDUCATOR` (Rate-Limited) | Bergabung dengan kode undangan `{ code }` (43 karakter base64url). Kode salah/kedaluwarsa/dicabut: `404` yang sama; sudah di institusi lain: `409 ALREADY_IN_INSTITUTION` (FR-10). |
+| `GET` | `/institution` | `INSTITUTION_ADMIN` | Pengajar, kelas, dan agregat per kelas; kelompok di bawah 5 siswa disembunyikan (FR-10). |
+| `GET` | `/institution/concepts` | `INSTITUTION_ADMIN` | Konsep tersulit lintas kelas, materi kelas dengan minimal 5 siswa (FR-10). |
+| `GET` / `POST` | `/institution/invites` | `INSTITUTION_ADMIN` | Daftar / buat kode undangan pengajar (7 hari; kode mentah hanya di jawaban `POST`) (FR-10). |
+| `DELETE` | `/institution/invites/:inviteId` | `INSTITUTION_ADMIN` | Cabut kode undangan (idempoten) (FR-10). |
+| `DELETE` | `/institution/educators/:educatorId` | `INSTITUTION_ADMIN` | Lepas pengajar; `classes.institution_id` miliknya dikosongkan (FR-10). |
 | `POST` | `/ledger/exports` | `STUDENT` (Pro) | Membuat PDF *Proof of Understanding* `{ submissionIds?, from?, to? }`; mengembalikan *Signed URL* (FR-12). |
 | `GET` | `/ledger/verify/:hash` | Public (Rate-Limited) | Memeriksa keaslian `ledger_hash`; hanya mengembalikan status valid dan tanggal sesi. |
 | `POST` | `/sessions/:id/cancel` | `STUDENT` (Owner) | Membatalkan sesi aktif → `EXPIRED` (v1.3, FR-02). |
@@ -469,6 +476,11 @@ Sumber kebenarannya adalah file `*.schema.ts`. Tabel ini ringkasan agar frontend
 
 **`spaced-repetition`** (`features/spaced-repetition/spaced.schema.ts`)
 * `GET /spaced/due?limit=` (1–50, default 20). Interval hanya 3 dan 7 hari.
+
+**`institutions`** (`features/institutions/institution.schema.ts`, FR-10)
+* `GET /institution` → `{ institution { id, name }, educators[] { id, fullName, email, classCount }, classes[] { id, name, educator { id, fullName }, memberCount, auditedStudents|null, completedSessions|null, avgScore|null, suppressed }, minGroupSize: 5 }`.
+* `GET /institution/concepts` → `{ concepts[] { materialId, materialTitle, concept, studentsMissing, studentsAudited, percent }, minGroupSize: 5 }`.
+* Agregat dihitung fungsi `SECURITY DEFINER` `institution_class_stats` / `institution_concept_stats` yang memeriksa sendiri bahwa `app.current_user_id` adalah admin institusi itu dan mengosongkan angka kelompok di bawah 5 siswa. Institusi + admin dibuat lewat `npm run institution:create`.
 
 **`governance`** (`features/governance/governance.schema.ts`)
 * `GET /governance/classes/:classId/ledger?cursor=&limit=` (cursor UUID, limit 1–100, default 20).

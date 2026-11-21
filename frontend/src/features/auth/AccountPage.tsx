@@ -8,6 +8,7 @@ import { Button } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { TextField } from '@/shared/ui/TextField';
 import { LedgerPdfSection } from '@/features/governance/LedgerPdfExport';
+import { InstitutionJoinSection } from '@/features/institution/InstitutionJoinSection';
 import { DataSection, PlanSection } from './AccountDataSections';
 import { useAuth } from './AuthProvider';
 import { authApi, isEffectivePro, ROLE_LABEL, type AuthUser } from './authApi';
@@ -33,6 +34,7 @@ export function AccountPage() {
         <ProfileSection user={auth.user} onSaved={auth.updateUser} />
         <PlanSection user={auth.user} onChanged={auth.updateUser} />
         {auth.user.role === 'STUDENT' && <LedgerPdfSection isPro={isEffectivePro(auth.user)} />}
+        {auth.user.role === 'EDUCATOR' && <InstitutionJoinSection />}
         <PasswordSection onChanged={auth.updateUser} />
         <DataSection
           user={auth.user}

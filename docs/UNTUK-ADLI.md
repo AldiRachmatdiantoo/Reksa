@@ -6,6 +6,11 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: FR-10 portal admin institusi (branch `feat/aldi-institution-admin`)
+
+- Migrasi baru `20261122000300_institution_admin`. Fungsi agregat membaca `essay_submissions.blind_spots_json`, `actual_ai_score`, dan `audit_status = 'DONE'`. Kalau bentuk kolom itu berubah, kabari saya supaya fungsinya ikut diubah.
+- Unit test baru di `backend/tests/unit/features/institutions/` (area tesmu, tidak menyentuh file lain).
+
 ## 22 Nov 2026: FR-08 peta bagian sulit (branch `feat/aldi-cohort-blind-spots`)
 
 - Peta membaca `blind_spots_json` lewat `parseBlindSpots` (di `spaced.service.ts`) dan menghitung sendiri persentasenya. Mock Stage 3 tidak diubah.

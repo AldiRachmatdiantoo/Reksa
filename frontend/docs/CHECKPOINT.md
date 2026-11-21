@@ -1,5 +1,13 @@
 # Checkpoint Frontend REKSA
 
+## #16 · 2026-11-22 · Portal admin institusi (FR-10)
+
+Branch: `feat/aldi-institution-admin`.
+
+- `features/institution/AdminPortal.tsx` menggantikan keterangan "Portal admin institusi menyusul" di `/guru` (subjudul header jadi "Portal Institusi"): pengajar dengan tombol Lepas (dialog konfirmasi), kode undangan (tampil sekali, salin, cabut), tabel kelas (angka disembunyikan untuk kelompok di bawah 5 siswa), konsep tersulit lintas kelas.
+- `features/institution/InstitutionJoinSection.tsx` di halaman Akun pengajar: status institusi atau form kode undangan.
+- Unit `formatScore`/`INVITE_STATUS_LABEL`; E2E `governance.spec.ts` memeriksa form gabung dengan kode tak dikenal. Alur admin dicoba manual lewat Playwright dengan akun dari skrip `institution:create` (akun admin tidak bisa dibuat lewat API, jadi tidak masuk E2E CI).
+
 ## #15 · 2026-11-22 · Peta bagian sulit (FR-08)
 
 Branch: `feat/aldi-cohort-blind-spots`.

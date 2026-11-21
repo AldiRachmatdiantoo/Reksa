@@ -71,6 +71,7 @@ model Institution {
 
   users   User[]
   classes Class[]
+  invites EducatorInvite[]
 
   @@map("institutions")
 }
@@ -107,8 +108,10 @@ model User {
   spacedSchedules  SpacedSchedule[]
   dataExports      DataExport[]
   proRedemptions   ProCodeRedemption[]
+  createdInvites   EducatorInvite[]
 
   @@unique([email], map: "idx_users_email")
+  @@index([institutionId], map: "idx_users_institution")
   @@map("users")
 }
 
@@ -161,6 +164,7 @@ model Class {
 
   @@unique([classCode], map: "idx_classes_code")
   @@index([educatorId], map: "idx_classes_educator")
+  @@index([institutionId], map: "idx_classes_institution")
   @@map("classes")
 }
 
@@ -321,4 +325,22 @@ model ProCodeRedemption {
   @@unique([codeId, userId], map: "idx_pro_redemptions_code_user")
   @@index([userId], map: "idx_pro_redemptions_user")
   @@map("pro_code_redemptions")
+}
+
+/// FR-10: kode undangan pengajar dari admin institusi. Hanya SHA-256 kodenya yang disimpan.
+model EducatorInvite {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  institutionId String    @map("institution_id") @db.Uuid
+  tokenHash     String    @map("token_hash") @db.VarChar(64)
+  createdBy     String    @map("created_by") @db.Uuid
+  expiresAt     DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt     DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  creator     User        @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@unique([tokenHash], map: "idx_educator_invites_token_hash")
+  @@index([institutionId, createdAt(sort: Desc)], map: "idx_educator_invites_institution")
+  @@map("educator_invites")
 }
