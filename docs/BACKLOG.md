@@ -36,4 +36,7 @@ Tugas Adli menuju MVP (PRD v1.3): `study-sessions`, `essay-scans`, Gemini Stage 
 
 ## Berjalan terus
 
+- [x] Test loop `AuditWorker` + `RedisAuditQueue`: `audit.queue.ts` 51% → 100% (checkpoint #15)
+- [ ] Naikkan branch coverage `study-sessions` (81,6%, gabungan unit + integrasi) ke ≥ 85%.
+
 - [ ] Unit test setiap `*.service.ts` baru, integration test setiap endpoint, uji IDOR; target coverage ≥ 85%.

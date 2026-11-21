@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 21 November 2026, persiapan Fase 3: Gemini Stage 2 Vision (Adli, branch `feat/adli-gemini-vision`, di atas `feat/adli-essay-scans`)
+**Checkpoint terakhir:** 21 November 2026, test loop worker audit (Adli, branch `feat/adli-audit-worker-tests`)
 
 ---
 
@@ -16,6 +16,16 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #15 · Test loop worker audit · branch `feat/adli-audit-worker-tests`
+
+PR #16 (`essay-scans`) dan #17 (Gemini Stage 2) sudah di-merge Aldi. Coverage gabungan unit + integrasi saat itu 92,5% statement / 85,3% branch; satu-satunya file Adli yang jauh di bawah target adalah `audit.queue.ts` (51%), karena test hanya memakai `drain()`.
+
+**Selesai:** `backend/tests/unit/features/essay-scans/audit.queue.test.ts`. `RedisAuditQueue`: FIFO, job divalidasi saat masuk, entri rusak/asing/SQLi di Redis dibuang tanpa membuat worker mati. `AuditWorker`: batas konkurensi dipatuhi (puncak = 2), polling saat antrean kosong dan mengambil job yang datang belakangan, job yang melempar dilaporkan ke `onError` dengan job-nya dan loop berlanjut, Redis mati dilaporkan tanpa job lalu dicoba lagi, `stop()` menunggu job yang sedang berjalan dan tidak mengambil job baru, `start()` ganda tidak menggandakan loop dan bisa dijalankan lagi setelah `stop()`, `drain()` berurutan dan melaporkan error.
+
+**Hasil:** `audit.queue.ts` 100% statement/branch/fungsi/baris; 221 unit lulus (3 live dilewati), stabil 3× berturut-turut.
+
+**Lain-lain:** `CLAUDE.md` §1 diperbarui: monorepo sudah di-merge (PR #14), kerja frontend di repo ini.
 
 ### #14 · Persiapan Fase 3: Gemini Stage 2 Vision + pertahanan prompt injection · branch `feat/adli-gemini-vision`
 
