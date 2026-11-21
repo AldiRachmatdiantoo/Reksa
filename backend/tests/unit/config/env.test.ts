@@ -29,6 +29,13 @@ describe('loadEnv', () => {
     expect(() => loadEnv({ ...validEnv, STORAGE_BUCKET: 'Bad_Bucket!' })).toThrow(/STORAGE_BUCKET/);
   });
 
+  it('requires SMTP_URL in production, accepts smtp/smtps URLs only', () => {
+    expect(() => loadEnv({ ...validEnv, NODE_ENV: 'production' })).toThrow(/SMTP_URL/);
+    expect(loadEnv({ ...validEnv, NODE_ENV: 'production', SMTP_URL: 'smtps://u:p@smtp.example.com:465' }).SMTP_URL).toBeDefined();
+    expect(() => loadEnv({ ...validEnv, SMTP_URL: 'http://smtp.example.com' })).toThrow(/SMTP_URL/);
+    expect(loadEnv(validEnv).SMTP_URL).toBeUndefined();
+  });
+
   it('requires GEMINI_API_KEY in gemini mode', () => {
     expect(() => loadEnv({ ...validEnv, AI_PROVIDER_MODE: 'gemini' })).toThrow(/GEMINI_API_KEY/);
   });

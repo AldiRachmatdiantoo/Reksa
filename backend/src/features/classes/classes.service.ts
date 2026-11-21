@@ -1,5 +1,5 @@
 import { randomInt } from 'node:crypto';
-import { ConflictError, NotFoundError } from '../../common/errors/AppError.js';
+import { AppError, ConflictError, NotFoundError } from '../../common/errors/AppError.js';
 import type { Role } from '../../common/utils/jwt.js';
 import { ClassCodeTakenError, type ClassesRepository, type ClassMemberRecord, type ClassRecord } from './classes.repository.js';
 import {
@@ -98,6 +98,14 @@ export class ClassesService {
   }
 
   async join(studentId: string, rawCode: string): Promise<ClassView> {
+    // Dicek sebelum kode: akun yang belum terverifikasi tidak bisa dipakai menebak kode (PRD FR-14).
+    if (!(await this.deps.repo.isEmailVerified(studentId))) {
+      throw new AppError(
+        403,
+        'EMAIL_NOT_VERIFIED',
+        'Verifikasi emailmu dulu sebelum bergabung ke kelas. Cek kotak masuk, atau kirim ulang tautannya dari halaman Akun.',
+      );
+    }
     const code = normalizeClassCode(rawCode);
     if (!CLASS_CODE_PATTERN.test(code)) throw new NotFoundError(JOIN_NOT_FOUND);
     const classId = await this.deps.repo.findIdByCode(code);

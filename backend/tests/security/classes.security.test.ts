@@ -11,6 +11,11 @@ afterAll(() => ctx.close());
 async function login(email: string, role: 'STUDENT' | 'EDUCATOR') {
   const res = await request(ctx.app).post('/api/v1/auth/register').send({ email, password: VALID_PASSWORD, fullName: 'Pengguna Uji', role });
   const cookie = cookieHeader({ [ACCESS_COOKIE]: parseSetCookies(res.headers['set-cookie'])[ACCESS_COOKIE]?.value ?? '' });
+  // Siswa wajib terverifikasi untuk bergabung ke kelas (FR-14): pakai tautan dari email, seperti user asli.
+  const verified = await request(ctx.app)
+    .post('/api/v1/auth/verify-email')
+    .send({ token: ctx.emails.tokenFor(email, 'verifikasi-email') });
+  expect(verified.status).toBe(204);
   return { cookie, userId: res.body.user.id as string };
 }
 
@@ -88,6 +93,23 @@ describe('classes: IDOR / BOLA', () => {
       expect(JSON.stringify(res.body)).not.toContain('Materi Rahasia');
     }
     expect((await request(ctx.app).get('/api/v1/materials').set('Cookie', outsider.cookie)).body.materials).toEqual([]);
+  });
+});
+
+describe('classes: email verification gate (FR-14)', () => {
+  it('an unverified student cannot join, even with the right code', async () => {
+    const guru = await login('guru@reksa.id', 'EDUCATOR');
+    const created = await request(ctx.app).post('/api/v1/classes').set('Cookie', guru.cookie).send({ name: 'Kelas' });
+    const reg = await request(ctx.app)
+      .post('/api/v1/auth/register')
+      .send({ email: 'belum@reksa.id', password: VALID_PASSWORD, fullName: 'Belum Verifikasi', role: 'STUDENT' });
+    const cookie = cookieHeader({ [ACCESS_COOKIE]: parseSetCookies(reg.headers['set-cookie'])[ACCESS_COOKIE]?.value ?? '' });
+
+    const res = await request(ctx.app).post('/api/v1/classes/join').set('Cookie', cookie).send({ classCode: created.body.class.classCode });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('EMAIL_NOT_VERIFIED');
+    expect(await ctx.owner.classMember.count()).toBe(0);
   });
 });
 

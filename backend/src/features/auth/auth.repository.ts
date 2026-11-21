@@ -10,6 +10,7 @@ export type UserRecord = {
   fullName: string;
   role: Role;
   tier: 'FREE' | 'PRO';
+  emailVerifiedAt: Date | null;
 };
 
 export type RefreshTokenRecord = {
@@ -20,11 +21,17 @@ export type RefreshTokenRecord = {
   expiresAt: Date;
 };
 
+export type AuthTokenPurpose = 'EMAIL_VERIFY' | 'PASSWORD_RESET';
+
 export interface AuthRepository {
   findUserByEmail(email: string): Promise<UserRecord | null>;
   findUserById(id: string): Promise<UserRecord | null>;
   /** Throws ConflictError when the email is already registered. */
   createUser(data: { email: string; passwordHash: string; fullName: string; role: Role }): Promise<UserRecord>;
+  updateFullName(userId: string, fullName: string): Promise<UserRecord | null>;
+  updatePasswordHash(userId: string, passwordHash: string): Promise<void>;
+  /** Hanya mengisi bila masih kosong, supaya tanggal verifikasi pertama tidak tertimpa. */
+  markEmailVerified(userId: string, at: Date): Promise<void>;
 
   createRefreshToken(data: { userId: string; tokenHash: string; familyId: string; expiresAt: Date }): Promise<void>;
   /** Locks the row (SELECT ... FOR UPDATE) so two concurrent refreshes cannot both rotate it. */
@@ -33,6 +40,22 @@ export interface AuthRepository {
   revokeRefreshToken(id: string): Promise<void>;
   revokeFamily(familyId: string): Promise<void>;
   revokeAllUserTokens(userId: string): Promise<void>;
+  /**
+   * Menghapus (bukan menandai revoked) semua refresh token user, untuk ganti/reset password.
+   * Token terhapus yang muncul lagi dianggap "tidak dikenal", bukan reuse, jadi perangkat lama
+   * hanya keluar dan tidak memicu pencabutan sesi baru milik user.
+   */
+  deleteAllRefreshTokens(userId: string): Promise<void>;
+
+  createAuthToken(data: { userId: string; purpose: AuthTokenPurpose; tokenHash: string; expiresAt: Date }): Promise<void>;
+  /** Token lama yang belum dipakai ikut mati saat token baru diterbitkan atau setelah salah satunya dipakai. */
+  deleteUnusedAuthTokens(userId: string, purpose: AuthTokenPurpose): Promise<void>;
+  /**
+   * Menandai token terpakai secara atomik (satu UPDATE bersyarat), jadi dua permintaan bersamaan
+   * dengan token yang sama tidak bisa sama-sama berhasil. Mengembalikan userId, atau null bila
+   * token tidak ada, salah tujuan, sudah dipakai, atau kedaluwarsa.
+   */
+  consumeAuthToken(tokenHash: string, purpose: AuthTokenPurpose, now: Date): Promise<string | null>;
 
   withTransaction<T>(fn: (repo: AuthRepository) => Promise<T>): Promise<T>;
 }
@@ -44,6 +67,7 @@ const userSelect = {
   fullName: true,
   role: true,
   tier: true,
+  emailVerifiedAt: true,
 } as const;
 
 export class PrismaAuthRepository implements AuthRepository {
@@ -69,6 +93,19 @@ export class PrismaAuthRepository implements AuthRepository {
       }
       throw err;
     }
+  }
+
+  async updateFullName(userId: string, fullName: string): Promise<UserRecord | null> {
+    const { count } = await this.db.user.updateMany({ where: { id: userId }, data: { fullName } });
+    return count === 0 ? null : this.findUserById(userId);
+  }
+
+  async updatePasswordHash(userId: string, passwordHash: string): Promise<void> {
+    await this.db.user.update({ where: { id: userId }, data: { passwordHash } });
+  }
+
+  async markEmailVerified(userId: string, at: Date): Promise<void> {
+    await this.db.user.updateMany({ where: { id: userId, emailVerifiedAt: null }, data: { emailVerifiedAt: at } });
   }
 
   async createRefreshToken(data: {
@@ -117,6 +154,28 @@ export class PrismaAuthRepository implements AuthRepository {
 
   async revokeAllUserTokens(userId: string): Promise<void> {
     await this.db.refreshToken.updateMany({ where: { userId, isRevoked: false }, data: { isRevoked: true } });
+  }
+
+  async deleteAllRefreshTokens(userId: string): Promise<void> {
+    await this.db.refreshToken.deleteMany({ where: { userId } });
+  }
+
+  async createAuthToken(data: { userId: string; purpose: AuthTokenPurpose; tokenHash: string; expiresAt: Date }): Promise<void> {
+    await this.db.authToken.create({ data });
+  }
+
+  async deleteUnusedAuthTokens(userId: string, purpose: AuthTokenPurpose): Promise<void> {
+    await this.db.authToken.deleteMany({ where: { userId, purpose, usedAt: null } });
+  }
+
+  async consumeAuthToken(tokenHash: string, purpose: AuthTokenPurpose, now: Date): Promise<string | null> {
+    const { count } = await this.db.authToken.updateMany({
+      where: { tokenHash, purpose, usedAt: null, expiresAt: { gt: now } },
+      data: { usedAt: now },
+    });
+    if (count === 0) return null;
+    const token = await this.db.authToken.findUnique({ where: { tokenHash }, select: { userId: true } });
+    return token?.userId ?? null;
   }
 
   withTransaction<T>(fn: (repo: AuthRepository) => Promise<T>): Promise<T> {

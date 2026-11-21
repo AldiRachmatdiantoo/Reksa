@@ -3,6 +3,7 @@ import { createAiService } from './common/ai/ai.factory.js';
 import { createLogger } from './common/utils/logger.js';
 import { loadEnv } from './config/env.js';
 import { buildRoutes } from './container.js';
+import { createEmailService } from './config/email.js';
 import { createPrismaClient } from './config/prisma.js';
 import { createRedisClient } from './config/redis.js';
 import { createStorageService } from './config/storage.js';
@@ -15,13 +16,14 @@ async function main(): Promise<void> {
   const redis = createRedisClient(env.REDIS_URL);
   const ai = createAiService(env);
   const storage = createStorageService(env);
+  const email = createEmailService(env, logger);
 
   await prisma.$connect();
   await redis.connect();
   await storage.checkConnection();
   logger.info({ aiProviderMode: env.AI_PROVIDER_MODE }, 'Database, Redis, storage, dan AI provider siap');
 
-  const routes = buildRoutes({ env, logger, prisma, redis, ai, storage });
+  const routes = buildRoutes({ env, logger, prisma, redis, ai, storage, email });
   const app = createApp({ env, logger, routes });
   const server = app.listen(env.PORT, () => {
     logger.info({ port: env.PORT }, 'REKSA backend berjalan');

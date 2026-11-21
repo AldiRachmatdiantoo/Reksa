@@ -23,6 +23,7 @@ class InMemoryClassesRepository implements ClassesRepository {
   members: { classId: string; studentId: string; joinedAt: Date }[] = [];
   institutions = new Map<string, string>();
   names = new Map<string, string>();
+  unverified = new Set<string>();
 
   private record(row: Row, joinedAt: Date | null = null): ClassRecord {
     return {
@@ -42,6 +43,9 @@ class InMemoryClassesRepository implements ClassesRepository {
 
   async getInstitutionId(userId: string) {
     return this.institutions.get(userId) ?? null;
+  }
+  async isEmailVerified(userId: string) {
+    return !this.unverified.has(userId);
   }
   async create(data: CreateClassData) {
     if (this.rows.some((r) => r.classCode === data.classCode)) throw new ClassCodeTakenError();
@@ -170,6 +174,15 @@ describe('ClassesService', () => {
       );
       for (const err of errors) expect(err).toBeInstanceOf(NotFoundError);
       expect(new Set(errors.map((e) => (e as Error).message)).size).toBe(1);
+      expect(repo.members).toHaveLength(0);
+    });
+
+    it('refuses students whose email is not verified, before looking at the code', async () => {
+      const cls = await service.create(educator, 'Biologi XI');
+      repo.unverified.add(student);
+
+      await expect(service.join(student, cls.classCode!)).rejects.toMatchObject({ statusCode: 403, code: 'EMAIL_NOT_VERIFIED' });
+      await expect(service.join(student, 'ZZZZZZZZ')).rejects.toMatchObject({ code: 'EMAIL_NOT_VERIFIED' });
       expect(repo.members).toHaveLength(0);
     });
 
