@@ -20,8 +20,19 @@ function formatBytes(n: number) {
   return n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
 }
 
-/** Unggah materi: tempel teks atau PDF. Hasilnya diserahkan ke parent untuk ditampilkan. */
-export function UploadMaterialForm({ onCreated }: { onCreated: (result: CreateMaterialResult) => void }) {
+/**
+ * Unggah materi: tempel teks atau PDF. Hasilnya diserahkan ke parent untuk ditampilkan.
+ * `classId` dipakai portal guru untuk membagikan materi ke satu kelas.
+ */
+export function UploadMaterialForm({
+  onCreated,
+  classId,
+  submitLabel = 'Susun konsep kunci',
+}: {
+  onCreated: (result: CreateMaterialResult) => void;
+  classId?: string;
+  submitLabel?: string;
+}) {
   const [mode, setMode] = useState<Mode>('teks');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -66,7 +77,9 @@ export function UploadMaterialForm({ onCreated }: { onCreated: (result: CreateMa
     setSubmitting(true);
     try {
       const result =
-        mode === 'teks' ? await materialsApi.createText(title.trim(), content) : await materialsApi.createPdf(title.trim(), file!);
+        mode === 'teks'
+          ? await materialsApi.createText(title.trim(), content, classId)
+          : await materialsApi.createPdf(title.trim(), file!, classId);
       setTitle('');
       setContent('');
       setFile(null);
@@ -250,7 +263,7 @@ export function UploadMaterialForm({ onCreated }: { onCreated: (result: CreateMa
         ) : (
           <>
             <Icon name="auto_stories" />
-            Susun konsep kunci
+            {submitLabel}
           </>
         )}
       </Button>

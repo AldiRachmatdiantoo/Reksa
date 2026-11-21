@@ -10,6 +10,7 @@ Urutan kasar sesuai ketergantungan ke backend. Tandai `✅` saat selesai dan cat
 - [ ] **Hasil cek asli**: ganti `SAMPLE_AUDIT` dengan hasil scan, tambah keadaan "sedang dicek".
 - [ ] **QR bridge laptop ke HP**: halaman QR + SSE, desain ada di `design-reference/qr_bridge_*`.
 - [ ] **Jadwal ulang** (`spaced-repetition`): daftar sesi jatuh tempo, ganti tanggal H+3/H+7 lokal.
+- [x] **Kelola kelas** (FR-09): portal guru dan halaman kelas siswa.
 - [ ] **Portal guru** (`governance`): peta blind spot kelas, bukti pemahaman (ledger + signed URL).
 
 ## Bisa dikerjakan sekarang

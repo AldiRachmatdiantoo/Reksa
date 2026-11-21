@@ -8,10 +8,16 @@ import { Button } from './Button';
 import { Icon } from './Icon';
 import { ThemeToggle } from './ThemeToggle';
 
-/** Dua tempat utama pelajar. Langkah foto dan hasil termasuk "Belajar" karena bagian dari satu sesi. */
+/** Tempat utama pelajar. Langkah foto dan hasil termasuk "Belajar" karena bagian dari satu sesi. */
 const STUDENT_NAV = [
-  { to: '/belajar', label: 'Belajar', icon: 'edit_note', match: (p: string) => p.startsWith('/belajar') && !p.startsWith('/belajar/materi') },
-  { to: '/belajar/materi', label: 'Materi saya', icon: 'menu_book', match: (p: string) => p.startsWith('/belajar/materi') },
+  {
+    to: '/belajar',
+    label: 'Belajar',
+    icon: 'edit_note',
+    match: (p: string) => p.startsWith('/belajar') && !p.startsWith('/belajar/materi') && !p.startsWith('/belajar/kelas'),
+  },
+  { to: '/belajar/materi', label: 'Materi', icon: 'menu_book', match: (p: string) => p.startsWith('/belajar/materi') },
+  { to: '/belajar/kelas', label: 'Kelas', icon: 'groups', match: (p: string) => p.startsWith('/belajar/kelas') },
 ];
 
 function StudentNav({ className, layoutId }: { className: string; layoutId: string }) {
