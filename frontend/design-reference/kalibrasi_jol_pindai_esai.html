@@ -1,0 +1,151 @@
+
+  <div class="min-h-screen flex flex-col bg-light-surface" data-stitch-vh="min-h-screen===min-h-screen">
+
+    <!-- Contextual Task Flow Header -->
+    <header class="sticky top-0 z-30 bg-light-surface-container-lowest border-b border-light-outline-variant/60 px-gutter-md py-3">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <a href="../study-studio/StudyStudio.html" aria-label="Kembali ke Ruang Belajar" class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-light-surface-container-low border border-light-outline-variant/70 text-light-on-surface transition-colors duration-state-change ease-state-change hover:bg-light-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">arrow_back</span>
+          </a>
+          <div class="flex flex-col">
+            <h1 data-design-text-token="title-md" class="font-headline text-title-md text-light-on-surface leading-none">Tebak &amp; Foto</h1>
+            <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Langkah 2 dari 3 • Tebak Nilai</span>
+          </div>
+        </div>
+
+        <span data-component-id="chip-action" data-component-type="chip" data-component-variant="action" class="inline-flex items-center gap-1 rounded-full bg-light-surface-container-low border border-light-outline-variant px-3 py-1 font-label text-label-sm text-light-primary tabular-nums whitespace-nowrap">
+          <span data-design-text-token="label-sm">Kuota 2/3</span>
+        </span>
+      </div>
+    </header>
+
+    <main class="flex-1 flex flex-col gap-gutter-lg px-gutter-md py-gutter-lg">
+
+      <!-- Step Progress Strip -->
+      <nav aria-label="Tahapan sesi belajar" class="grid grid-cols-3 gap-2">
+        <div class="rounded-full bg-light-surface-variant text-light-primary py-1.5 px-2.5 text-center">
+          <span data-design-text-token="label-sm" class="font-label text-label-sm whitespace-nowrap">1. Fokus</span>
+        </div>
+        <div class="rounded-full bg-light-primary text-light-on-primary py-1.5 px-2.5 text-center">
+          <span data-design-text-token="label-sm" class="font-label text-label-sm whitespace-nowrap">2. Tebak Nilai</span>
+        </div>
+        <div class="rounded-full bg-light-surface-container text-light-on-surface-variant py-1.5 px-2.5 text-center">
+          <span data-design-text-token="label-sm" class="font-label text-label-sm whitespace-nowrap">3. Cek Hasil</span>
+        </div>
+      </nav>
+
+      <!-- Recorded Focus Summary -->
+      <div class="rounded-md bg-light-surface-container-low border border-light-outline-variant/50 px-4 py-3 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <span class="material-symbols-outlined text-success text-title-lg" aria-hidden="true">task_alt</span>
+          <div class="flex flex-col">
+            <span data-design-text-token="label-md" class="font-label text-label-md text-light-on-surface">Arsitektur Enterprise — TOGAF.pdf</span>
+            <span data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">Lama waktu fokusmu tadi</span>
+          </div>
+        </div>
+        <span data-design-text-token="mono-md" class="font-mono text-mono-md text-light-primary tabular-nums">24:42</span>
+      </div>
+
+      <!-- Self-Guess Slider -->
+      <section aria-labelledby="jol-heading">
+        <article data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-gutter-lg shadow-sm flex flex-col gap-gutter-md">
+          <header class="flex items-start justify-between gap-3">
+            <div class="flex flex-col gap-1">
+              <h2 id="jol-heading" data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface text-balance">
+                Menurutmu, berapa nilai catatanmu tadi?
+              </h2>
+              <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant text-pretty">
+                Tebak dulu seberapa paham kamu sebelum catatanmu dicek, biar makin kenal kemampuan sendiri.
+              </p>
+            </div>
+            <span class="material-symbols-outlined text-light-secondary text-headline-md shrink-0" aria-hidden="true">psychology</span>
+          </header>
+
+          <div class="rounded-md bg-light-surface-container-low p-4 flex items-center justify-between gap-3">
+            <div class="flex flex-col">
+              <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Tebakan Nilaimu</span>
+              <span id="jol-label" data-design-text-token="title-md" class="font-title text-title-md text-light-primary">Cukup Yakin</span>
+            </div>
+            <span id="jol-value" data-design-text-token="headline-lg-mobile" class="font-mono text-headline-lg-mobile text-light-secondary tabular-nums">75%</span>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <input id="jol-slider" type="range" min="0" max="100" step="1" value="75" aria-label="Tebakan nilai pemahaman 0 hingga 100 persen" class="w-full h-2 rounded-full accent-light-secondary bg-light-surface-container-high cursor-pointer">
+            <div class="flex items-center justify-between font-mono text-label-sm text-light-on-surface-variant tabular-nums">
+              <span>0%</span>
+              <span>50%</span>
+              <span>100%</span>
+            </div>
+          </div>
+
+          <button id="confirm-jol-btn" data-component-id="button-primary" data-component-type="button" data-component-variant="primary" type="button" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-light-primary text-light-on-primary px-6 py-3 font-label text-label-lg shadow-sm transition-colors duration-state-change ease-state-change hover:bg-light-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+            <span data-design-text-token="label-lg">Simpan Tebakan &amp; Buka Kamera</span>
+          </button>
+        </article>
+      </section>
+
+      <!-- Direct Mobile Image Capture -->
+      <section aria-labelledby="capture-heading">
+        <!-- Locked State before Guess Confirmation -->
+        <article id="capture-locked-card" class="rounded-md bg-light-surface-container border border-light-outline-variant/70 p-gutter-lg flex flex-col items-center text-center gap-2">
+          <span class="material-symbols-outlined text-light-on-surface-variant text-headline-md" aria-hidden="true">lock_clock</span>
+          <h2 id="capture-heading" data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">
+            Kamera Belum Terbuka
+          </h2>
+          <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant text-pretty max-w-prose">
+            Simpan tebakan nilaimu di atas dulu untuk membuka kamera HP.
+          </p>
+        </article>
+
+        <!-- Unlocked Direct Mobile Capture State -->
+        <article id="capture-unlocked-card" hidden class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-gutter-lg shadow-sm flex flex-col gap-gutter-md">
+          <header class="flex items-start justify-between gap-3">
+            <div class="flex flex-col gap-1">
+              <h2 data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">
+                Foto Catatan Kertasmu
+              </h2>
+              <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant text-pretty">
+                Pastikan seluruh tulisan dan gambar panahmu terlihat jelas dalam satu foto ya.
+              </p>
+            </div>
+            <span class="material-symbols-outlined text-light-primary text-headline-md shrink-0" aria-hidden="true">photo_camera</span>
+          </header>
+
+          <input id="camera-input" type="file" accept="image/*" capture="environment" class="sr-only">
+          <input id="gallery-input" type="file" accept="image/jpeg,image/png,image/webp,image/heic" class="sr-only">
+
+          <div id="upload-preview" hidden class="rounded-md bg-light-surface-container-low border border-light-primary/50 p-3 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="material-symbols-outlined text-success text-title-lg shrink-0" aria-hidden="true">image</span>
+              <span id="upload-filename" data-design-text-token="label-md" class="font-label text-label-md text-light-on-surface truncate">catatan_arsitektur_enterprise.webp</span>
+            </div>
+            <span data-design-text-token="label-sm" class="font-label text-label-sm text-success whitespace-nowrap shrink-0">Siap Dicek</span>
+          </div>
+
+          <div class="flex flex-col gap-2.5">
+            <label for="camera-input" data-component-id="button-with-icon" data-component-type="button" data-component-variant="with-icon" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-light-secondary text-light-on-secondary px-6 py-3 font-label text-label-lg shadow-sm cursor-pointer transition-colors duration-state-change ease-state-change hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-secondary">
+              <span class="material-symbols-outlined text-title-lg" aria-hidden="true">photo_camera</span>
+              <span data-design-text-token="label-lg">Foto Catatan Sekarang</span>
+            </label>
+
+            <label for="gallery-input" data-component-id="button-tertiary" data-component-type="button" data-component-variant="tertiary" class="w-full inline-flex items-center justify-center rounded-full border border-light-outline-variant bg-light-surface-container-lowest text-light-primary px-6 py-3 font-label text-label-lg cursor-pointer transition-colors duration-state-change ease-state-change hover:bg-light-surface-container-low">
+              <span data-design-text-token="label-lg">Pilih dari Galeri</span>
+            </label>
+          </div>
+
+          <div class="flex items-center gap-2 pt-1 border-t border-light-outline-variant/40">
+            <span class="material-symbols-outlined text-light-primary text-title-md shrink-0" aria-hidden="true">shield</span>
+            <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">
+              Foto aman tanpa lokasi &amp; otomatis diperkecil biar hemat kuota.
+            </p>
+          </div>
+        </article>
+      </section>
+
+    </main>
+  </div>
+
+  
+
+

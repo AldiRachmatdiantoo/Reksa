@@ -1,0 +1,182 @@
+
+  <div class="min-h-screen flex flex-col bg-light-surface" data-stitch-vh="min-h-screen===min-h-screen">
+
+    <!-- Desktop Contextual Top Bar -->
+    <header class="sticky top-0 z-30 bg-light-surface-container-lowest border-b border-light-outline-variant/60 px-gutter-lg py-3.5">
+      <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <a href="../study-studio/StudyStudio.html" aria-label="Kembali ke Ruang Belajar" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-light-surface-container-low border border-light-outline-variant/70 text-light-on-surface transition-colors duration-state-change ease-state-change hover:bg-light-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">arrow_back</span>
+          </a>
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-md bg-light-primary text-light-on-primary flex items-center justify-center shadow-sm">
+              <span class="material-symbols-outlined text-title-lg" aria-hidden="true">edit_document</span>
+            </div>
+            <div class="flex flex-col">
+              <span data-design-text-token="title-md" class="font-headline text-title-md text-light-primary leading-none">REKSA</span>
+              <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Sambungkan Kamera HP</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step Progress Strip -->
+        <nav aria-label="Tahapan sesi belajar" class="flex items-center gap-2">
+          <span class="rounded-full bg-light-surface-variant text-light-primary px-3.5 py-1.5 font-label text-label-sm whitespace-nowrap">1. Fokus</span>
+          <span class="rounded-full bg-light-primary text-light-on-primary px-3.5 py-1.5 font-label text-label-sm whitespace-nowrap">2. Tebak &amp; Foto</span>
+          <span class="rounded-full bg-light-surface-container text-light-on-surface-variant px-3.5 py-1.5 font-label text-label-sm whitespace-nowrap">3. Cek Hasil</span>
+        </nav>
+
+        <span data-component-id="chip-action" data-component-type="chip" data-component-variant="action" class="inline-flex items-center gap-1.5 rounded-full bg-light-surface-container-low border border-light-outline-variant px-3.5 py-1.5 font-label text-label-sm text-light-primary tabular-nums whitespace-nowrap">
+          <span data-design-text-token="label-sm">Kuota 2/3</span>
+        </span>
+      </div>
+    </header>
+
+    <!-- Main Centered 2-Column Workspace -->
+    <main class="flex-1 flex items-center justify-center px-gutter-lg py-gutter-xl">
+      <div class="w-full max-w-4xl flex flex-col gap-gutter-lg">
+
+        <!-- Title Intro -->
+        <div class="flex flex-col gap-1.5">
+          <h1 data-design-text-token="headline-lg" class="font-headline text-headline-lg text-light-on-surface text-balance">
+            Foto Catatanmu Pakai Kamera HP
+          </h1>
+          <p data-design-text-token="body-lg" class="font-body text-body-lg text-light-on-surface-variant text-pretty max-w-prose">
+            Scan kode QR di bawah pakai kamera HP biasa. Nggak perlu instal aplikasi dan nggak perlu login ulang!
+          </p>
+        </div>
+
+        <!-- 2-Column Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-stretch">
+
+          <!-- Left Column: QR Code Card -->
+          <section class="lg:col-span-5 flex flex-col">
+            <article id="qr-waiting-card" data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="h-full rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-gutter-lg shadow-sm flex flex-col items-center justify-between text-center gap-gutter-md">
+              <div class="w-full flex items-center justify-between gap-2">
+                <span data-design-text-token="label-md" class="font-label text-label-md text-light-on-surface-variant">Berlaku selama</span>
+                <span id="qr-countdown" data-design-text-token="mono-md" class="font-mono text-mono-md text-light-secondary tabular-nums">04:52</span>
+              </div>
+
+              <!-- Crisp SVG QR Code -->
+              <div class="p-4 rounded-md bg-light-surface-container-lowest border border-light-outline-variant">
+                <svg width="200" height="200" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kode QR untuk unggah foto catatan dari HP">
+                  <rect width="21" height="21" fill="#FFFFFF"></rect>
+                  <!-- Top-left finder -->
+                  <path fill="#171D1C" d="M0 0h7v7H0V0zm1 1v5h5V1H1zm1 1h3v3H2V2z"></path>
+                  <!-- Top-right finder -->
+                  <path fill="#171D1C" d="M14 0h7v7h-7V0zm1 1v5h5V1h-5zm1 1h3v3h-3V2z"></path>
+                  <!-- Bottom-left finder -->
+                  <path fill="#171D1C" d="M0 14h7v7H0v-7zm1 1v5h5v-5H1zm1 1h3v3H2v-3z"></path>
+                  <!-- Timing & data modules -->
+                  <path fill="#171D1C" d="M8 0h1v2H8V0zm2 1h2v1h-2V1zm-1 2h2v1H9V3zm3 0h1v2h-1V3zM8 5h3v1H8V5zm4 1h1v2h-1V6zM0 8h2v1H0V8zm3 0h2v2H3V8zm3 1h1v2H6V9zm2-1h2v2H8V8zm3 1h2v1h-2V9zm3-1h2v2h-2V8zm3 0h4v1h-4V8zm-1 2h2v2h-2v-2zM1 11h2v2H1v-2zm3 0h3v1H4v-1zm4 1h2v2H8v-2zm3-1h2v2h-2v-2zm3 1h2v1h-2v-1zm3 0h3v2h-3v-2zM8 14h2v2H8v-2zm3 1h3v1h-3v-1zm4-1h2v3h-2v-3zm3 2h2v2h-2v-2zM8 17h1v3H8v-3zm2 1h3v2h-3v-2zm4 0h2v3h-2v-3zm3 1h3v2h-3v-2z"></path>
+                  <!-- Center Teal Accent Mark -->
+                  <rect x="9" y="9" width="3" height="3" rx="0.5" fill="#006763"></rect>
+                </svg>
+              </div>
+
+              <div class="w-full flex flex-col gap-2">
+                <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">
+                  Menunggu foto masuk dari HP-mu...
+                </p>
+
+                <button id="simulate-receive-btn" data-component-id="button-primary" data-component-type="button" data-component-variant="primary" type="button" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-light-primary text-light-on-primary px-6 py-3 font-label text-label-lg shadow-sm transition-colors duration-state-change ease-state-change hover:bg-light-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+                  <span class="material-symbols-outlined text-title-lg" aria-hidden="true">qr_code_scanner</span>
+                  <span data-design-text-token="label-lg">Simulasikan Foto Masuk</span>
+                </button>
+              </div>
+            </article>
+
+            <!-- Received State (Hidden until simulated) -->
+            <article id="qr-received-card" hidden class="h-full rounded-md bg-light-surface-container-lowest border-2 border-light-primary p-gutter-lg shadow-sm flex flex-col items-center justify-center text-center gap-gutter-md">
+              <div class="w-14 h-14 rounded-full bg-light-surface-variant text-success flex items-center justify-center">
+                <span class="material-symbols-outlined text-headline-lg" aria-hidden="true">check_circle</span>
+              </div>
+              <div class="flex flex-col gap-1">
+                <h2 data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">Foto Catatan Diterima!</h2>
+                <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant">
+                  catatan_arsitektur_enterprise.webp sudah masuk dan siap dicek.
+                </p>
+              </div>
+              <a href="../audit-result/AuditResult.html" data-component-id="button-with-icon" data-component-type="button" data-component-variant="with-icon" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-light-secondary text-light-on-secondary px-6 py-3 font-label text-label-lg shadow-sm transition-colors duration-state-change ease-state-change hover:opacity-90">
+                <span class="material-symbols-outlined text-title-lg" aria-hidden="true">fact_check</span>
+                <span data-design-text-token="label-lg">Lihat Hasil Cek Catatan</span>
+              </a>
+            </article>
+          </section>
+
+          <!-- Right Column: Guide & Session Context -->
+          <section class="lg:col-span-7 flex flex-col gap-gutter-md justify-between">
+            <article data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-gutter-lg shadow-sm flex flex-col gap-gutter-md">
+              <h2 data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">
+                Cara Mudah Kirim Foto dari HP
+              </h2>
+
+              <div class="flex flex-col gap-4">
+                <div class="flex items-start gap-3">
+                  <div class="w-8 h-8 rounded-full bg-light-surface-variant text-light-primary flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-title-md" aria-hidden="true">photo_camera</span>
+                  </div>
+                  <div class="flex flex-col gap-0.5">
+                    <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Buka Kamera HP Biasa</h3>
+                    <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant">Nggak perlu aplikasi tambahan, cukup pakai kamera bawaan HP-mu.</p>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                  <div class="w-8 h-8 rounded-full bg-light-surface-variant text-light-primary flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-title-md" aria-hidden="true">qr_code_2</span>
+                  </div>
+                  <div class="flex flex-col gap-0.5">
+                    <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Arahkan ke Kode QR &amp; Ketuk Tautannya</h3>
+                    <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant">Halaman foto akan langsung terbuka di HP tanpa perlu login ulang.</p>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                  <div class="w-8 h-8 rounded-full bg-light-surface-variant text-light-primary flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-title-md" aria-hidden="true">bolt</span>
+                  </div>
+                  <div class="flex flex-col gap-0.5">
+                    <h3 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Otomatis Muncul di Laptop</h3>
+                    <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant">Begitu kamu jepret catatan kertas, hasilnya langsung tampil di layar ini.</p>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- Session Context Card -->
+            <article class="rounded-md bg-light-surface-container-low border border-light-outline-variant/60 p-4 flex flex-col gap-3">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex flex-col">
+                  <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Materi Sesi Ini</span>
+                  <span data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Arsitektur Enterprise — TOGAF.pdf</span>
+                </div>
+                <div class="flex items-center gap-4">
+                  <div class="flex flex-col text-right">
+                    <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Fokus</span>
+                    <span data-design-text-token="mono-md" class="font-mono text-mono-md text-light-primary tabular-nums">24:42</span>
+                  </div>
+                  <div class="flex flex-col text-right">
+                    <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Tebakan</span>
+                    <span data-design-text-token="mono-md" class="font-mono text-mono-md text-light-secondary tabular-nums">75%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-2.5 border-t border-light-outline-variant/40 flex items-center justify-between gap-3">
+                <span data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">Sudah simpan foto di laptop?</span>
+                <button type="button" data-component-id="button-tertiary" data-component-type="button" data-component-variant="tertiary" class="inline-flex items-center justify-center rounded-full border border-light-outline-variant bg-light-surface-container-lowest text-light-primary px-6 py-3 font-label text-label-lg transition-colors duration-state-change ease-state-change hover:bg-light-surface-container-low whitespace-nowrap">
+                  <span data-design-text-token="label-lg">Unggah dari Laptop</span>
+                </button>
+              </div>
+            </article>
+          </section>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  
+
+
