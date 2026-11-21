@@ -145,6 +145,15 @@ describe('AuditService.run: retries (FR-05)', () => {
     expect(repo.quota.dailyScanCount).toBe(0);
   });
 
+  it('does not retry FATAL errors (bad API key or request)', async () => {
+    ai.evaluateHandwritingEssay.mockRejectedValue(new AiProviderError('FATAL', '403'));
+    const { submission, job } = pending();
+    await expect(service().run(job)).resolves.toBe('FAILED');
+    expect(repo.submissions.get(submission.id)!.auditErrorCode).toBe('AI_UNAVAILABLE');
+    expect(ai.evaluateHandwritingEssay).toHaveBeenCalledTimes(1);
+    expect(sleeps).toEqual([]);
+  });
+
   it('fails with AI_INVALID_OUTPUT after two invalid outputs', async () => {
     ai.evaluateHandwritingEssay.mockRejectedValue(new z.ZodError([]));
     const { submission, job } = pending();
