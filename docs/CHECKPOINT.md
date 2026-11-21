@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 21 November 2026, frontend di repo terpisah (Aldi, `reksa-frontend` branch `feat/aldi-frontend-app`)
+**Checkpoint terakhir:** 21 November 2026, modul `materials` (Aldi, branch `feat/aldi-materials` di kedua repo)
 
 ---
 
@@ -12,10 +12,31 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | :--- | :--- | :--- |
 | Langkah 0 | ✅ Selesai, di `main` (PR #1) | ⏳ Belum mulai (bagian frontend diambil alih Aldi) |
 | Fase 1 | ✅ Selesai: `auth` (PR #2, #3), CI + branch protection (PR #4) | — |
-| Fase 2 | ✅ Storage (PR #6) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | ⬜ |
+| Fase 2 | ✅ Storage (PR #6) · 🟡 `materials` (branch `feat/aldi-materials`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | ⬜ |
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #6 · Modul `materials` (Fase 2) · branch `feat/aldi-materials`
+
+**Endpoint** (semua butuh login, `/api/v1/materials`)
+- `POST /`: JSON `{title, content, classId?}` (teks maks. 15.000 karakter) atau `multipart/form-data` field `file` + `title` (PDF maks. 10 MB, 150 halaman). Respons 201 `{material, rubricCached}`. Tipe lain 415.
+- `GET /` daftar milik sendiri (maks. 50, tanpa rubrik, dengan `conceptCount`) · `GET /:id` lengkap dengan rubrik · `GET /:id/file` signed URL PDF 300 detik (`Cache-Control: no-store`) · `DELETE /:id` 204, atau 409 kalau sudah dipakai sesi belajar.
+
+**Alur**
+- PDF: magic bytes harus `application/pdf` (`file-type`), teks diambil dengan `unpdf` (`common/utils/pdfText.ts`), PDF hasil scan tanpa teks ditolak 422.
+- Teks dinormalisasi lalu di-hash SHA-256. Rubrik dicache di Redis `rubric:v1:<sha256>` selama 30 hari dan divalidasi ulang dengan `AiRubricOutputSchema` saat dibaca. Teks yang sama dari PDF maupun tempelan memakai cache yang sama.
+- Redis mati tidak menggagalkan unggahan (cache dilewati, dicatat di log). Kalau insert DB gagal, file PDF di storage dihapus lagi.
+
+**Keamanan**
+- Query lewat `withUserContext` (RLS) + filter `uploaderId` eksplisit; materi orang lain dijawab 404.
+- `classId` hanya diterima kalau kelas itu milik pendidik yang mengunggah, selain itu 404.
+- Rate limit 20 unggahan/jam per user. Zod `.strict()` untuk JSON dan field multipart.
+- Middleware baru `common/middlewares/upload.middleware.ts` (`singleFileUpload`): multer di memori, 1 file, error dipetakan ke 413/400. Error baru di `AppError`: `PayloadTooLargeError` 413, `UnsupportedMediaTypeError` 415, `UnprocessableEntityError` 422.
+
+**Test**: unit service + cache, integration (Testcontainers), security (IDOR, kelas milik pendidik lain, RLS tanpa filter, file ganda, SQLi di judul, rate limit). Total 155 lulus.
+
+**Frontend** ([reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) branch `feat/aldi-materials`): halaman `/belajar/materi` (tempel teks atau unggah PDF, pratinjau konsep kunci, daftar, buka PDF, hapus), ruang belajar memakai materi asli. Materi contoh dihapus.
 
 ### #5 · Frontend di repo terpisah · `reksa-frontend` branch `feat/aldi-frontend-app`
 
@@ -122,8 +143,8 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 ## Berikutnya
 
 **Aldi**
-1. Merge PR `feat/aldi-frontend-app` (reksa-frontend) dan `feat/aldi-frontend-integration` (repo ini)
-2. Modul `materials` (upload PDF → magic bytes → storage, cache rubrik SHA-256 di Redis) + halaman unggah materi di frontend
+1. Merge PR `feat/aldi-materials` di kedua repo (PR frontend ikut membawa commit animasi dan pop up yang belum masuk `main`)
+2. Modul `spaced-repetition` (jadwal H+3/H+7) lalu `governance`
 3. Persiapan deploy: migrasi pencabutan hak `anon`/`authenticated` Supabase, `vercel.json` di reksa-frontend (rewrite + header), konfigurasi Render
 4. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
 

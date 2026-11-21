@@ -10,6 +10,11 @@ import type { IStorageService } from './config/storage.js';
 import { PrismaAuthRepository } from './features/auth/auth.repository.js';
 import { createAuthRouter } from './features/auth/auth.routes.js';
 import { AuthService } from './features/auth/auth.service.js';
+import { UnpdfTextExtractor, type PdfTextExtractor } from './common/utils/pdfText.js';
+import { PrismaMaterialsRepository } from './features/materials/materials.repository.js';
+import { createMaterialsRouter } from './features/materials/materials.routes.js';
+import { MaterialsService } from './features/materials/materials.service.js';
+import { RedisRubricCache } from './features/materials/rubricCache.js';
 
 export type ContainerDeps = {
   env: Pick<Env, 'JWT_ACCESS_SECRET' | 'JWT_REFRESH_SECRET'>;
@@ -21,6 +26,8 @@ export type ContainerDeps = {
   storage: IStorageService;
   /** Override di test agar tidak menunggu Argon2 penuh. */
   hasher?: PasswordHasher;
+  /** Override di test bila perlu; default pdf.js lewat unpdf. */
+  pdf?: PdfTextExtractor;
 };
 
 /** Merangkai repository → service → router untuk semua fitur. */
@@ -38,7 +45,17 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     },
   });
 
+  const materialsService = new MaterialsService({
+    repo: new PrismaMaterialsRepository(deps.prisma),
+    ai: deps.ai,
+    cache: new RedisRubricCache(deps.redis, (err, op) => deps.logger.warn({ err, op }, 'Rubric cache unavailable')),
+    storage: deps.storage,
+    pdf: deps.pdf ?? new UnpdfTextExtractor(),
+    onWarning: (message, data) => deps.logger.warn(data, message),
+  });
+
   return {
     '/auth': createAuthRouter({ service: authService, signer, redis: deps.redis }),
+    '/materials': createMaterialsRouter({ service: materialsService, signer, redis: deps.redis }),
   };
 }

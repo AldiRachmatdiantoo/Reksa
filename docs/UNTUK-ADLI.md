@@ -2,7 +2,7 @@
 
 Dari: Aldi
 Terakhir diperbarui: 21 November 2026
-Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Frontend kini repo terpisah (lihat §0).
+Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `materials` di PR `feat/aldi-materials` (lihat §1d). Frontend kini repo terpisah (lihat §0).
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
@@ -35,7 +35,7 @@ Kamu bisa langsung mulai `study-sessions` dan `essay-scans`. Ada dua hal yang sa
 
 | Kamu butuh | Dari | Sementara itu |
 | :--- | :--- | :--- |
-| `materialId` valid untuk `POST /sessions` | Modul `materials` (saya) | Di test, buat materi langsung lewat `ctx.owner.studyMaterial.create(...)` di `createTestContext()` |
+| ~~`materialId` valid untuk `POST /sessions`~~ | ✅ **Modul `materials` siap**, lihat §1d | Di test tetap boleh buat materi langsung lewat `ctx.owner.studyMaterial.create(...)` |
 | ~~Simpan foto esai ke bucket privat + *signed URL*~~ | ✅ **Storage service siap**, lihat §1c | — |
 
 ## 1c. ✅ Storage service siap dipakai
@@ -60,6 +60,13 @@ const url = await storage.getSignedUrl(submission.imageStorageKey); // berlaku 5
 - Di test integration, `createTestContext()` punya `ctx.storage` yang terhubung ke bucket S3 sungguhan (container SeaweedFS). Contoh: `backend/tests/integration/storage.test.ts`.
 - Lokal: `docker compose up -d storage-init` membuat bucket; signed URL mengarah ke `http://localhost:8333`. Produksi memakai Supabase Storage dengan antarmuka yang sama.
 - Frontend: tampilkan gambar dengan `<img src={signedUrl}>`. CSP `img-src` di `nginx.conf` sudah mengizinkan `localhost:8333`.
+
+## 1d. ✅ Modul `materials` siap (PR `feat/aldi-materials`)
+
+- `POST /api/v1/materials` membuat materi dan rubriknya; `id` di respons itulah `materialId` untuk `POST /sessions`. Rubrik lengkap (`keyConcepts`, `causalRelations`) ada di `study_materials.rubric_json`, jadi `essay-scans` bisa membacanya langsung saat memanggil `evaluateHandwritingEssay`.
+- **Hapus materi ditolak 409** kalau sudah ada `study_sessions` yang memakainya (FK `Restrict`). Jangan ubah FK itu jadi cascade tanpa kabari saya.
+- **Middleware unggah bisa kamu pakai** untuk foto esai: `singleFileUpload({ field: 'photo', maxBytes })` dari `common/middlewares/upload.middleware.ts`. File masuk ke `req.file.buffer` (memori), ukuran lebih dari batas otomatis 413. Magic bytes tetap kamu cek di service (contoh: `materials.service.ts` `createFromPdf`).
+- Error baru di `common/errors/AppError.ts`: `PayloadTooLargeError` (413), `UnsupportedMediaTypeError` (415), `UnprocessableEntityError` (422). Pakai ini supaya frontend menampilkan pesan yang sama.
 
 ## 2. Yang perlu kamu lakukan
 
