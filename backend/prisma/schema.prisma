@@ -252,6 +252,8 @@ model EssaySubmission {
 
   @@unique([sessionId], map: "idx_submissions_session")
   @@index([userId, createdAt(sort: Desc)], map: "idx_submissions_user_created")
+  // FR-07: GET /ledger/verify/:hash lewat fungsi ledger_lookup (migrasi ledger_verify).
+  @@index([ledgerHash], map: "idx_submissions_ledger_hash")
   @@map("essay_submissions")
 }
 

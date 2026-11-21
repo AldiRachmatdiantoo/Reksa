@@ -152,7 +152,7 @@ function MaterialPicker() {
             <StaggerItem as="li" key={m.id}>
               <button
                 type="button"
-                onClick={() => selectMaterial(m.id, m.title)}
+                onClick={() => selectMaterial(m.id, m.title, m.classId)}
                 className="group flex h-full w-full flex-col gap-2 rounded-md border border-line-soft bg-card p-4 text-left transition-colors hover:border-teal"
               >
                 <span className="flex items-center gap-2 text-body-sm text-ink-muted">
