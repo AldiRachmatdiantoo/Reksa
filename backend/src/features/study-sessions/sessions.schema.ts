@@ -29,3 +29,44 @@ export const SessionIdParamsSchema = z.object({ id: z.uuid() }).strict();
 
 export type StartSessionInput = z.infer<typeof StartSessionSchema>;
 export type SubmitJolInput = z.infer<typeof SubmitJolSchema>;
+export type PomodoroPreset = z.infer<typeof PomodoroPresetSchema>;
+
+// ---------- Aturan sesi sah (PRD v1.3 FR-02) ----------
+/** Fokus yang tidak diakhiri dalam durasi preset + 30 menit menjadi EXPIRED. */
+export const FOCUS_GRACE_SEC = 30 * 60;
+/** Durasi fokus aktual dibatasi paling lama durasi preset + 5 menit. */
+export const FOCUS_OVERTIME_CAP_SEC = 5 * 60;
+/** Foto wajib diunggah dalam 2 jam setelah tebakan JOL disimpan. */
+export const SCAN_UPLOAD_WINDOW_SEC = 2 * 60 * 60;
+/** Fokus aktual kurang dari rasio ini terhadap preset ditandai SHORT_FOCUS. */
+export const SHORT_FOCUS_RATIO = 0.5;
+
+export type SessionStatus = 'FOCUS_ACTIVE' | 'AWAITING_JOL' | 'AWAITING_SCAN' | 'COMPLETED' | 'EXPIRED';
+export type SessionValidity = 'VALID' | 'SHORT_FOCUS';
+
+/** Bentuk sesi di setiap respons /sessions. Semua waktu ISO 8601 UTC dari jam server. */
+export type SessionView = {
+  id: string;
+  materialId: string;
+  /** null bila materi tidak lagi bisa dibaca (mis. pelajar sudah keluar dari kelas pemilik materi). */
+  materialTitle: string | null;
+  classId: string | null;
+  sessionType: 'INITIAL_BLURTING' | 'SPACED_REVIEW';
+  /** null untuk durasi di luar preset (mis. sesi SPACED_REVIEW nanti). */
+  preset: PomodoroPreset | null;
+  status: SessionStatus;
+  validity: SessionValidity | null;
+  plannedDurationSec: number;
+  actualDurationSec: number | null;
+  predictedJolScore: number | null;
+  startedAt: string;
+  /** Kapan timer fokus habis menurut server (startedAt + plannedDurationSec). */
+  focusEndsAt: string;
+  /** Batas akhir mengakhiri fokus sebelum sesi EXPIRED. */
+  focusDeadlineAt: string;
+  focusEndedAt: string | null;
+  /** Batas unggah foto; hanya diisi saat AWAITING_SCAN dan foto belum masuk. */
+  scanDeadlineAt: string | null;
+  hasSubmission: boolean;
+  completedAt: string | null;
+};

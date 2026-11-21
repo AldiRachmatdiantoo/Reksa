@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 21 November 2026, akun dasar FR-14 (Aldi, branch `feat/aldi-account` di kedua repo)
+**Checkpoint terakhir:** 21 November 2026, `study-sessions` FR-01 sampai FR-03 (Adli, branch `feat/adli-sessions`)
 
 ---
 
@@ -12,10 +12,24 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | :--- | :--- | :--- |
 | Langkah 0 | ✅ Selesai, di `main` (PR #1) | ⏳ Belum mulai (bagian frontend diambil alih Aldi) |
 | Fase 1 | ✅ Selesai: `auth` (PR #2, #3), CI + branch protection (PR #4) | — |
-| Fase 2 | ✅ Storage (PR #6) · ✅ `materials` (PR #8) · ✅ PRD v1.3 (PR #9) · ✅ `classes` FR-09 (PR #10) · 🟡 akun dasar FR-14 (branch `feat/aldi-account`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | ⬜ |
+| Fase 2 | ✅ Storage (PR #6) · ✅ `materials` (PR #8) · ✅ PRD v1.3 (PR #9) · ✅ `classes` FR-09 (PR #10) · 🟡 akun dasar FR-14 (branch `feat/aldi-account`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | 🟡 Variasi `MockAiProvider` + `study-sessions` (branch `feat/adli-sessions`) · ⬜ `essay-scans` |
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #9 · `study-sessions` + variasi mock AI (Adli) · branch `feat/adli-sessions`
+
+**Mock AI:** fixture audit skor tinggi (tanpa blind spot), sedang (tetap), rendah, plus materi fotosintesis. Varian audit dipilih dari hash SHA-256 foto (deterministik). Opsi `auditFailureRate` melempar `AiProviderError` (`common/ai/ai.errors.ts`) untuk menguji alur `FAILED`.
+
+**Migrasi** `20261121000200_session_validity` (area Aldi, menunggu review di PR): `study_sessions.validity`, `focus_ended_at`, CHECK konsistensi, partial unique index `idx_sessions_one_active`.
+
+**Endpoint** `/api/v1/sessions` (STUDENT): `POST /`, `GET /active`, `GET /:id`, `PATCH /:id/jol`, `POST /:id/cancel`. Detail request/response di `UNTUK-ALDI.md`.
+
+**Aturan FR-02** (di `sessions.service.ts`): waktu dari server; satu sesi aktif (baris `users` dikunci `FOR UPDATE` saat membuat sesi, index parsial sebagai penjaga terakhir); fokus aktual dipotong di preset + 5 menit; `SHORT_FOCUS` bila < 50%; `EXPIRED` dihitung saat dibaca (fokus > preset + 30 menit, atau 2 jam setelah JOL tanpa foto; batas 2 jam tidak berlaku setelah foto tersimpan). PATCH JOL bersyarat status, jadi dua permintaan paralel hanya satu yang berhasil.
+
+**Test:** unit `tests/unit/features/study-sessions/` + varian mock; integrasi `tests/integration/sessions.test.ts` (termasuk 5 `POST` paralel → tepat 1 sesi, JOL paralel, IDOR, RLS tanpa filter, SQLi di id). Hasil: 129 unit, 148 integrasi + security, semua lulus.
+
+**Belum:** `POST /sessions/:id/qr-bridge` (ikut `essay-scans`). Sesi `AWAITING_SCAN` dengan audit yang akhirnya `FAILED` tidak bisa dibatalkan; penyelesaiannya diatur di `essay-scans`.
 
 ### #8 · Akun dasar (FR-14) · branch `feat/aldi-account`
 
@@ -194,8 +208,9 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 4. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
 
 **Adli** (lihat [UNTUK-ADLI.md](UNTUK-ADLI.md))
-1. Review schema di foldernya, perkaya `mockAi.fixtures.ts`
-2. Backend `study-sessions` dan `essay-scans`, lalu kabari bentuk API final lewat `UNTUK-ALDI.md`
+1. ~~Review schema di foldernya, perkaya `mockAi.fixtures.ts`~~ ✅
+2. ~~Backend `study-sessions`~~ ✅ (PR `feat/adli-sessions`)
+3. `essay-scans`: menunggu keputusan Aldi soal `essay_submissions` append-only dan infra antrean (lihat `UNTUK-ALDI.md`)
 
 ## Catatan teknis yang perlu diingat
 
