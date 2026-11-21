@@ -191,7 +191,7 @@ export function MaterialsPage() {
             )}
             {state.status === 'ready' && state.data.length === 0 && (
               <p className="rounded-md border border-dashed border-line bg-wash px-5 py-6 text-body-md text-ink-muted">
-                Belum ada materi. Materi yang kamu tambahkan muncul di sini dan bisa dipakai lagi kapan saja.
+                Belum ada materi. Materi yang kamu tambahkan dan materi dari kelasmu muncul di sini.
               </p>
             )}
             {state.status === 'ready' && state.data.length > 0 && (
@@ -220,6 +220,12 @@ export function MaterialsPage() {
                               <span aria-hidden="true">·</span>
                               <span>{formatMaterialDate(m.createdAt)}</span>
                             </p>
+                            {!m.isOwner && m.className && (
+                              <p className="inline-flex items-center gap-1 text-body-sm text-teal">
+                                <Icon name="groups" className="text-[16px]" />
+                                Dari kelas {m.className}
+                              </p>
+                            )}
                           </div>
                           {active && <span className="shrink-0 rounded-full bg-teal px-2.5 py-0.5 text-label-sm text-on-teal">Dipakai</span>}
                         </div>
@@ -233,9 +239,11 @@ export function MaterialsPage() {
                               {openingId === m.id ? 'Membuka...' : 'Buka PDF'}
                             </Button>
                           )}
-                          <Button variant="ghost" onClick={() => setToDelete(m)} aria-label={`Hapus materi ${m.title}`} className="px-3">
-                            <Icon name="delete" />
-                          </Button>
+                          {m.isOwner && (
+                            <Button variant="ghost" onClick={() => setToDelete(m)} aria-label={`Hapus materi ${m.title}`} className="px-3">
+                              <Icon name="delete" />
+                            </Button>
+                          )}
                         </div>
                       </StaggerItem>
                     );

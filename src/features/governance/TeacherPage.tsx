@@ -1,14 +1,15 @@
 import { motion } from 'motion/react';
 import { useEffect } from 'react';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { TeacherClasses } from '@/features/classes/TeacherClasses';
 import { pageTransition, Reveal, Stagger, StaggerItem } from '@/shared/motion';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Icon } from '@/shared/ui/Icon';
 import { StateBlock } from '@/shared/ui/StateBlock';
 
-// Data kelas datang dari modul `governance` (ledger bukti belajar + peta
-// bagian sulit kelas). Sampai endpoint itu ada, halaman ini menampilkan
-// empty state, bukan data siswa karangan.
+// Kelola kelas sudah jalan (FR-09). Ledger bukti belajar dan peta bagian sulit
+// datang dari modul `governance`; sampai endpoint itu ada, keduanya hanya
+// dijelaskan, bukan diisi data siswa karangan.
 const UPCOMING = [
   {
     icon: 'verified_user',
@@ -24,7 +25,8 @@ const UPCOMING = [
 
 export function TeacherPage() {
   const auth = useAuth();
-  const firstName = auth.status === 'authenticated' ? auth.user.fullName.split(' ')[0] : '';
+  const fullName = auth.status === 'authenticated' ? auth.user.fullName : '';
+  const isEducator = auth.status === 'authenticated' && auth.user.role === 'EDUCATOR';
 
   useEffect(() => {
     document.title = 'Portal Guru · REKSA';
@@ -35,25 +37,30 @@ export function TeacherPage() {
       <AppHeader subtitle="Portal Guru" />
       <motion.main
         {...pageTransition}
-        className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10"
+        className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10"
       >
         <header className="flex flex-col gap-2">
-          <h1 className="font-display text-headline-lg-mobile text-ink sm:text-headline-lg">Halo, {firstName}</h1>
+          <h1 className="font-display text-headline-lg-mobile text-ink sm:text-headline-lg">Halo, {fullName}</h1>
           <p className="max-w-prose text-body-lg text-ink-muted text-pretty">
-            Portal ini menampilkan hasil belajar siswa di kelas yang kamu ajar.
+            {isEducator
+              ? 'Buat kelas, bagikan kodenya ke siswa, lalu bagikan materi yang perlu mereka pelajari.'
+              : 'Portal admin institusi masih dalam pengembangan.'}
           </p>
         </header>
 
         <Reveal delay={0.1}>
-        <StateBlock icon="groups" title="Belum ada kelas yang terhubung">
-          Kelas dan anggota kelas dibuat oleh admin institusi. Begitu kamu terdaftar sebagai pengajar sebuah kelas dan siswanya mulai
-          mengirim catatan, ringkasannya muncul di sini.
-        </StateBlock>
+          {isEducator ? (
+            <TeacherClasses />
+          ) : (
+            <StateBlock icon="domain" title="Portal admin institusi menyusul">
+              Nantinya kamu bisa membuat kode undangan pengajar dan melihat kelas di institusimu dari sini.
+            </StateBlock>
+          )}
         </Reveal>
 
         <section aria-labelledby="upcoming-title" className="flex flex-col gap-4">
           <h2 id="upcoming-title" className="font-headline text-headline-md text-ink">
-            Yang akan kamu lihat di sini
+            Menyusul di portal ini
           </h2>
           <Stagger as="ul" delay={0.2} className="grid gap-4 md:grid-cols-2">
             {UPCOMING.map((item) => (
