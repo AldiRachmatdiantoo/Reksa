@@ -1,5 +1,17 @@
 # Checkpoint Frontend REKSA
 
+## #6 · 2026-11-21 · Beranda jadi tur gulir "Kenalan dengan REKSA"
+
+Branch: `feat/aldi-landing-story`
+
+- **Tur gulir** (`src/features/landing/StoryTour.tsx`), 7 bab: masalah baca ulang, siapkan materi, tulis dari ingatan, tebak nilai, foto catatan, hasil cek, latihan ulang hari ke-3 dan ke-7. Tiap bab punya contoh tampilan kecil berlabel "Contoh tampilan" yang angkanya sama dengan data contoh aplikasi (rubrik homeostasis, nilai 62, konsep terlewat dari `sampleAudit.ts`).
+- Desktop: teks di kiri, contoh tampilan di kanan menempel dan berganti mengikuti bab yang ada di tengah layar, plus penanda kemajuan 1 sampai 7. HP: contoh tampilan muncul di bawah teks tiap bab.
+- Section "Cara kerja" (tab pelajar/guru) dan "Cara menilai" diganti tur ini; isi penilaian (coretan dihitung, bacakan hasil, kamera HP atau laptop) masuk ke bab 4 dan 5. Bagian guru kini section sendiri (`#guru`) dengan catatan jujur bahwa portalnya masih dikembangkan.
+- Menu atas: Cara kerja, Untuk guru, Tanya jawab. Tombol hero "Kenalan dulu" menggulir ke tur.
+- Naskah ditulis hanya dari fitur yang sudah ada; pengingat otomatis jadwal ulang disebut "menyusul".
+
+Diverifikasi di browser: desktop 1280px (panel berganti di bab 3 dan 6, penanda kemajuan ikut), HP 375px tanpa scroll horizontal. Typecheck, 13 test, build lulus.
+
 ## #5 · 2026-11-21 · Audit kemudahan pakai, dibandingkan dengan ruangguru.com
 
 Branch: `feat/aldi-materials`
