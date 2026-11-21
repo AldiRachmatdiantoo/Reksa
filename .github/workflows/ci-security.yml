@@ -167,7 +167,10 @@ jobs:
   e2e:
     name: E2E · Playwright + axe (Docker stack)
     needs: frontend
-    runs-on: ubuntu-latest
+    # Dikunci ke 24.04: ubuntu-latest sudah 26.04 dan Playwright 1.59 belum mendukungnya
+    # ("Playwright does not support chromium on ubuntu26.04-x64"). Naikkan setelah
+    # Playwright mendukung 26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
