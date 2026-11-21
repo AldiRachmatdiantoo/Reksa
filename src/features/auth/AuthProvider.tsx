@@ -14,6 +14,8 @@ type AuthContextValue = AuthState & {
   register: (input: RegisterInput) => Promise<AuthUser>;
   logout: () => Promise<void>;
   recheck: () => void;
+  /** Mengganti data user yang sedang login (setelah ubah nama, verifikasi email, ganti kata sandi). */
+  updateUser: (user: AuthUser) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -62,7 +64,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAttempt((n) => n + 1);
   }, []);
 
-  const value = useMemo(() => ({ ...state, login, register, logout, recheck }), [state, login, register, logout, recheck]);
+  const updateUser = useCallback((user: AuthUser) => {
+    setState((s) => (s.status === 'authenticated' ? { status: 'authenticated', user } : s));
+  }, []);
+
+  const value = useMemo(
+    () => ({ ...state, login, register, logout, recheck, updateUser }),
+    [state, login, register, logout, recheck, updateUser],
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

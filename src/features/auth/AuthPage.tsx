@@ -11,6 +11,7 @@ import { TextField } from '@/shared/ui/TextField';
 import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 import { useAuth } from './AuthProvider';
 import { homePathFor, PASSWORD_RULES } from './authApi';
+import { PasswordRules } from './PasswordRules';
 
 type Mode = 'masuk' | 'daftar';
 type SignupRole = 'STUDENT' | 'EDUCATOR';
@@ -240,23 +241,13 @@ export function AuthPage({ mode }: { mode: Mode }) {
                   <Icon name={showPassword ? 'visibility_off' : 'visibility'} />
                 </button>
               }
-              hint={
-                isRegister ? (
-                  <ul className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1" aria-label="Syarat kata sandi">
-                    {PASSWORD_RULES.map((rule) => {
-                      const ok = rule.test(password);
-                      return (
-                        <li key={rule.id} className={`flex items-center gap-1.5 ${ok ? 'text-teal' : ''}`}>
-                          <Icon name={ok ? 'check_circle' : 'radio_button_unchecked'} fill={ok} className="text-[18px]" />
-                          {rule.label}
-                          <span className="sr-only">{ok ? '(terpenuhi)' : '(belum)'}</span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : undefined
-              }
+              hint={isRegister ? <PasswordRules value={password} /> : undefined}
             />
+            {!isRegister && (
+              <Link to="/lupa-password" className="-mt-2 self-end text-label-lg text-teal underline-offset-2 hover:underline">
+                Lupa kata sandi?
+              </Link>
+            )}
 
             {formError && (
               <p role="alert" className="flex items-start gap-2 rounded-md bg-danger-wash px-4 py-3 text-body-md text-on-danger-wash">

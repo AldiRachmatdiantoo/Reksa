@@ -1,10 +1,10 @@
 import { motion } from 'motion/react';
 import { useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { homePathFor, ROLE_LABEL } from '@/features/auth/authApi';
 import { Brand } from './Brand';
-import { Button } from './Button';
+import { Button, ButtonLink } from './Button';
 import { Icon } from './Icon';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -77,10 +77,15 @@ export function AppHeader({ subtitle }: { subtitle: string }) {
         {isStudent && <StudentNav layoutId="student-nav-desktop" className="hidden items-center gap-1 md:flex" />}
         <div className="flex items-center gap-1 sm:gap-2">
           {user && (
-            <span className="hidden flex-col items-end text-right lg:flex">
+            <Link to="/akun" className="hidden flex-col items-end rounded-md px-2 py-1 text-right hover:bg-wash lg:flex">
               <span className="max-w-48 truncate text-label-lg text-ink">{user.fullName}</span>
               <span className="text-label-sm text-ink-muted">{ROLE_LABEL[user.role]}</span>
-            </span>
+            </Link>
+          )}
+          {user && (
+            <ButtonLink to="/akun" variant="ghost" aria-label="Akun" className="px-3 lg:hidden">
+              <Icon name="account_circle" />
+            </ButtonLink>
           )}
           <ThemeToggle />
           <Button variant="ghost" onClick={logout} disabled={leaving} aria-label="Keluar dari akun" className="px-3 sm:px-4">
