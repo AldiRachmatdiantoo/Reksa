@@ -161,7 +161,9 @@ export function LandingPage() {
                 Tugas yang dikerjakan dari ingatan di atas kertas susah disalin dari internet. Guru bisa melihat buktinya dan bagian materi
                 yang paling sering terlewat di kelas.
               </p>
-              <p className="text-body-sm text-ink-muted">Portal guru masih dalam pengembangan. Dua fitur ini menyusul bertahap.</p>
+              <p className="text-body-sm text-ink-muted">
+                Membuat kelas dan membagikan materi sudah bisa dipakai. Dua fitur ini menyusul bertahap.
+              </p>
             </Reveal>
             <Stagger as="ul" gap={0.1} className="grid gap-4 self-center lg:col-span-7">
               {TEACHER_POINTS.map((point) => (

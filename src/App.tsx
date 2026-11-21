@@ -7,6 +7,7 @@ import { RequireAuth } from '@/features/auth/RequireAuth';
 import { ResultPage } from '@/features/audit-result/ResultPage';
 import { TeacherPage } from '@/features/governance/TeacherPage';
 import { MaterialsPage } from '@/features/materials/MaterialsPage';
+import { StudentClassesPage } from '@/features/classes/StudentClassesPage';
 import { LandingPage } from '@/features/landing/LandingPage';
 import { NotFoundPage } from '@/features/landing/NotFoundPage';
 import { CalibratePage } from '@/features/scanner/CalibratePage';
@@ -48,6 +49,7 @@ function AnimatedRoutes() {
         <Route path="/belajar" element={<StudentArea />}>
           <Route index element={<StudioPage />} />
           <Route path="materi" element={<MaterialsPage />} />
+          <Route path="kelas" element={<StudentClassesPage />} />
           <Route path="foto" element={<CalibratePage />} />
           <Route path="hasil" element={<ResultPage />} />
         </Route>

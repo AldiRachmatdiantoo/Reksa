@@ -1,5 +1,17 @@
 # Checkpoint Frontend REKSA
 
+## #7 · 2026-11-21 · Kelola kelas (FR-09)
+
+Branch: `feat/aldi-classes` (backend: branch `feat/aldi-classes` di repo Reksa)
+
+- **Portal guru** (`/guru`, `src/features/classes/TeacherClasses.tsx`): buat kelas, daftar kelas di kiri dan detail di kanan. Detail berisi kode kelas besar (dibaca "ABCD EFGH") dengan tombol Salin dan Kode baru (dengan konfirmasi), daftar siswa dengan tombol Keluarkan, materi kelas dengan form "Bagikan materi" (memakai `UploadMaterialForm` + `classId`), dan Hapus kelas yang hanya aktif saat kelas kosong. Admin institusi melihat catatan bahwa portalnya menyusul.
+- **Kelas siswa** (`/belajar/kelas`, `StudentClassesPage.tsx`): gabung lewat kode (huruf kecil, spasi, dan tanda hubung diterima), pesan error dari `joinErrorMessage` (404 sama untuk kode salah apa pun, 429 setelah 10 percobaan per jam), daftar kelas yang diikuti, keluar kelas dengan konfirmasi. Menu pelajar jadi tiga: Belajar, Materi, Kelas.
+- **Materi kelas** di `/belajar/materi`: diberi label "Dari kelas ...", tanpa tombol hapus (`isOwner: false`), tetap bisa dipakai untuk sesi belajar.
+- `useLoad` dipindah ke `src/shared/hooks/useLoad.ts` supaya dipakai materi dan kelas.
+- Sapaan portal guru memakai nama lengkap (kata pertama sering "Pak" atau "Bu").
+
+Diverifikasi di browser: guru membuat kelas, membagikan materi, siswa gabung (kode salah lalu kode benar huruf kecil), materi muncul di Materi dan bisa dipakai belajar, guru mengeluarkan siswa, membuat kode baru, menghapus kelas. HP 412px tanpa scroll horizontal, desktop 1280px. Typecheck, 17 test, build lulus.
+
 ## #6 · 2026-11-21 · Beranda jadi tur gulir "Kenalan dengan REKSA"
 
 Branch: `feat/aldi-landing-story`
