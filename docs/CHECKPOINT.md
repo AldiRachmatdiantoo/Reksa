@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 21 November 2026, frontend alur belajar tersambung ke backend + E2E (Adli, branch `feat/adli-frontend-scans`)
+**Checkpoint terakhir:** 21 November 2026, branch coverage `study-sessions` 100% (Adli, branch `feat/adli-sessions-coverage`)
 
 ---
 
@@ -16,6 +16,16 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #17 · Branch coverage `study-sessions` 81,65% → 100% · branch `feat/adli-sessions-coverage`
+
+Satu-satunya angka milik Adli yang masih di bawah target PRD §11.1 (≥ 85%). Diukur gabungan unit + integrasi.
+
+- **Perapian:** `sessions.repository.ts` mengulang `row ? ((await toRecords(...))[0] ?? null) : null` di 4 method; diganti satu helper `toRecord`. Arm `?? null` yang tidak mungkin tercapai ikut hilang (branch repository 34 → 20).
+- **Test baru (unit):** `sessions.controller.test.ts` (SSE QR bridge: header, `ready` → `uploaded`/`timeout`, `error` tanpa detail internal, browser putus = tidak ada tulisan lagi dan wait dibatalkan, ping tiap 15 detik lalu berhenti, 404 sebelum stream dibuka); `sessions.repository.test.ts` (penjaga terakhir P2002 `idx_sessions_one_active`: jadi id sesi pemenang, P2002 tanpa sesi aktif dilempar ulang, error lain dilempar tanpa mencari sesi); `sessions.service.test.ts` (race: sesi hilang saat dibatalkan → 404, sesi basi yang gagal di-EXPIRED-kan tetap dikembalikan).
+- **Test regresi (integrasi):** siswa keluar dari kelas pemilik materi → sesi tetap terbaca dengan `materialTitle: null` (alasan repository tidak memakai relasi wajib).
+
+**Hasil:** controller 8/8, service 67/67, repository 20/20 → `study-sessions` 95/95 branch. Backend keseluruhan: 94,47% statement, 88,4% branch, 95,99% baris. 410 test lulus (3 live Gemini dilewati), `npm audit --omit=dev` 0, Semgrep 0.
 
 ### #16 · Frontend tersambung ke `sessions` + `scans`, E2E Playwright + axe · branch `feat/adli-frontend-scans`
 

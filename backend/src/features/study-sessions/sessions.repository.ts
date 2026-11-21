@@ -140,8 +140,7 @@ export class PrismaSessionsRepository implements SessionsRepository {
           data: { ...data, sessionType: 'INITIAL_BLURTING', status: 'FOCUS_ACTIVE' },
           select: sessionSelect,
         });
-        const [created] = await toRecords(tx, data.userId, [row]);
-        return { created: created! };
+        return { created: (await toRecord(tx, data.userId, row))! };
       });
     } catch (err) {
       // idx_sessions_one_active: hanya terjadi bila ada jalur lain yang lolos dari kunci di atas.
@@ -155,7 +154,7 @@ export class PrismaSessionsRepository implements SessionsRepository {
   findOwned(userId: string, sessionId: string): Promise<SessionRecord | null> {
     return withUserContext(this.prisma, userId, async (tx) => {
       const row = await tx.studySession.findFirst({ where: { id: sessionId, userId }, select: sessionSelect });
-      return row ? ((await toRecords(tx, userId, [row]))[0] ?? null) : null;
+      return toRecord(tx, userId, row);
     });
   }
 
@@ -166,7 +165,7 @@ export class PrismaSessionsRepository implements SessionsRepository {
         orderBy: { startedAt: 'desc' },
         select: sessionSelect,
       });
-      return row ? ((await toRecords(tx, userId, [row]))[0] ?? null) : null;
+      return toRecord(tx, userId, row);
     });
   }
 
@@ -177,7 +176,7 @@ export class PrismaSessionsRepository implements SessionsRepository {
         data: { status: 'EXPIRED' },
       });
       const row = await tx.studySession.findFirst({ where: { id: sessionId, userId }, select: sessionSelect });
-      return row ? ((await toRecords(tx, userId, [row]))[0] ?? null) : null;
+      return toRecord(tx, userId, row);
     });
   }
 
@@ -190,9 +189,16 @@ export class PrismaSessionsRepository implements SessionsRepository {
       });
       if (count === 0) return null;
       const row = await tx.studySession.findFirst({ where: { id: sessionId, userId }, select: sessionSelect });
-      return row ? ((await toRecords(tx, userId, [row]))[0] ?? null) : null;
+      return toRecord(tx, userId, row);
     });
   }
+}
+
+/** Satu baris (atau null) menjadi SessionRecord. toRecords memetakan 1:1, jadi hasilnya selalu ada. */
+async function toRecord(tx: TxClient, userId: string, row: SessionRow | null): Promise<SessionRecord | null> {
+  if (!row) return null;
+  const [record] = await toRecords(tx, userId, [row]);
+  return record!;
 }
 
 /**
