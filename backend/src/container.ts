@@ -19,6 +19,9 @@ import { PrismaMaterialsRepository } from './features/materials/materials.reposi
 import { createMaterialsRouter } from './features/materials/materials.routes.js';
 import { MaterialsService } from './features/materials/materials.service.js';
 import { RedisRubricCache } from './features/materials/rubricCache.js';
+import { PrismaSessionsRepository } from './features/study-sessions/sessions.repository.js';
+import { createSessionsRouter } from './features/study-sessions/sessions.routes.js';
+import { SessionsService } from './features/study-sessions/sessions.service.js';
 
 export type ContainerDeps = {
   env: Pick<Env, 'JWT_ACCESS_SECRET' | 'JWT_REFRESH_SECRET' | 'CORS_ORIGIN' | 'APP_URL'>;
@@ -64,11 +67,13 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
   });
 
   const classesService = new ClassesService({ repo: new PrismaClassesRepository(deps.prisma) });
+  const sessionsService = new SessionsService({ repo: new PrismaSessionsRepository(deps.prisma) });
 
   return {
     '/auth': createAuthRouter({ service: authService, signer, redis: deps.redis }),
     '/me': createMeRouter({ service: authService, signer, redis: deps.redis }),
     '/materials': createMaterialsRouter({ service: materialsService, signer, redis: deps.redis }),
     '/classes': createClassesRouter({ service: classesService, signer, redis: deps.redis }),
+    '/sessions': createSessionsRouter({ service: sessionsService, signer, redis: deps.redis }),
   };
 }
