@@ -68,6 +68,22 @@ const url = await storage.getSignedUrl(submission.imageStorageKey); // berlaku 5
 - **Middleware unggah bisa kamu pakai** untuk foto esai: `singleFileUpload({ field: 'photo', maxBytes })` dari `common/middlewares/upload.middleware.ts`. File masuk ke `req.file.buffer` (memori), ukuran lebih dari batas otomatis 413. Magic bytes tetap kamu cek di service (contoh: `materials.service.ts` `createFromPdf`).
 - Error baru di `common/errors/AppError.ts`: `PayloadTooLargeError` (413), `UnsupportedMediaTypeError` (415), `UnprocessableEntityError` (422). Pakai ini supaya frontend menampilkan pesan yang sama.
 
+## 1e. PRD v1.2: empat fitur baru (FR-09 sampai FR-12)
+
+Saya menambahkan ke [PRD.md](../PRD.md) fitur yang sebelumnya belum dirancang: kelola kelas (FR-09), portal admin institusi (FR-10), tier Free/Pro & kuota (FR-11), dan ekspor PDF (FR-12). Yang menyentuh area kamu:
+
+- **Kuota scan (FR-11)** usulnya kamu pegang karena terjadi di `POST /scans/upload`: Free 3 scan per hari, reset 00.00 WIB dari `last_scan_reset_at`, `SELECT ... FOR UPDATE`, kuota dikembalikan kalau audit AI gagal, kuota habis `429 QUOTA_EXCEEDED` + `resetAt`. Respons unggah memuat `{ tier, used, limit, remaining, resetAt }`, sama dengan `GET /me/quota`.
+- **Tier efektif** nanti dihitung dari `users.pro_expires_at` (kolom baru, saya yang migrasi bersama kode aktivasi). Sampai kolom itu ada, pakai `users.tier`.
+- **`classId` di `POST /sessions`** hanya boleh kelas yang pelajar itu ikuti (cek `class_members`). Tabelnya sudah ada; endpoint kelasnya saya buat.
+
+Kalau pembagian ini tidak cocok, tulis di `UNTUK-ALDI.md`.
+
+**Tambahan PRD v1.3 yang mengubah desain modulmu, mohon dibaca sebelum mulai:**
+
+- **Aturan sesi sah (FR-02):** waktu dari server saja; satu sesi aktif per pelajar (`409` + id sesi aktif, ada `POST /sessions/:id/cancel`); fokus tidak diakhiri dalam preset + 30 menit → `EXPIRED`; foto tidak diunggah dalam 2 jam setelah JOL → `EXPIRED`; fokus < 50% preset ditandai `validity = SHORT_FOCUS`. Status kedaluwarsa dihitung saat dibaca, tanpa cron. `AWAITING_JOL` tidak dipakai.
+- **Audit asinkron (FR-05):** `POST /scans/upload` menjawab `202` dan hanya menyimpan foto + memotong kuota. Audit dijalankan worker (antrean Redis, saya siapkan infranya), status dibaca di `GET /scans/:id`, gagal → kuota dikembalikan + `POST /scans/:id/retry`. `ledger_hash`, `COMPLETED`, dan jadwal H+3/H+7 hanya saat `DONE`.
+- Kolom baru (`validity`, `audit_status`, dst.) ada di PRD §7.1. Migrasinya bisa kamu yang buat di branch fiturmu, tapi kabari saya dulu karena `backend/prisma/` area saya.
+
 ## 2. Yang perlu kamu lakukan
 
 ### a. Pull dan cek file di foldermu

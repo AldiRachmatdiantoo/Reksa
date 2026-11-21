@@ -64,10 +64,21 @@ Landasan ilmiah: *retrieval practice*, *generation effect*, *dual-coding*, *judg
 | :--- | :--- | :--- |
 | FR-07 | *Proof of Understanding Ledger* | Timestamp sesi, durasi fokus, foto asli via *signed URL*, JOL vs. skor AI, verifikasi `ledger_hash` |
 | FR-08 | *Cohort Blind-Spots* | Persentase kegagalan per konsep dalam satu kelas + rekomendasi perbaikan modul dari AI |
+| FR-09 | Kelola kelas | Guru membuat kelas dengan kode 8 karakter, siswa bergabung lewat kode, materi kelas terbaca anggota |
+| FR-10 | Portal admin institusi | Kode undangan pengajar, daftar pengajar & kelas, analitik agregat (kelompok < 5 siswa disembunyikan) |
+
+### Akun & Langganan
+
+| Kode | Fitur | Inti |
+| :--- | :--- | :--- |
+| FR-11 | Tier Free/Pro & kuota | Free 3 scan/hari (reset 00.00 WIB), Pro lewat kode aktivasi; payment gateway pasca-MVP |
+| FR-12 | Ekspor PDF *Proof of Understanding* | PDF milik sendiri (Pro) lewat *signed URL*, verifikasi publik `ledger_hash` tanpa data pribadi |
+| FR-13 | Privasi & data anak | Kebijakan Privasi & Syarat Layanan berversi, tahun lahir + izin orang tua, unduh data, hapus akun, aturan penyimpanan |
+| FR-14 | Akun dasar | Verifikasi email, lupa password tanpa enumerasi akun, ganti password, ubah nama |
 
 ### Peran (RBAC)
 
-- **`STUDENT`**: tier Free (kuota scan harian terbatas) dan Pro (tanpa batas, *spaced re-blurting*, ekspor PDF).
+- **`STUDENT`**: tier Free (kuota scan harian terbatas, *spaced re-blurting* H+3/H+7) dan Pro (scan tanpa batas, analitik tren kalibrasi, ekspor PDF).
 - **`EDUCATOR`**: mengelola kelas, materi resmi, verifikasi ledger, analitik kelas.
 - **`INSTITUTION_ADMIN`**: analitik lintas kelas dan manajemen pengajar. Tidak bisa melihat audit esai individu.
 
