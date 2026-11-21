@@ -42,6 +42,12 @@ enum SessionType {
   SPACED_REVIEW
 }
 
+/// FR-02: sesi dengan fokus aktual < 50% durasi preset ditandai SHORT_FOCUS.
+enum SessionValidity {
+  VALID
+  SHORT_FOCUS
+}
+
 enum SessionStatus {
   FOCUS_ACTIVE
   AWAITING_JOL
@@ -176,18 +182,21 @@ model StudyMaterial {
 }
 
 model StudySession {
-  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId             String        @map("user_id") @db.Uuid
-  materialId         String        @map("material_id") @db.Uuid
-  classId            String?       @map("class_id") @db.Uuid
-  sessionType        SessionType   @map("session_type")
-  plannedDurationSec Int           @map("planned_duration_sec")
-  actualDurationSec  Int?          @map("actual_duration_sec")
+  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String           @map("user_id") @db.Uuid
+  materialId         String           @map("material_id") @db.Uuid
+  classId            String?          @map("class_id") @db.Uuid
+  sessionType        SessionType      @map("session_type")
+  plannedDurationSec Int              @map("planned_duration_sec")
+  actualDurationSec  Int?             @map("actual_duration_sec")
   // Disimpan saat PATCH /sessions/:id/jol, sebelum foto diunggah (FR-03).
-  predictedJolScore  Int?          @map("predicted_jol_score")
-  status             SessionStatus @default(FOCUS_ACTIVE)
-  startedAt          DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
-  completedAt        DateTime?     @map("completed_at") @db.Timestamptz(6)
+  predictedJolScore  Int?             @map("predicted_jol_score")
+  status             SessionStatus    @default(FOCUS_ACTIVE)
+  // Diisi bersamaan saat fokus diakhiri (PATCH /sessions/:id/jol), lihat migrasi session_validity.
+  validity           SessionValidity?
+  focusEndedAt       DateTime?        @map("focus_ended_at") @db.Timestamptz(6)
+  startedAt          DateTime         @default(now()) @map("started_at") @db.Timestamptz(6)
+  completedAt        DateTime?        @map("completed_at") @db.Timestamptz(6)
 
   user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   material   StudyMaterial    @relation(fields: [materialId], references: [id], onDelete: Restrict)
