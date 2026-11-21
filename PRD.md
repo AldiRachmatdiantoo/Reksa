@@ -369,7 +369,7 @@ Seluruh endpoint berada di bawah prefix `/api/v1` dan menggunakan middleware val
 | `POST` | `/sessions` | `STUDENT` | Memulai sesi Pomodoro; mengunci waktu mulai di server. |
 | `PATCH` | `/sessions/:id/jol` | `STUDENT` (Owner) | Mengakhiri fase fokus & menyimpan skor keyakinan metakognisi (`predicted_jol_score`). |
 | `POST` | `/sessions/:id/qr-bridge` | `STUDENT` (Owner) | Menghasilkan token QR sementara di Redis (TTL 300 detik) untuk akses dari desktop. |
-| `GET` | `/scans/qr-bridge/:token/events` | `STUDENT` (Owner, desktop) | *(Usulan, final ditentukan Adli)* Stream SSE ke layar laptop saat foto dari HP masuk. Nginx sudah dikonfigurasi tanpa buffering untuk path ini. |
+| `GET` | `/sessions/:id/qr-bridge/events` | `STUDENT` (Owner, desktop) | *(Final, Adli 21 Nov 2026)* Stream SSE ke layar laptop: `ready` → `uploaded { submissionId }` atau `timeout`. Token QR tidak ada di URL (tidak tercatat di access log). Respons memakai header `X-Accel-Buffering: no` dan ping tiap 15 detik. |
 | `POST` | `/scans/upload` | `STUDENT` / QR Token | Menerima `multipart/form-data` foto esai, validasi *magic bytes*, menghapus EXIF, memotong kuota, lalu mengantrekan audit `IAiService` (v1.3: respons `202`, hasil dibaca lewat `GET /scans/:id`). |
 | `GET` | `/spaced/due` | `STUDENT` | Mengambil daftar sesi *micro-blurting* yang jatuh tempo hari ini. |
 | `GET` | `/governance/classes/:classId/ledger` | `EDUCATOR` (Owner) | Mengambil daftar *Proof of Understanding Ledger* siswa beserta *Signed URL* foto tulisan tangan. |

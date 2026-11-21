@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 21 November 2026, kuota scan harian FR-11 + `GET /me/quota` (Adli, branch `feat/adli-image-processor`)
+**Checkpoint terakhir:** 21 November 2026, QR bridge laptop ↔ HP FR-04 (Adli, branch `feat/adli-image-processor`)
 
 ---
 
@@ -12,10 +12,23 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | :--- | :--- | :--- |
 | Langkah 0 | ✅ Selesai, di `main` (PR #1) | ⏳ Belum mulai (bagian frontend diambil alih Aldi) |
 | Fase 1 | ✅ Selesai: `auth` (PR #2, #3), CI + branch protection (PR #4) | — |
-| Fase 2 | ✅ Storage (PR #6) · ✅ `materials` (PR #8) · ✅ PRD v1.3 (PR #9) · ✅ `classes` FR-09 (PR #10) · 🟡 akun dasar FR-14 (branch `feat/aldi-account`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | ✅ Variasi `MockAiProvider` + `study-sessions` (PR #13) · ✅ monorepo frontend (PR #14) · 🟡 `essay-scans`: `imageProcessor` + kuota (branch `feat/adli-image-processor`) |
+| Fase 2 | ✅ Storage (PR #6) · ✅ `materials` (PR #8) · ✅ PRD v1.3 (PR #9) · ✅ `classes` FR-09 (PR #10) · 🟡 akun dasar FR-14 (branch `feat/aldi-account`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | ✅ Variasi `MockAiProvider` + `study-sessions` (PR #13) · ✅ monorepo frontend (PR #14) · 🟡 `essay-scans`: `imageProcessor` + kuota + QR bridge (branch `feat/adli-image-processor`); unggah + worker menunggu Aldi |
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #12 · QR bridge laptop ↔ HP (FR-04 skenario B) · branch `feat/adli-image-processor`
+
+**Selesai**
+- `backend/src/features/essay-scans/qrBridge.gateway.ts` (`RedisQrBridge`): token 32 byte base64url, di Redis hanya SHA-256-nya (`qr:v1:token:<hash>`, TTL 300 detik). Token baru untuk sesi yang sama langsung membatalkan token lama (`SET ... GET` atomik). `consume` memakai `GETDEL`, jadi sekali pakai walau diminta paralel. `resolve` untuk validasi awal, `notifyUploaded` + `waitForUpload` untuk memberi tahu laptop (polling Redis tiap detik; tanpa koneksi subscriber, aman untuk banyak instance).
+- `POST /sessions/:id/qr-bridge` (STUDENT pemilik, 20/jam): `201 { qrToken, expiresInSec: 300 }`, hanya saat `AWAITING_SCAN` dan foto belum masuk.
+- `GET /sessions/:id/qr-bridge/events` (SSE, 60/jam): `retry`, `ready`, ping tiap 15 detik, lalu `uploaded {submissionId}` atau `timeout` (330 detik), lalu ditutup. Kepemilikan dicek sebelum header SSE dikirim (404 tetap JSON).
+
+**Keputusan:** path SSE diganti dari usulan `/scans/qr-bridge/:token/events` ke `/sessions/:id/qr-bridge/events` supaya token unggah tidak masuk URL/access log. Buffering nginx dimatikan per respons dengan `X-Accel-Buffering: no`, jadi tetap jalan dengan `nginx.conf` sekarang; permintaan merapikan `location` ada di `UNTUK-ALDI.md`. PRD §8.1 diperbarui.
+
+**Belum:** pemakaian token di `POST /scans/upload` (`resolve` → proses foto → `consume` → `notifyUploaded`) ikut modul unggah yang masih menunggu keputusan Aldi.
+
+**Test:** unit (aturan `issueQrBridge`, kepemilikan `waitForQrUpload`); integrasi `tests/integration/qrBridge.test.ts` (token tidak tersimpan mentah, TTL ≤ 300, token lama batal, 6 `consume` paralel → tepat 1, token aneh/SQLi ditolak, SSE asli lewat HTTP: header, `ready`, `uploaded`; 404 JSON untuk siswa lain). Hasil: 155 unit, 163 integrasi + security, `npm audit --omit=dev` 0, Semgrep (aturan CI) 0 temuan.
 
 ### #11 · Kuota scan harian (FR-11, bagian Adli) · branch `feat/adli-image-processor`
 
@@ -234,7 +247,7 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 **Adli** (lihat [UNTUK-ADLI.md](UNTUK-ADLI.md))
 1. ~~Review schema di foldernya, perkaya `mockAi.fixtures.ts`~~ ✅
 2. ~~Backend `study-sessions`~~ ✅ (PR #13)
-3. ~~`imageProcessor`~~ ✅ · ~~kuota scan + `GET /me/quota`~~ ✅ (`feat/adli-image-processor`); berikutnya QR bridge, lihat [BACKLOG.md](BACKLOG.md)
+3. ~~`imageProcessor`~~ ✅ · ~~kuota scan + `GET /me/quota`~~ ✅ · ~~QR bridge~~ ✅ (`feat/adli-image-processor`). Semua yang tidak terblokir sudah selesai, lihat [BACKLOG.md](BACKLOG.md)
 4. Unggah + worker `essay-scans`: menunggu keputusan Aldi soal `essay_submissions` append-only dan infra antrean (lihat `UNTUK-ALDI.md`)
 
 ## Catatan teknis yang perlu diingat

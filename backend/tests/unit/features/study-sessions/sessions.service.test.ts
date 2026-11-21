@@ -85,6 +85,17 @@ class FakeSessionsRepository implements SessionsRepository {
   }
 }
 
+const qrBridge = {
+  issued: [] as { userId: string; sessionId: string }[],
+  async issue(ticket: { userId: string; sessionId: string }) {
+    this.issued.push(ticket);
+    return { qrToken: 'A'.repeat(43), expiresInSec: 300 as const };
+  },
+  async waitForUpload() {
+    return 'submission-id';
+  },
+};
+
 let repo: FakeSessionsRepository;
 let clock: Date;
 let service: SessionsService;
@@ -96,7 +107,8 @@ function advance(ms: number) {
 beforeEach(() => {
   repo = new FakeSessionsRepository();
   clock = T0;
-  service = new SessionsService({ repo, now: () => clock });
+  qrBridge.issued = [];
+  service = new SessionsService({ repo, qrBridge, now: () => clock });
 });
 
 describe('pure rules', () => {
@@ -262,5 +274,38 @@ describe('cancel', () => {
   it("answers 404 for another student's session", async () => {
     const s = await service.start(USER, { materialId: MATERIAL, preset: 'CLASSIC_25_5' });
     await expect(service.cancel(OTHER, s.id)).rejects.toMatchObject({ statusCode: 404 });
+  });
+});
+
+describe('QR bridge', () => {
+  it('issues a token only after JOL, while waiting for the photo', async () => {
+    const s = await service.start(USER, { materialId: MATERIAL, preset: 'CLASSIC_25_5' });
+    await expect(service.issueQrBridge(USER, s.id)).rejects.toMatchObject({ code: 'INVALID_SESSION_STATE' });
+
+    await service.submitJol(USER, s.id, 60);
+    await expect(service.issueQrBridge(USER, s.id)).resolves.toEqual({ qrToken: 'A'.repeat(43), expiresInSec: 300 });
+    expect(qrBridge.issued).toEqual([{ userId: USER, sessionId: s.id }]);
+  });
+
+  it('refuses once the photo is in, after expiry, and for other students', async () => {
+    const s = await service.start(USER, { materialId: MATERIAL, preset: 'CLASSIC_25_5' });
+    await service.submitJol(USER, s.id, 60);
+
+    await expect(service.issueQrBridge(OTHER, s.id)).rejects.toMatchObject({ statusCode: 404 });
+
+    repo.sessions.get(s.id)!.hasSubmission = true;
+    await expect(service.issueQrBridge(USER, s.id)).rejects.toMatchObject({ code: 'INVALID_SESSION_STATE' });
+
+    repo.sessions.get(s.id)!.hasSubmission = false;
+    advance(121 * MIN);
+    await expect(service.issueQrBridge(USER, s.id)).rejects.toMatchObject({ code: 'SESSION_EXPIRED' });
+    expect(qrBridge.issued).toHaveLength(0);
+  });
+
+  it('waitForQrUpload checks ownership before waiting', async () => {
+    const s = await service.start(USER, { materialId: MATERIAL, preset: 'CLASSIC_25_5' });
+    const signal = new AbortController().signal;
+    await expect(service.waitForQrUpload(OTHER, s.id, signal)).rejects.toMatchObject({ statusCode: 404 });
+    await expect(service.waitForQrUpload(USER, s.id, signal)).resolves.toBe('submission-id');
   });
 });

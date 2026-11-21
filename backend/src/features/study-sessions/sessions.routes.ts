@@ -25,6 +25,8 @@ const HOUR = 60 * 60_000;
  * GET   /sessions/:id          detail sesi; status kedaluwarsa dihitung saat dibaca
  * PATCH /sessions/:id/jol      { predictedJolScore } mengakhiri fokus → AWAITING_SCAN
  * POST  /sessions/:id/cancel   membatalkan sesi aktif → EXPIRED
+ * POST  /sessions/:id/qr-bridge          201 { qrToken, expiresInSec: 300 } untuk QR (FR-04); hanya saat AWAITING_SCAN
+ * GET   /sessions/:id/qr-bridge/events   SSE untuk laptop: ready → uploaded {submissionId} | timeout
  */
 export function createSessionsRouter({ service, signer, redis }: SessionsRouterDeps): Router {
   const router = Router();
@@ -42,6 +44,18 @@ export function createSessionsRouter({ service, signer, redis }: SessionsRouterD
   router.get('/:id', validate({ params: SessionIdParamsSchema }), controller.get);
   router.patch('/:id/jol', validate({ params: SessionIdParamsSchema, body: SubmitJolSchema }), controller.submitJol);
   router.post('/:id/cancel', validate({ params: SessionIdParamsSchema }), controller.cancel);
+  router.post(
+    '/:id/qr-bridge',
+    rateLimit({ redis, name: 'sessions:qr-bridge', limit: 20, windowMs: HOUR, key: (req) => getAuth(req.res!).userId }),
+    validate({ params: SessionIdParamsSchema }),
+    controller.issueQrBridge,
+  );
+  router.get(
+    '/:id/qr-bridge/events',
+    rateLimit({ redis, name: 'sessions:qr-events', limit: 60, windowMs: HOUR, key: (req) => getAuth(req.res!).userId }),
+    validate({ params: SessionIdParamsSchema }),
+    controller.qrBridgeEvents,
+  );
 
   return router;
 }

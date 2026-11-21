@@ -19,6 +19,7 @@ import { PrismaMaterialsRepository } from './features/materials/materials.reposi
 import { createMaterialsRouter } from './features/materials/materials.routes.js';
 import { MaterialsService } from './features/materials/materials.service.js';
 import { RedisRubricCache } from './features/materials/rubricCache.js';
+import { RedisQrBridge } from './features/essay-scans/qrBridge.gateway.js';
 import { PrismaQuotaRepository } from './features/essay-scans/quota.repository.js';
 import { createQuotaRouter } from './features/essay-scans/quota.routes.js';
 import { QuotaService } from './features/essay-scans/quota.service.js';
@@ -70,7 +71,8 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
   });
 
   const classesService = new ClassesService({ repo: new PrismaClassesRepository(deps.prisma) });
-  const sessionsService = new SessionsService({ repo: new PrismaSessionsRepository(deps.prisma) });
+  const qrBridge = new RedisQrBridge(deps.redis);
+  const sessionsService = new SessionsService({ repo: new PrismaSessionsRepository(deps.prisma), qrBridge });
   const quotaService = new QuotaService({ repo: new PrismaQuotaRepository(deps.prisma) });
 
   return {

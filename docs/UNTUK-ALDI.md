@@ -25,6 +25,12 @@ Contoh format:
 **Mendesak?** Ya, memblokir integration test sessions.
 -->
 
+### ⏳ 2026-11-21 — `nginx.conf`: path SSE QR bridge final (tidak mendesak)
+**Butuh untuk:** FR-04 skenario B (checklist Adli poin 4 di `CLAUDE.md`).
+**Detail:** path final `GET /api/v1/sessions/<uuid>/qr-bridge/events`, bukan usulan lama `/api/v1/scans/qr-bridge/<token>/events` (token unggah sebaiknya tidak masuk URL karena tercatat di access log). Usul ganti `location` SSE di `frontend/nginx.conf` menjadi `~ ^/api/v1/sessions/[0-9a-f-]{36}/qr-bridge/events$` dengan isi yang sama (`proxy_buffering off`, `proxy_read_timeout 330s`).
+**Mendesak?** Tidak. Backend sudah mengirim `X-Accel-Buffering: no` dan ping tiap 15 detik, jadi SSE tetap jalan lewat `location /api/` biasa. Perubahan ini hanya merapikan aturan lama yang sekarang tidak terpakai.
+**Catatan deploy:** rewrite Vercel ke Render bisa membatasi durasi respons stream. Kalau SSE terputus di produksi, frontend cukup jatuh ke polling `GET /sessions/:id` (`hasSubmission`) tiap 3 detik.
+
 ### ⏳ 2026-11-21 — Usulan: satukan `reksa-frontend` ke `frontend/` (monorepo)
 **Butuh untuk:** satu tempat untuk menjalankan, menguji, dan me-review frontend + backend; kontrak API dan UI berubah dalam satu PR.
 **Yang sudah saya lakukan** di branch `feat/adli-frontend-monorepo` (belum di-merge, menyentuh area kamu, jadi butuh persetujuanmu):
@@ -71,6 +77,14 @@ Kalau kamu setuju opsi A di atas, saya bisa sekalian membuat migrasi ini di bran
 ## Kabar & progres
 
 Hal yang perlu Aldi ketahui tapi tidak butuh tindakan (fitur selesai, perubahan kontrak di area Adli, keputusan desain).
+
+### 2026-11-21 — ✅ QR bridge laptop ↔ HP siap disambungkan (FR-04 skenario B)
+Alur untuk frontend:
+1. Laptop, setelah `PATCH /sessions/:id/jol`: `POST /api/v1/sessions/:id/qr-bridge` → `201 { qrToken, expiresInSec: 300 }`. `409 INVALID_SESSION_STATE` bila JOL belum disimpan atau foto sudah masuk; `409 SESSION_EXPIRED`. Minta lagi = token lama batal.
+2. Tampilkan QR berisi tautan halaman unggah HP dengan token di **fragment**, misalnya `${APP_URL}/unggah#<qrToken>`. Fragment tidak dikirim ke server, jadi token tidak masuk log mana pun.
+3. Laptop membuka `new EventSource('/api/v1/sessions/:id/qr-bridge/events', { withCredentials: true })` dan mendengarkan event `ready`, `uploaded` (`{ submissionId }`, lalu buka halaman hasil), `timeout` (token habis, tawarkan QR baru), dan `error`. Server menutup stream setelah `uploaded`/`timeout`; tutup `EventSource` di sisi klien juga supaya tidak tersambung ulang.
+4. HP (tanpa login) mengirim `POST /api/v1/scans/upload` multipart `image` + `qrToken`. **Endpoint ini belum ada** (menunggu keputusan append-only), tetapi kontraknya tetap seperti `UploadScanFieldsSchema`.
+- Rate limit: buat token 20/jam, buka stream 60/jam per user.
 
 ### 2026-11-21 — ✅ `GET /me/quota` siap (FR-11)
 - `GET /api/v1/me/quota` (STUDENT) → `{ quota: { tier, used, limit, remaining, resetAt } }`; Pro: `limit` dan `remaining` `null`. `resetAt` = 00.00 WIB berikutnya (ISO UTC).

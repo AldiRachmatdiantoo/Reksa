@@ -10,16 +10,15 @@ Tugas Adli menuju MVP (PRD v1.3): `study-sessions`, `essay-scans`, Gemini Stage 
 - [x] `study-sessions` FR-01 sampai FR-03: mulai, sesi aktif, detail, JOL, batal; aturan sesi sah FR-02 (PR #13, checkpoint #9)
 - [x] `common/utils/imageProcessor.ts`: magic bytes, hapus EXIF/GPS, orientasi, lebar maks. 1600px, WebP, batas piksel (checkpoint #10)
 - [x] Kuota scan harian FR-11 (`quota.*`, 00.00 WIB, `FOR UPDATE`, 429 `QUOTA_EXCEEDED`, refund) + `GET /me/quota` (checkpoint #11)
+- [x] QR bridge FR-04: `POST /sessions/:id/qr-bridge` + SSE `GET /sessions/:id/qr-bridge/events`, token hash di Redis, sekali pakai (checkpoint #12)
 
 ## Bisa dikerjakan sekarang
-
-- [ ] **QR bridge** (FR-04 skenario B): `POST /sessions/:id/qr-bridge` (token Redis TTL 300 detik, sekali pakai) + SSE `/scans/qr-bridge/:token/events`. Kabari Aldi path final SSE untuk `nginx.conf`.
 
 - [ ] Tier efektif dari `users.pro_expires_at` begitu migrasi FR-11 Aldi masuk (sekarang `users.tier`).
 
 ## Menunggu Aldi (lihat `UNTUK-ALDI.md`)
 
-- [ ] **`POST /scans/upload`** (202): menunggu keputusan `essay_submissions` append-only + migrasi kolom audit.
+- [ ] **`POST /scans/upload`** (202): menunggu keputusan `essay_submissions` append-only + migrasi kolom audit. Bahan sudah siap: `imageProcessor`, `lockQuotaState`/`writeQuotaCounters` (satu transaksi dengan insert submission), `qrBridge.resolve` → `consume` → `notifyUploaded`.
 - [ ] **Worker audit** (`PENDING → PROCESSING → DONE/FAILED`, batas 60 detik, retry 2× untuk TRANSIENT, 1× untuk INVALID_OUTPUT): menunggu infra antrean.
 - [ ] **`GET /scans/:id`** dan **`POST /scans/:id/retry`** (maks. 2 kali).
 - [ ] Saat `DONE`: `ledger_hash`, sesi `COMPLETED`, jadwal H+3/H+7 (jadwal milik Aldi, sepakati antarmukanya).
