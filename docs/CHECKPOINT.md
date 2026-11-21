@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 21 November 2026, modul `materials` (Aldi, branch `feat/aldi-materials` di kedua repo)
+**Checkpoint terakhir:** 21 November 2026, modul `classes` FR-09 (Aldi, branch `feat/aldi-classes` di kedua repo)
 
 ---
 
@@ -12,10 +12,32 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | :--- | :--- | :--- |
 | Langkah 0 | ✅ Selesai, di `main` (PR #1) | ⏳ Belum mulai (bagian frontend diambil alih Aldi) |
 | Fase 1 | ✅ Selesai: `auth` (PR #2, #3), CI + branch protection (PR #4) | — |
-| Fase 2 | ✅ Storage (PR #6) · 🟡 `materials` (branch `feat/aldi-materials`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | ⬜ |
+| Fase 2 | ✅ Storage (PR #6) · ✅ `materials` (PR #8) · ✅ PRD v1.3 (PR #9) · 🟡 `classes` FR-09 (branch `feat/aldi-classes`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | ⬜ |
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #7 · Kelola kelas & keanggotaan (FR-09) · branch `feat/aldi-classes`
+
+**Endpoint** (semua butuh login, `/api/v1/classes`)
+- `POST /` (EDUCATOR) `{name}` 1 sampai 100 karakter. Server membuat `class_code` 8 karakter dari alfabet tanpa `0 O 1 I L` (`crypto.randomInt`), dicoba ulang maksimal 5 kali kalau bentrok. `institution_id` diambil dari `users.institution_id`.
+- `GET /`: guru mendapat kelas yang diampu, siswa mendapat kelas yang diikuti, peran lain `[]`.
+- `POST /join` (STUDENT) `{classCode}`: spasi, tanda hubung, dan huruf kecil dinormalkan. Kode salah apa pun bentuknya dijawab 404 dengan pesan yang sama. Rate limit 10 percobaan per jam per user, dipasang sebelum validasi. Bergabung dua kali tidak membuat baris ganda.
+- `GET /:id` (pemilik atau anggota; anggota mendapat `classCode: null`) · `PATCH /:id` ganti nama · `POST /:id/code` kode baru, kode lama langsung mati · `DELETE /:id` 204, atau 409 kalau masih ada anggota (baris kelas dikunci `FOR UPDATE` supaya tidak balapan dengan siswa yang bergabung).
+- `GET /:id/members` (pemilik): `{studentId, fullName, joinedAt}`, tanpa email. `DELETE /:id/members/:studentId`: guru mengeluarkan siswa, atau siswa keluar sendiri.
+- Kelas milik orang lain dijawab 404. `classes` dan `class_members` tidak memakai RLS, jadi setiap query memfilter `educatorId` atau keanggotaan secara eksplisit.
+
+**Perubahan `materials`**
+- `GET /materials`, `GET /materials/:id`, dan `GET /materials/:id/file` kini juga mengembalikan materi kelas tempat user menjadi anggota atau guru. Filter eksplisit sama dengan policy RLS `materials_class_read` yang sudah ada.
+- Respons materi bertambah `className` dan `isOwner`. Hapus tetap hanya untuk pengunggah (anggota mendapat 404).
+
+**Keputusan:** aturan hapus kelas di PRD diganti dari "belum ada sesi" menjadi "belum ada anggota", karena sesi siswa yang sudah keluar tidak terlihat oleh guru (RLS `sessions_educator_read`).
+
+**Test:** unit `tests/unit/features/classes/` (service, kode, normalisasi) + materi kelas di unit materials; integrasi `tests/integration/classes.test.ts`; security `tests/security/classes.security.test.ts` (IDOR di semua aksi pemilik, anggota tidak melihat kode/daftar anggota, siswa tidak bisa mengeluarkan siswa lain, orang luar tidak bisa membaca materi kelas, payload SQL di kode, brute-force join 429). Hasil: 82 unit, 111 integrasi + security, semua lulus.
+
+**Frontend** (`reksa-frontend`, branch `feat/aldi-classes`): portal guru untuk membuat kelas, menyalin dan mengganti kode, mengelola siswa, membagikan materi ke kelas, dan menghapus kelas kosong; halaman `/belajar/kelas` untuk siswa (gabung lewat kode, keluar kelas); materi kelas tampil di halaman Materi dengan label kelas dan tanpa tombol hapus. Diverifikasi di browser dengan akun guru dan siswa uji di localhost.
+
+**Berikutnya:** FR-14 verifikasi email belum ada, jadi join belum mensyaratkan email terverifikasi (PRD FR-14). Tambahkan cek itu saat FR-14 dibangun.
 
 ### #6 · Modul `materials` (Fase 2) · branch `feat/aldi-materials`
 

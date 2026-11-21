@@ -74,7 +74,7 @@ Saya menambahkan ke [PRD.md](../PRD.md) fitur yang sebelumnya belum dirancang: k
 
 - **Kuota scan (FR-11)** usulnya kamu pegang karena terjadi di `POST /scans/upload`: Free 3 scan per hari, reset 00.00 WIB dari `last_scan_reset_at`, `SELECT ... FOR UPDATE`, kuota dikembalikan kalau audit AI gagal, kuota habis `429 QUOTA_EXCEEDED` + `resetAt`. Respons unggah memuat `{ tier, used, limit, remaining, resetAt }`, sama dengan `GET /me/quota`.
 - **Tier efektif** nanti dihitung dari `users.pro_expires_at` (kolom baru, saya yang migrasi bersama kode aktivasi). Sampai kolom itu ada, pakai `users.tier`.
-- **`classId` di `POST /sessions`** hanya boleh kelas yang pelajar itu ikuti (cek `class_members`). Tabelnya sudah ada; endpoint kelasnya saya buat.
+- **`classId` di `POST /sessions`** hanya boleh kelas yang pelajar itu ikuti (cek `class_members`). ✅ Endpoint kelas sudah jadi (branch `feat/aldi-classes`, lihat CHECKPOINT #7). Cek keanggotaannya cukup `prisma.classMember.findFirst({ where: { classId, studentId: userId } })`; kalau tidak ada, jawab 404 seperti kelas yang tidak ada. Materi kelas juga sudah bisa dibaca anggota lewat `GET /materials/:id`, jadi sesi boleh memakai materi milik guru kelasnya.
 
 Kalau pembagian ini tidak cocok, tulis di `UNTUK-ALDI.md`.
 
