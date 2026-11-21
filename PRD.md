@@ -51,8 +51,8 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
 
 ### 3.1 Definisi Peran (*Roles*)
 1. **`STUDENT` (Pelajar / Mahasiswa):**
-   * *Tier Free:* Akses penuh siklus Pomodoro, *Paper Blurting*, pemindaian AI Vision (kuota harian terbatas, misal 3 sesi/hari), JOL Slider, dan *Text-to-Speech*.
-   * *Tier Pro:* Kuota pemindaian tak terbatas, penjadwalan otomatis *Spaced Re-Blurting*, analitik tren kalibrasi metakognisi, dan ekspor PDF *Proof of Understanding*.
+   * *Tier Free:* Akses penuh siklus Pomodoro, *Paper Blurting*, pemindaian AI Vision (kuota harian terbatas, misal 3 sesi/hari), JOL Slider, *Text-to-Speech*, dan penjadwalan otomatis *Spaced Re-Blurting* H+3/H+7.
+   * *Tier Pro:* Kuota pemindaian tak terbatas, analitik tren kalibrasi metakognisi, dan ekspor PDF *Proof of Understanding*.
    * Aturan kuota, cara mengaktifkan Pro, dan ekspor PDF dirinci di FR-11 dan FR-12.
 2. **`EDUCATOR` (Guru / Dosen):**
    * Membuat ruang kelas (*Cohort*), mengunggah materi referensi resmi, memverifikasi *Proof of Understanding Ledger* siswa, dan menganalisis *Cohort Blind-Spots*.
@@ -176,7 +176,7 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
   * **MVP tanpa payment gateway.** Pro diaktifkan dengan **kode aktivasi** yang dibagikan tim REKSA atau institusi. Kode disimpan sebagai hash, punya durasi (misal 30 atau 365 hari), batas jumlah penukaran, dan tanggal kedaluwarsa. Menukar kode mengisi atau memperpanjang `users.pro_expires_at`. Rate limit 10 percobaan per jam per user.
   * Tier efektif dihitung dari `pro_expires_at`: lewat tanggal itu, user kembali `FREE` otomatis. Data dan riwayat tidak dihapus saat turun tier.
   * Pembayaran langsung (misal Midtrans atau Xendit) dicatat sebagai Pasca-MVP (§4.5).
-  * **Keputusan terbuka:** §3.1 menyebut *Spaced Re-Blurting* otomatis sebagai fitur Pro, sedangkan FR-06 membuat jadwal H+3/H+7 untuk semua pelajar. Perlu dipilih: Free tetap mendapat jadwal tetapi tanpa pengingat otomatis, atau jadwal hanya untuk Pro.
+  * **Diputuskan (v1.3):** jadwal *Spaced Re-Blurting* H+3/H+7 (FR-06) berlaku untuk **semua pelajar**, Free maupun Pro. Pembeda Pro hanya kuota tanpa batas, analitik tren kalibrasi, dan ekspor PDF.
 
 #### **FR-12: Ekspor PDF Proof of Understanding**
 * **User Story:** Sebagai pelajar Pro, saya ingin mengunduh bukti belajar dalam bentuk PDF untuk dilampirkan ke tugas atau portofolio, dan penerimanya bisa memeriksa keasliannya.
@@ -192,7 +192,7 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
 * **Acceptance Criteria:**
   * Halaman publik **Kebijakan Privasi** (`/privasi`) dan **Syarat Layanan** (`/syarat`), masing-masing bernomor versi. Isinya minimal: data yang dikumpulkan, tujuan, siapa yang bisa melihat (guru hanya untuk kelas yang diikuti, admin hanya agregat), penyimpanan, hak pengguna, dan kontak.
   * Saat mendaftar, pengguna wajib mencentang persetujuan dan mengisi **tahun lahir**. Server menyimpan `terms_version`, `privacy_version`, `consented_at`, dan `birth_year`. Jika versi dokumen naik, pengguna diminta menyetujui ulang saat masuk.
-  * Pengguna di bawah 18 tahun wajib menyatakan sudah mendapat izin orang tua atau wali. **Keputusan terbuka:** pernyataan mandiri ini cukup untuk MVP, atau perlu konfirmasi lewat email orang tua (butuh layanan email dari FR-14), atau izin dikumpulkan sekolah saat siswa bergabung lewat kelas.
+  * Pengguna di bawah 18 tahun wajib menyatakan sudah mendapat izin orang tua atau wali. **Diputuskan (v1.3):** untuk MVP cukup **pernyataan mandiri** berupa centang saat mendaftar, disimpan di `guardian_consent`. Konfirmasi lewat email orang tua masuk pasca-MVP (§4.5) dan sebaiknya ditinjau ulang bersama ahli hukum sebelum rilis publik.
   * Data seminimal mungkin: email, nama, tahun lahir, dan data belajar. Foto catatan dibersihkan dari EXIF/GPS sebelum disimpan (§9.1). Tidak ada pelacak iklan atau analitik pihak ketiga.
   * **Pemrosesan oleh AI pihak ketiga** dicantumkan di Kebijakan Privasi: teks materi dan foto catatan dikirim ke penyedia AI untuk dinilai. Gunakan paket dan ketentuan penyedia yang tidak memakai data untuk melatih model; ini wajib diperiksa ulang sebelum Fase 3.
   * **Unduh data saya:** `POST /me/export` menyiapkan arsip (JSON data akun, sesi, hasil audit, plus foto) di bucket privat, diberikan lewat *Signed URL* 300 detik, dihapus otomatis setelah 24 jam. Rate limit 1 kali per hari.
@@ -214,6 +214,7 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
 * **Interleaving Engine:** Penggabungan dua topik materi berbeda secara otomatis dalam satu sesi evaluasi esai.
 * **Offline-First PWA:** Penyimpanan lokal (*IndexedDB*) untuk timer Pomodoro dan antrean foto tulisan tangan saat perangkat kehilangan koneksi internet.
 * **Ganti email** dengan verifikasi ke alamat baru (lanjutan FR-14).
+* **Konfirmasi izin orang tua lewat email** untuk pengguna di bawah 18 tahun, menggantikan pernyataan mandiri dari FR-13.
 * **Pembayaran Pro langsung:** integrasi payment gateway (misal Midtrans atau Xendit) dengan webhook bertanda tangan, menggantikan kode aktivasi manual dari FR-11.
 
 ---

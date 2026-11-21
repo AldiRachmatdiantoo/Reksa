@@ -78,7 +78,7 @@ Landasan ilmiah: *retrieval practice*, *generation effect*, *dual-coding*, *judg
 
 ### Peran (RBAC)
 
-- **`STUDENT`**: tier Free (kuota scan harian terbatas) dan Pro (tanpa batas, *spaced re-blurting*, ekspor PDF).
+- **`STUDENT`**: tier Free (kuota scan harian terbatas, *spaced re-blurting* H+3/H+7) dan Pro (scan tanpa batas, analitik tren kalibrasi, ekspor PDF).
 - **`EDUCATOR`**: mengelola kelas, materi resmi, verifikasi ledger, analitik kelas.
 - **`INSTITUTION_ADMIN`**: analitik lintas kelas dan manajemen pengajar. Tidak bisa melihat audit esai individu.
 
