@@ -73,6 +73,8 @@ Landasan ilmiah: *retrieval practice*, *generation effect*, *dual-coding*, *judg
 | :--- | :--- | :--- |
 | FR-11 | Tier Free/Pro & kuota | Free 3 scan/hari (reset 00.00 WIB), Pro lewat kode aktivasi; payment gateway pasca-MVP |
 | FR-12 | Ekspor PDF *Proof of Understanding* | PDF milik sendiri (Pro) lewat *signed URL*, verifikasi publik `ledger_hash` tanpa data pribadi |
+| FR-13 | Privasi & data anak | Kebijakan Privasi & Syarat Layanan berversi, tahun lahir + izin orang tua, unduh data, hapus akun, aturan penyimpanan |
+| FR-14 | Akun dasar | Verifikasi email, lupa password tanpa enumerasi akun, ganti password, ubah nama |
 
 ### Peran (RBAC)
 

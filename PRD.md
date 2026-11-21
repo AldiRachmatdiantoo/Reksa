@@ -2,7 +2,7 @@
 
 **Nama Produk:** **REKSA** (*Recall & Knowledge Semantic Audit*)  
 **Tagline:** *Platform Pembelajaran Aktif Multisensori dengan Audit Pemahaman Tulisan Tangan Berbasis AI*  
-**Versi Dokumen:** 1.2 (menambah FR-09 sampai FR-12: kelas, admin institusi, tier & kuota, ekspor PDF)  
+**Versi Dokumen:** 1.3 (v1.2: FR-09 sampai FR-12. v1.3: aturan sesi sah, audit AI asinkron, FR-13 privasi & data anak, FR-14 akun dasar)  
 **Status:** Ready for Architecture Review & Engineering Execution  
 **Tema Utama:** Integrasi Pendidikan, Teknologi Inklusif, dan Tata Kelola Akademik Berbasis AI  
 
@@ -89,6 +89,12 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
   * Saat tombol *Mulai Sesi* ditekan, konten materi di layar dikunci/disembunyikan (*blur/concealed state*).
   * Status timer disimpan persisten di `localStorage` (via Zustand) dan disinkronkan dengan *timestamp* mulai di server PostgreSQL agar tidak dapat dimanipulasi dengan *refresh* browser.
   * Mencatat waktu aktual pengerjaan sebagai bukti integritas *Proof of Understanding*.
+  * **Aturan sesi sah (v1.3).** Semua waktu diambil dari jam server (UTC); nilai waktu dari klien diabaikan.
+    * Alur status: `FOCUS_ACTIVE` → `AWAITING_SCAN` (setelah `PATCH /sessions/:id/jol`) → `COMPLETED` (setelah audit AI selesai), atau `EXPIRED`. Status `AWAITING_JOL` tidak dipakai di MVP karena tebakan dikirim bersamaan dengan mengakhiri fokus.
+    * Durasi fokus aktual = waktu server saat `PATCH /sessions/:id/jol` dikurangi `started_at`, dibatasi paling lama durasi preset + 5 menit.
+    * Satu pelajar hanya boleh punya satu sesi aktif (`FOCUS_ACTIVE` atau `AWAITING_SCAN`). Memulai sesi baru saat masih ada yang aktif dijawab `409` beserta id sesi aktif, dan frontend menawarkan untuk membatalkannya (`POST /sessions/:id/cancel` → `EXPIRED`).
+    * Fokus yang tidak diakhiri dalam durasi preset + 30 menit menjadi `EXPIRED`. Foto yang tidak diunggah dalam 2 jam setelah tebakan disimpan juga membuat sesi `EXPIRED`, supaya catatan tidak dikerjakan belakangan dengan buku terbuka. Status kedaluwarsa dihitung saat sesi dibaca atau diubah, tanpa cron.
+    * Sesi dengan fokus aktual kurang dari 50% durasi preset tetap boleh dilanjutkan untuk belajar mandiri, tetapi ditandai `validity = SHORT_FOCUS`. Ledger guru (FR-07) menampilkan tanda ini sebagai "status validitas sesi"; sesi normal bertanda `VALID`.
 
 #### **FR-03: Kalibrasi Metakognisi (*Judgment of Learning / JOL Slider*)**
 * **User Story:** Sebagai pelajar, saya ingin menilai tingkat keyakinan pemahaman saya sebelum melihat hasil AI agar saya sadar apakah saya mengalami *illusion of competence*.
@@ -110,6 +116,14 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
   * Rubrik penilaian mengabaikan kerapian kaligrafi (ramah disgrafia) serta kesalahan ejaan/typo (ramah disleksia), dan memahami campuran bahasa Indonesia–Inggris (*code-switching*) serta singkatan umum pelajar.
   * Output menampilkan: (1) Skor Pemahaman Aktual ($0-100$) beserta selisih kalibrasi JOL, (2) Poin Konsep Akurat, (3) Daftar *Blind Spots* (Konsep Terlewat), dan (4) Koreksi Alur Logika.
   * Tersedia tombol **"Bacakan Hasil Koreksi"** menggunakan *Web Speech API* (`window.speechSynthesis`) untuk aksesibilitas pengguna *low vision*.
+  * **Audit berjalan asinkron (v1.3).** Panggilan AI Vision bisa makan belasan sampai puluhan detik, jadi tidak dijalankan di dalam request unggah.
+    * `POST /scans/upload` hanya memvalidasi file, membersihkan EXIF, menyimpan foto, memotong kuota, dan membuat `essay_submissions` dengan `audit_status = PENDING`. Respons `202 { submissionId, auditStatus, quota }`.
+    * Audit dikerjakan *worker* lewat antrean berbasis Redis (misal BullMQ) dengan batas jumlah audit bersamaan. Status: `PENDING` → `PROCESSING` → `DONE` atau `FAILED`.
+    * Frontend memantau lewat `GET /scans/:id` setiap 2 detik sampai paling lama 90 detik sambil menampilkan keadaan "sedang dicek". Lewat dari itu, halaman menyatakan hasil akan muncul di riwayat dan pelajar boleh menutup halaman.
+    * Batas waktu satu panggilan AI 60 detik. Error sementara (`429`/`5xx` dari penyedia, *timeout*) dicoba ulang paling banyak 2 kali dengan jeda bertambah. Output yang gagal validasi Zod dicoba ulang sekali.
+    * Jika akhirnya `FAILED`: kuota dikembalikan, foto tetap tersimpan, dan pelajar bisa meminta audit ulang tanpa memotret lagi (`POST /scans/:id/retry`, maks. 2 kali). Batas 2 jam unggah foto (FR-02) tidak berlaku lagi setelah foto tersimpan.
+    * Hanya saat `DONE`: kolom hasil diisi, `ledger_hash` dihitung, sesi menjadi `COMPLETED`, dan jadwal H+3/H+7 (FR-06) dibuat.
+    * `MockAiProvider` mensimulasikan jeda dan kegagalan supaya alur ini teruji tanpa API asli.
 
 #### **FR-06: Penjadwalan Micro-Blurting Berjeda (*Spaced Re-Blurting*)**
 * **User Story:** Sebagai pelajar, saya ingin sistem menjadwalkan latihan singkat ulangan khusus pada poin yang saya lupakan agar ingatan bertahan jangka panjang.
@@ -151,13 +165,13 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
   * Analitik lintas kelas hanya berupa agregat per kelas dan per konsep: jumlah sesi selesai, rata-rata skor, dan persentase kegagalan per konsep. Kelompok dengan kurang dari 5 siswa tidak ditampilkan angkanya supaya siswa tidak bisa dikenali.
   * Admin **tidak bisa** membuka foto, esai, skor individu, atau ledger siswa (sesuai matriks RBAC §3.2). Semua query dibatasi `institution_id` milik admin; institusi lain dijawab `404`.
 
-### 4.4 Akun, Langganan & Ekspor (MVP)
+### 4.4 Akun, Privasi, Langganan & Ekspor (MVP)
 
 #### **FR-11: Tier Free/Pro & Kuota Scan Harian**
 * **User Story:** Sebagai pelajar gratis, saya ingin tahu sisa kuota scan hari ini dan cara membuka Pro, supaya tidak kaget ketika unggahan ditolak.
 * **Acceptance Criteria:**
   * Tier `FREE` mendapat **3 scan per hari**. Kuota direset pukul 00.00 WIB (`Asia/Jakarta`), dihitung dari `users.last_scan_reset_at`, tanpa cron.
-  * Pemotongan kuota terjadi di `POST /scans/upload` dalam satu transaksi dengan `SELECT ... FOR UPDATE` pada baris user (§9.1). Jika audit AI gagal, kuota yang terpotong dikembalikan di transaksi yang sama. Kuota habis dijawab `429` dengan kode `QUOTA_EXCEEDED` dan `resetAt`, berbeda dari `429` rate limit biasa.
+  * Pemotongan kuota terjadi di `POST /scans/upload` dalam satu transaksi dengan `SELECT ... FOR UPDATE` pada baris user (§9.1). Karena audit berjalan asinkron (FR-05), kuota yang terpotong dikembalikan oleh *worker* dalam transaksi terpisah saat audit berakhir `FAILED`. Kuota habis dijawab `429` dengan kode `QUOTA_EXCEEDED` dan `resetAt`, berbeda dari `429` rate limit biasa.
   * Respons unggah dan `GET /me/quota` memuat `{ tier, used, limit, remaining, resetAt }`. Untuk Pro, `limit` dan `remaining` bernilai `null` (tanpa batas). Frontend menampilkan sisa kuota sebelum siswa memotret.
   * **MVP tanpa payment gateway.** Pro diaktifkan dengan **kode aktivasi** yang dibagikan tim REKSA atau institusi. Kode disimpan sebagai hash, punya durasi (misal 30 atau 365 hari), batas jumlah penukaran, dan tanggal kedaluwarsa. Menukar kode mengisi atau memperpanjang `users.pro_expires_at`. Rate limit 10 percobaan per jam per user.
   * Tier efektif dihitung dari `pro_expires_at`: lewat tanggal itu, user kembali `FREE` otomatis. Data dan riwayat tidak dihapus saat turun tier.
@@ -172,10 +186,34 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
   * PDF dibuat di server, disimpan sementara di bucket privat dengan prefix `exports`, lalu diberikan lewat *Signed URL* 300 detik. File dihapus otomatis setelah 24 jam. Rate limit 5 ekspor per jam per user.
   * Setiap halaman memuat tautan/QR verifikasi `GET /ledger/verify/:hash`. Endpoint publik ini hanya menjawab apakah hash valid beserta tanggal sesi, tanpa nama, skor, atau foto, supaya tidak membocorkan data pribadi.
 
+#### **FR-13: Privasi & Perlindungan Data Anak**
+* **User Story:** Sebagai pelajar atau orang tua, saya ingin tahu data apa yang dikumpulkan REKSA, siapa yang bisa melihatnya, dan bisa meminta data itu diunduh atau dihapus.
+* **Catatan:** Pengguna utama REKSA kemungkinan besar di bawah 18 tahun, sehingga UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi (UU PDP) berlaku, termasuk ketentuan data anak. Butir di bawah adalah rancangan produk, **bukan nasihat hukum**, dan perlu ditinjau orang yang paham hukum sebelum rilis publik.
+* **Acceptance Criteria:**
+  * Halaman publik **Kebijakan Privasi** (`/privasi`) dan **Syarat Layanan** (`/syarat`), masing-masing bernomor versi. Isinya minimal: data yang dikumpulkan, tujuan, siapa yang bisa melihat (guru hanya untuk kelas yang diikuti, admin hanya agregat), penyimpanan, hak pengguna, dan kontak.
+  * Saat mendaftar, pengguna wajib mencentang persetujuan dan mengisi **tahun lahir**. Server menyimpan `terms_version`, `privacy_version`, `consented_at`, dan `birth_year`. Jika versi dokumen naik, pengguna diminta menyetujui ulang saat masuk.
+  * Pengguna di bawah 18 tahun wajib menyatakan sudah mendapat izin orang tua atau wali. **Keputusan terbuka:** pernyataan mandiri ini cukup untuk MVP, atau perlu konfirmasi lewat email orang tua (butuh layanan email dari FR-14), atau izin dikumpulkan sekolah saat siswa bergabung lewat kelas.
+  * Data seminimal mungkin: email, nama, tahun lahir, dan data belajar. Foto catatan dibersihkan dari EXIF/GPS sebelum disimpan (§9.1). Tidak ada pelacak iklan atau analitik pihak ketiga.
+  * **Pemrosesan oleh AI pihak ketiga** dicantumkan di Kebijakan Privasi: teks materi dan foto catatan dikirim ke penyedia AI untuk dinilai. Gunakan paket dan ketentuan penyedia yang tidak memakai data untuk melatih model; ini wajib diperiksa ulang sebelum Fase 3.
+  * **Unduh data saya:** `POST /me/export` menyiapkan arsip (JSON data akun, sesi, hasil audit, plus foto) di bucket privat, diberikan lewat *Signed URL* 300 detik, dihapus otomatis setelah 24 jam. Rate limit 1 kali per hari.
+  * **Hapus akun:** `DELETE /me` dengan konfirmasi password. Menghapus akun beserta sesi, hasil audit, jadwal, materi pribadi, dan semua file di storage, lalu mencabut semua refresh token. Akun guru yang masih punya kelas beranggota ditolak `409` sampai kelasnya dihapus atau dikosongkan.
+  * **Penyimpanan:** foto catatan dan hasil audit disimpan selama akun aktif dan ikut terhapus bersama akun. File ekspor dihapus setelah 24 jam. Log aplikasi disimpan paling lama 30 hari dan tidak memuat isi materi, foto, maupun token.
+
+#### **FR-14: Akun Dasar (Verifikasi Email, Lupa Password, Profil)**
+* **User Story:** Sebagai pengguna, saya ingin bisa memulihkan akun kalau lupa password dan mengubah data profil sendiri.
+* **Acceptance Criteria:**
+  * **Layanan email transaksional** lewat antarmuka `IEmailService`. Implementasi lokal/CI menangkap email tanpa mengirim (misal Mailpit di Docker); produksi memakai penyedia email transaksional (misal Resend atau Amazon SES).
+  * Token email (verifikasi dan reset) berupa 32 byte acak, hanya hash-nya yang disimpan, sekali pakai. Verifikasi berlaku 24 jam, reset password 30 menit.
+  * **Verifikasi email:** dikirim saat mendaftar, bisa dikirim ulang (maks. 3 kali per jam). Akun yang belum terverifikasi tetap bisa belajar mandiri, tetapi belum bisa bergabung ke kelas (FR-09) atau menukar kode Pro (FR-11).
+  * **Lupa password:** `POST /auth/password/forgot { email }` selalu menjawab `202` dengan pesan yang sama, baik email terdaftar maupun tidak, supaya keberadaan akun tidak bocor. Rate limit 3 per jam per email dan 10 per jam per IP. `POST /auth/password/reset { token, newPassword }` memakai aturan password yang sama dengan register dan mencabut seluruh refresh token user.
+  * **Ganti password** saat login: wajib password lama, lalu semua sesi di perangkat lain dicabut.
+  * **Ubah nama:** `PATCH /me { fullName }`. Ganti email ditunda ke pasca-MVP karena butuh verifikasi ke alamat baru.
+
 ### 4.5 Peta Jalan Pengembangan Fitur (Pasca-MVP)
 * **Mode Audio-First Feynman:** Lawan bicara AI berbasis *Speech-to-Text* dan *Text-to-Speech* di mana AI berperan sebagai murid awam yang menginterogasi penjelasan lisan pelajar (aksesibilitas utama untuk tunanetra).
 * **Interleaving Engine:** Penggabungan dua topik materi berbeda secara otomatis dalam satu sesi evaluasi esai.
 * **Offline-First PWA:** Penyimpanan lokal (*IndexedDB*) untuk timer Pomodoro dan antrean foto tulisan tangan saat perangkat kehilangan koneksi internet.
+* **Ganti email** dengan verifikasi ke alamat baru (lanjutan FR-14).
 * **Pembayaran Pro langsung:** integrasi payment gateway (misal Midtrans atau Xendit) dengan webhook bertanda tangan, menggantikan kode aktivasi manual dari FR-11.
 
 ---
@@ -282,7 +320,7 @@ reksa-platform/
 Seluruh tabel menggunakan tipe primary key `UUID` (`gen_random_uuid()`) untuk mencegah enumerasi ID berurutan (*predictable ID enumeration*).
 
 ### 7.1 Spesifikasi Tabel Inti
-1. **`users`**: `id (UUID PK)`, `email (VARCHAR UNIQUE)`, `password_hash (TEXT - Argon2id)`, `full_name (VARCHAR)`, `role (ENUM: STUDENT, EDUCATOR, INSTITUTION_ADMIN)`, `tier (ENUM: FREE, PRO)`, `institution_id (UUID FK nullable)`, `daily_scan_count (INT DEFAULT 0)`, `last_scan_reset_at (TIMESTAMPTZ)`, `created_at (TIMESTAMPTZ)`. *(v1.2, belum dimigrasi)* `pro_expires_at (TIMESTAMPTZ nullable)`: sumber tier efektif (FR-11).
+1. **`users`**: `id (UUID PK)`, `email (VARCHAR UNIQUE)`, `password_hash (TEXT - Argon2id)`, `full_name (VARCHAR)`, `role (ENUM: STUDENT, EDUCATOR, INSTITUTION_ADMIN)`, `tier (ENUM: FREE, PRO)`, `institution_id (UUID FK nullable)`, `daily_scan_count (INT DEFAULT 0)`, `last_scan_reset_at (TIMESTAMPTZ)`, `created_at (TIMESTAMPTZ)`. *(v1.2, belum dimigrasi)* `pro_expires_at (TIMESTAMPTZ nullable)`: sumber tier efektif (FR-11). *(v1.3, belum dimigrasi)* `email_verified_at (TIMESTAMPTZ nullable)`, `birth_year (SMALLINT)`, `terms_version (VARCHAR)`, `privacy_version (VARCHAR)`, `consented_at (TIMESTAMPTZ)`, `guardian_consent (BOOLEAN DEFAULT FALSE)` (FR-13, FR-14).
 2. **`refresh_tokens`**: `id (UUID PK)`, `user_id (UUID FK)`, `token_hash (VARCHAR UNIQUE)`, `family_id (UUID)`, `is_revoked (BOOLEAN DEFAULT FALSE)`, `expires_at (TIMESTAMPTZ)`, `created_at (TIMESTAMPTZ)`.
 3. **`institutions`**: `id (UUID PK)`, `name (VARCHAR)`, `created_at (TIMESTAMPTZ)`.
 4. **`classes`**: `id (UUID PK)`, `institution_id (UUID FK nullable)`, `educator_id (UUID FK)`, `class_code (VARCHAR UNIQUE)`, `name (VARCHAR)`, `created_at (TIMESTAMPTZ)`.
@@ -293,6 +331,9 @@ Seluruh tabel menggunakan tipe primary key `UUID` (`gen_random_uuid()`) untuk me
 *Tabel baru v1.2 (belum dimigrasi):*
 * **`activation_codes`** (FR-11): `id (UUID PK)`, `code_hash (VARCHAR(64) UNIQUE)`, `institution_id (UUID FK nullable)`, `duration_days (INT)`, `max_redemptions (INT)`, `redeemed_count (INT DEFAULT 0)`, `expires_at (TIMESTAMPTZ)`, `created_at (TIMESTAMPTZ)`.
 * **`activation_redemptions`** (FR-11): `id (UUID PK)`, `code_id (UUID FK)`, `user_id (UUID FK)`, `redeemed_at (TIMESTAMPTZ)`, `UNIQUE (code_id, user_id)`.
+* **`auth_tokens`** (v1.3, FR-14): `id (UUID PK)`, `user_id (UUID FK)`, `purpose (ENUM: EMAIL_VERIFY, PASSWORD_RESET)`, `token_hash (VARCHAR(64) UNIQUE)`, `expires_at (TIMESTAMPTZ)`, `used_at (TIMESTAMPTZ nullable)`.
+* *(v1.3)* **`study_sessions`** ditambah `validity (ENUM: VALID, SHORT_FOCUS)` dan *partial unique index* `(user_id) WHERE status IN ('FOCUS_ACTIVE','AWAITING_SCAN')` untuk menjamin satu sesi aktif (FR-02).
+* *(v1.3)* **`essay_submissions`** ditambah `audit_status (ENUM: PENDING, PROCESSING, DONE, FAILED)`, `audit_attempts (INT DEFAULT 0)`, `audit_error_code (VARCHAR nullable)`; kolom hasil (`actual_ai_score`, `*_json`, `ledger_hash`) menjadi nullable sampai `DONE` (FR-05).
 * **`educator_invites`** (FR-10): `id (UUID PK)`, `institution_id (UUID FK)`, `token_hash (VARCHAR(64) UNIQUE)`, `created_by (UUID FK)`, `expires_at (TIMESTAMPTZ)`, `revoked_at (TIMESTAMPTZ nullable)`.
 
 9. **`spaced_schedules`**: `id (UUID PK)`, `user_id (UUID FK)`, `origin_submission_id (UUID FK)`, `material_id (UUID FK)`, `target_blind_spots_json (JSONB)`, `interval_day (INT CHECK IN (3, 7))`, `next_review_at (TIMESTAMPTZ)`, `is_completed (BOOLEAN DEFAULT FALSE)`.
@@ -327,7 +368,7 @@ Seluruh endpoint berada di bawah prefix `/api/v1` dan menggunakan middleware val
 | `PATCH` | `/sessions/:id/jol` | `STUDENT` (Owner) | Mengakhiri fase fokus & menyimpan skor keyakinan metakognisi (`predicted_jol_score`). |
 | `POST` | `/sessions/:id/qr-bridge` | `STUDENT` (Owner) | Menghasilkan token QR sementara di Redis (TTL 300 detik) untuk akses dari desktop. |
 | `GET` | `/scans/qr-bridge/:token/events` | `STUDENT` (Owner, desktop) | *(Usulan, final ditentukan Adli)* Stream SSE ke layar laptop saat foto dari HP masuk. Nginx sudah dikonfigurasi tanpa buffering untuk path ini. |
-| `POST` | `/scans/upload` | `STUDENT` / QR Token | Menerima `multipart/form-data` foto esai, validasi *magic bytes*, menghapus EXIF, menjalankan audit `IAiService`, dan menjadwalkan H+3 & H+7. |
+| `POST` | `/scans/upload` | `STUDENT` / QR Token | Menerima `multipart/form-data` foto esai, validasi *magic bytes*, menghapus EXIF, memotong kuota, lalu mengantrekan audit `IAiService` (v1.3: respons `202`, hasil dibaca lewat `GET /scans/:id`). |
 | `GET` | `/spaced/due` | `STUDENT` | Mengambil daftar sesi *micro-blurting* yang jatuh tempo hari ini. |
 | `GET` | `/governance/classes/:classId/ledger` | `EDUCATOR` (Owner) | Mengambil daftar *Proof of Understanding Ledger* siswa beserta *Signed URL* foto tulisan tangan. |
 | `GET` | `/governance/classes/:classId/blind-spots` | `EDUCATOR` / `ADMIN` | Mengambil hasil klasterisasi *Cohort Blind-Spots* & rekomendasi perbaikan kurikulum. |
@@ -353,6 +394,15 @@ Seluruh endpoint berada di bawah prefix `/api/v1` dan menggunakan middleware val
 | `POST` | `/me/activate-pro` | Authenticated (Rate-Limited) | Menukar kode aktivasi Pro `{ code }`. |
 | `POST` | `/ledger/exports` | `STUDENT` (Pro) | Membuat PDF *Proof of Understanding* `{ submissionIds?, from?, to? }`; mengembalikan *Signed URL* (FR-12). |
 | `GET` | `/ledger/verify/:hash` | Public (Rate-Limited) | Memeriksa keaslian `ledger_hash`; hanya mengembalikan status valid dan tanggal sesi. |
+| `POST` | `/sessions/:id/cancel` | `STUDENT` (Owner) | Membatalkan sesi aktif → `EXPIRED` (v1.3, FR-02). |
+| `GET` | `/scans/:id` | `STUDENT` (Owner) | Status audit `PENDING`/`PROCESSING`/`DONE`/`FAILED` dan hasilnya saat `DONE` (v1.3, FR-05). |
+| `POST` | `/scans/:id/retry` | `STUDENT` (Owner) | Audit ulang foto yang sama setelah `FAILED`, maks. 2 kali. |
+| `POST` | `/auth/verify-email` & `/auth/verify-email/resend` | Public / Authenticated (Rate-Limited) | Verifikasi email dengan token; kirim ulang tautan (FR-14). |
+| `POST` | `/auth/password/forgot` & `/auth/password/reset` | Public (Rate-Limited) | Lupa password; jawaban selalu sama untuk mencegah enumerasi akun. |
+| `PATCH` | `/me` & `/me/password` | Authenticated | Ubah nama; ganti password (wajib password lama). |
+| `POST` | `/me/consent` | Authenticated | Menyetujui versi baru Kebijakan Privasi & Syarat Layanan (FR-13). |
+| `POST` | `/me/export` | Authenticated (1×/hari) | Menyiapkan arsip data pribadi lewat *Signed URL*. |
+| `DELETE` | `/me` | Authenticated | Hapus akun dan seluruh datanya (konfirmasi password). |
 
 ### 8.2 Contoh Kontrak Zod Schema
 
@@ -492,6 +542,7 @@ Pembangunan sistem wajib mengikuti tiga fase berurutan berikut agar fondasi infr
 * Membangun Portal Pendidik: *Proof of Understanding Ledger* (dengan *Signed URL* dan verifikasi `ledger_hash`) serta *Cohort Blind-Spots Dashboard*.
 * *(v1.2)* Kelola kelas & keanggotaan (FR-09) dibangun **sebelum** ledger dan *Cohort Blind-Spots*, karena keduanya bergantung pada `class_members`. Lalu portal admin institusi (FR-10), kuota & kode aktivasi Pro (FR-11), dan ekspor PDF (FR-12).
 * *(v1.2)* Usulan pembagian: FR-09, FR-10, FR-12, dan kode aktivasi Pro dipegang Aldi (berdekatan dengan `auth` dan `governance`); pemotongan kuota dan `GET /me/quota` dipegang Adli karena terjadi di `essay-scans`. Folder baru (`features/classes/`, `features/institution/`) perlu ditambahkan ke daftar area di `CLAUDE.md` setelah disepakati.
+* *(v1.3)* Aturan sesi sah (FR-02) dan audit asinkron (FR-05) masuk ke `study-sessions` dan `essay-scans` (Adli). Infrastruktur pendukungnya (antrean *worker* di Redis, layanan email + Mailpit di Docker) disiapkan Aldi, begitu juga FR-13 dan FR-14 karena berada di `auth`. Halaman `/privasi` dan `/syarat` wajib ada sebelum deploy publik.
 * Menuntaskan seluruh **Unit Testing**, **Integration Testing (Testcontainers)**, **E2E & Accessibility Testing (Playwright + axe-core)**, dan **Automated Security/Pen-Testing Suite**.
 
 ### Fase 3: Integrasi API AI Asli (`GeminiAiProvider`) & Prompt Hardening

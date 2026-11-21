@@ -78,6 +78,12 @@ Saya menambahkan ke [PRD.md](../PRD.md) fitur yang sebelumnya belum dirancang: k
 
 Kalau pembagian ini tidak cocok, tulis di `UNTUK-ALDI.md`.
 
+**Tambahan PRD v1.3 yang mengubah desain modulmu, mohon dibaca sebelum mulai:**
+
+- **Aturan sesi sah (FR-02):** waktu dari server saja; satu sesi aktif per pelajar (`409` + id sesi aktif, ada `POST /sessions/:id/cancel`); fokus tidak diakhiri dalam preset + 30 menit → `EXPIRED`; foto tidak diunggah dalam 2 jam setelah JOL → `EXPIRED`; fokus < 50% preset ditandai `validity = SHORT_FOCUS`. Status kedaluwarsa dihitung saat dibaca, tanpa cron. `AWAITING_JOL` tidak dipakai.
+- **Audit asinkron (FR-05):** `POST /scans/upload` menjawab `202` dan hanya menyimpan foto + memotong kuota. Audit dijalankan worker (antrean Redis, saya siapkan infranya), status dibaca di `GET /scans/:id`, gagal → kuota dikembalikan + `POST /scans/:id/retry`. `ledger_hash`, `COMPLETED`, dan jadwal H+3/H+7 hanya saat `DONE`.
+- Kolom baru (`validity`, `audit_status`, dst.) ada di PRD §7.1. Migrasinya bisa kamu yang buat di branch fiturmu, tapi kabari saya dulu karena `backend/prisma/` area saya.
+
 ## 2. Yang perlu kamu lakukan
 
 ### a. Pull dan cek file di foldermu
