@@ -72,6 +72,12 @@ Kalau kamu setuju opsi A di atas, saya bisa sekalian membuat migrasi ini di bran
 
 Hal yang perlu Aldi ketahui tapi tidak butuh tindakan (fitur selesai, perubahan kontrak di area Adli, keputusan desain).
 
+### 2026-11-21 — Kontrak foto esai: HEIC tidak diterima lagi
+- `SCAN_ALLOWED_MIME_TYPES` di `essay-scans/scans.schema.ts` kini hanya `image/jpeg`, `image/png`, `image/webp`. `sharp` versi npm tidak punya dekoder HEVC, jadi HEIC dari iPhone tidak bisa dibaca server.
+- **Untuk frontend:** pasang `accept="image/jpeg,image/png,image/webp"` di input foto (juga yang `capture="environment"`). Safari iOS otomatis mengonversi ke JPEG bila HEIC tidak diminta. File lain dijawab `415 UNSUPPORTED_MEDIA_TYPE`, foto rusak `422`.
+- Foto disimpan sebagai WebP maks. lebar 1600px tanpa metadata, jadi `<img>` hasil signed URL selalu WebP.
+- Dependency baru `sharp` 0.35.5 (0.34.x punya advisory *high*). Jalan di image Alpine, sudah dicek.
+
 ### 2026-11-21 — ✅ Endpoint `study-sessions` siap disambungkan ke frontend (branch `feat/adli-sessions`)
 Semua butuh login sebagai `STUDENT`. Sesi milik orang lain dijawab 404. Semua waktu dari jam server (ISO UTC); field waktu dari klien ditolak 400 (`.strict()`).
 

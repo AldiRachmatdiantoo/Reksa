@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 21 November 2026, `study-sessions` FR-01 sampai FR-03 (Adli, branch `feat/adli-sessions`)
+**Checkpoint terakhir:** 21 November 2026, `imageProcessor` untuk `essay-scans` (Adli, branch `feat/adli-image-processor`)
 
 ---
 
@@ -12,10 +12,22 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | :--- | :--- | :--- |
 | Langkah 0 | ✅ Selesai, di `main` (PR #1) | ⏳ Belum mulai (bagian frontend diambil alih Aldi) |
 | Fase 1 | ✅ Selesai: `auth` (PR #2, #3), CI + branch protection (PR #4) | — |
-| Fase 2 | ✅ Storage (PR #6) · ✅ `materials` (PR #8) · ✅ PRD v1.3 (PR #9) · ✅ `classes` FR-09 (PR #10) · 🟡 akun dasar FR-14 (branch `feat/aldi-account`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | 🟡 Variasi `MockAiProvider` + `study-sessions` (branch `feat/adli-sessions`) · ⬜ `essay-scans` |
+| Fase 2 | ✅ Storage (PR #6) · ✅ `materials` (PR #8) · ✅ PRD v1.3 (PR #9) · ✅ `classes` FR-09 (PR #10) · 🟡 akun dasar FR-14 (branch `feat/aldi-account`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | ✅ Variasi `MockAiProvider` + `study-sessions` (PR #13) · ✅ monorepo frontend (PR #14) · 🟡 `essay-scans`: `imageProcessor` (branch `feat/adli-image-processor`) |
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #10 · `imageProcessor` foto esai (Adli) · branch `feat/adli-image-processor`
+
+**Selesai:** `backend/src/common/utils/imageProcessor.ts` (`SharpImageProcessor`). Tipe dicek dari magic bytes (`file-type`), lalu piksel ditulis ulang sebagai WebP: orientasi EXIF diterapkan dulu, semua metadata (EXIF, GPS, perangkat, ICC, XMP) dibuang, lebar maks. 1600px tanpa memperbesar, batas 50 MP sebelum dekode (*decompression bomb*). Tipe salah 415, file rusak/terlalu besar 422.
+
+**Keputusan**
+- **HEIC tidak diterima.** `sharp` versi npm hanya membawa dekoder AV1 (`heif` → `.avif`), tanpa HEVC, jadi foto HEIC iPhone tidak bisa dibaca. `SCAN_ALLOWED_MIME_TYPES` kini JPEG/PNG/WebP. Frontend memakai `accept="image/jpeg,image/png,image/webp"` (Safari iOS otomatis mengirim JPEG).
+- **`sharp` 0.35.5**, bukan 0.34.x: 0.34.5 punya advisory *high* (libvips, libheif, librsvg) yang menggagalkan gerbang `npm audit`.
+
+**Test:** unit `tests/unit/common/utils/imageProcessor.test.ts` (fixture JPEG berisi EXIF + GPS + orientasi 6; output tanpa metadata, diputar benar, 1600×2400; `.exe`/SVG/PDF/GIF/AVIF ditolak 415; JPEG terpotong 422; batas piksel 422). Hasil: 140 unit lulus, `npm audit --omit=dev` 0, `sharp` diverifikasi jalan di image runner Alpine (musl).
+
+**Backlog Adli** sekarang di [BACKLOG.md](BACKLOG.md).
 
 ### #9 · `study-sessions` + variasi mock AI (Adli) · branch `feat/adli-sessions`
 
@@ -209,8 +221,9 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 
 **Adli** (lihat [UNTUK-ADLI.md](UNTUK-ADLI.md))
 1. ~~Review schema di foldernya, perkaya `mockAi.fixtures.ts`~~ ✅
-2. ~~Backend `study-sessions`~~ ✅ (PR `feat/adli-sessions`)
-3. `essay-scans`: menunggu keputusan Aldi soal `essay_submissions` append-only dan infra antrean (lihat `UNTUK-ALDI.md`)
+2. ~~Backend `study-sessions`~~ ✅ (PR #13)
+3. ~~`imageProcessor`~~ ✅ (`feat/adli-image-processor`); berikutnya kuota scan dan QR bridge, lihat [BACKLOG.md](BACKLOG.md)
+4. Unggah + worker `essay-scans`: menunggu keputusan Aldi soal `essay_submissions` append-only dan infra antrean (lihat `UNTUK-ALDI.md`)
 
 ## Catatan teknis yang perlu diingat
 

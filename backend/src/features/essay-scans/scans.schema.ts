@@ -6,7 +6,9 @@ import { z } from 'zod';
 export { AiEssayAuditOutputSchema, type AiEssayAuditOutput } from '../../common/ai/ai.schema.js';
 
 export const SCAN_MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-export const SCAN_ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] as const;
+// HEIC tidak diterima: sharp versi npm tidak punya dekoder HEVC. Safari iOS otomatis mengirim JPEG
+// bila input file memakai accept="image/jpeg,image/png,image/webp".
+export const SCAN_ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
 /** Token QR bridge: 32 byte acak dalam base64url (43 karakter). */
 export const QrTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/, 'Token QR tidak valid');
