@@ -2,7 +2,12 @@ import type { AiCohortClusterOutput, AiEssayAuditOutput, AiRubricOutput } from '
 
 // Data dummy deterministik untuk MockAiProvider. Semuanya harus lolos skema Zod
 // di ai.schema.ts (dicek oleh tests/unit/common/ai/mockAi.provider.test.ts).
-// Adli: tambahkan variasi data di sini sesuai kebutuhan tampilan UI.
+//
+// Variasi audit (dipilih MockAiProvider secara deterministik dari isi foto):
+// - MOCK_ESSAY_AUDIT_HIGH  : skor tinggi, tanpa blind spot (tidak memicu jadwal H+3/H+7)
+// - MOCK_ESSAY_AUDIT       : skor sedang (dipakai juga sebagai SAMPLE_AUDIT di frontend)
+// - MOCK_ESSAY_AUDIT_LOW   : skor rendah, banyak blind spot dan koreksi logika
+// Materi kedua (fotosintesis) dipakai bila teks materi menyebut "fotosintesis".
 
 export const MOCK_RUBRIC: AiRubricOutput = {
   materialTitle: 'Homeostasis dan Mekanisme Umpan Balik',
@@ -125,3 +130,168 @@ export const MOCK_COHORT_CLUSTERS: AiCohortClusterOutput = {
   curriculumRecommendation:
     'Mayoritas siswa hafal contoh homeostasis tetapi belum memahami mekanisme umpan balik negatif. Sisipkan satu sesi latihan menggambar diagram alur reseptor → pusat kontrol → efektor sebelum masuk ke sistem endokrin.',
 };
+
+export const MOCK_ESSAY_AUDIT_HIGH: AiEssayAuditOutput = {
+  actualScore: 91,
+  accurateConcepts: [
+    {
+      concept: 'Homeostasis',
+      evidenceFromHandwriting: '"homeostasis: kondisi internal dijaga ~konstan walau lingkungan luar berubah" (judul halaman)',
+    },
+    {
+      concept: 'Reseptor',
+      evidenceFromHandwriting: 'Kotak "termoreseptor kulit" di awal diagram, panah ke "hipotalamus"',
+    },
+    {
+      concept: 'Pusat kontrol',
+      evidenceFromHandwriting: '"hipotalamus bandingin suhu skrg vs set point 37°C" (ditulis di samping kotak kedua)',
+    },
+    {
+      concept: 'Efektor',
+      evidenceFromHandwriting: 'Dua cabang panah: "kelenjar keringat" dan "pembuluh darah melebar (vasodilatasi)"',
+    },
+    {
+      concept: 'Umpan balik negatif',
+      evidenceFromHandwriting: 'Panah melingkar kembali ke awal, diberi label "negative feedback = lawan arah perubahan"',
+    },
+  ],
+  blindSpots: [],
+  logicCorrections: [],
+  encouragingSummary:
+    'Luar biasa! Alur reseptor → pusat kontrol → efektor dan alasan mekanismenya disebut negatif sudah lengkap. Pertahankan dengan mencoba menjelaskan contoh lain, misalnya pengaturan kadar glukosa darah.',
+};
+
+export const MOCK_ESSAY_AUDIT_LOW: AiEssayAuditOutput = {
+  actualScore: 28,
+  accurateConcepts: [
+    {
+      concept: 'Homeostasis',
+      evidenceFromHandwriting: '"homeostasis itu keseimbangan tubuh" (satu baris di atas, tanpa penjelasan lanjut)',
+    },
+  ],
+  blindSpots: [
+    {
+      concept: 'Umpan balik negatif',
+      importanceLevel: 'HIGH',
+      explanation: 'Mekanisme utama yang menjaga homeostasis belum muncul sama sekali di catatanmu.',
+    },
+    {
+      concept: 'Pusat kontrol',
+      importanceLevel: 'HIGH',
+      explanation: 'Belum ada bagian yang membandingkan kondisi tubuh dengan titik setel, misalnya hipotalamus untuk suhu.',
+    },
+    {
+      concept: 'Reseptor',
+      importanceLevel: 'MEDIUM',
+      explanation: 'Belum dijelaskan bagaimana tubuh mendeteksi perubahan suhu atau kadar zat.',
+    },
+    {
+      concept: 'Efektor',
+      importanceLevel: 'MEDIUM',
+      explanation: 'Belum disebutkan organ yang menjalankan respons, seperti kelenjar keringat atau otot rangka saat menggigil.',
+    },
+  ],
+  logicCorrections: [
+    {
+      studentStatement: '"kalau panas, suhu badan naik terus sampai dingin sendiri"',
+      correction:
+        'Suhu tubuh tidak turun dengan sendirinya. Tubuh aktif melawan kenaikan suhu lewat keringat dan pelebaran pembuluh darah, itulah umpan balik negatif.',
+    },
+    {
+      studentStatement: '"homeostasis = semua organ kerja sama" (dicoret lalu ditulis ulang)',
+      correction:
+        'Kerja sama organ memang terjadi, tetapi inti homeostasis adalah menjaga variabel internal tetap dekat titik setel lewat alur reseptor → pusat kontrol → efektor.',
+    },
+  ],
+  encouragingSummary:
+    'Awal yang baik: kamu sudah tahu homeostasis berkaitan dengan keseimbangan. Coba baca ulang bagian alur kontrol, lalu gambar diagram tiga kotak (reseptor, pusat kontrol, efektor) dengan contoh suhu tubuh.',
+};
+
+export const MOCK_RUBRIC_FOTOSINTESIS: AiRubricOutput = {
+  materialTitle: 'Fotosintesis',
+  summary:
+    'Fotosintesis adalah proses tumbuhan hijau mengubah energi cahaya menjadi energi kimia. Reaksi terang di membran tilakoid menghasilkan ATP dan NADPH yang dipakai siklus Calvin di stroma untuk menyusun glukosa.',
+  keyConcepts: [
+    {
+      id: 'klorofil',
+      concept: 'Klorofil',
+      definition: 'Pigmen hijau di kloroplas yang menyerap cahaya, terutama spektrum merah dan biru.',
+      weight: 3,
+    },
+    {
+      id: 'reaksi-terang',
+      concept: 'Reaksi terang',
+      definition: 'Tahap di membran tilakoid yang memakai cahaya untuk memecah air, melepas O2, dan menghasilkan ATP serta NADPH.',
+      weight: 5,
+    },
+    {
+      id: 'siklus-calvin',
+      concept: 'Siklus Calvin',
+      definition: 'Tahap di stroma yang memfiksasi CO2 memakai ATP dan NADPH untuk membentuk gula.',
+      weight: 5,
+    },
+    {
+      id: 'fotolisis-air',
+      concept: 'Fotolisis air',
+      definition: 'Pemecahan molekul air oleh energi cahaya yang menghasilkan elektron, ion H+, dan oksigen.',
+      weight: 4,
+    },
+  ],
+  causalRelations: [
+    {
+      fromConceptId: 'klorofil',
+      toConceptId: 'reaksi-terang',
+      relation: 'Cahaya yang diserap klorofil menggerakkan reaksi terang.',
+    },
+    {
+      fromConceptId: 'fotolisis-air',
+      toConceptId: 'reaksi-terang',
+      relation: 'Fotolisis air menyediakan elektron pengganti bagi reaksi terang dan melepas oksigen.',
+    },
+    {
+      fromConceptId: 'reaksi-terang',
+      toConceptId: 'siklus-calvin',
+      relation: 'ATP dan NADPH dari reaksi terang dipakai siklus Calvin untuk menyusun glukosa.',
+    },
+  ],
+};
+
+export const MOCK_ESSAY_AUDIT_FOTOSINTESIS: AiEssayAuditOutput = {
+  actualScore: 70,
+  accurateConcepts: [
+    {
+      concept: 'Klorofil',
+      evidenceFromHandwriting: 'Gambar daun dengan label "klorofil serap cahaya (merah & biru)"',
+    },
+    {
+      concept: 'Siklus Calvin',
+      evidenceFromHandwriting: '"Calvin cycle di stroma: CO2 → glukosa" (ditulis dalam kotak, campuran bahasa Inggris)',
+    },
+    {
+      concept: 'Reaksi terang',
+      evidenceFromHandwriting: 'Panah "cahaya → ATP + NADPH" di sisi kiri halaman',
+    },
+  ],
+  blindSpots: [
+    {
+      concept: 'Fotolisis air',
+      importanceLevel: 'HIGH',
+      explanation: 'Belum dijelaskan bahwa oksigen yang dilepas tumbuhan berasal dari pemecahan air, bukan dari CO2.',
+    },
+  ],
+  logicCorrections: [
+    {
+      studentStatement: '"O2 dari CO2 yang dipecah"',
+      correction: 'Oksigen hasil fotosintesis berasal dari fotolisis air pada reaksi terang. Atom O dari CO2 masuk ke glukosa.',
+    },
+  ],
+  encouragingSummary:
+    'Pembagian dua tahap fotosintesis sudah tepat dan diagrammu jelas. Tambahkan asal-usul oksigen (fotolisis air) supaya alurnya lengkap.',
+};
+
+/** Audit Stage 2 untuk materi homeostasis, urut dari skor tertinggi. */
+export const MOCK_ESSAY_AUDIT_VARIANTS: readonly AiEssayAuditOutput[] = [
+  MOCK_ESSAY_AUDIT_HIGH,
+  MOCK_ESSAY_AUDIT,
+  MOCK_ESSAY_AUDIT_LOW,
+];
