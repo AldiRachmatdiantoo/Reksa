@@ -48,6 +48,14 @@ enum SessionValidity {
   SHORT_FOCUS
 }
 
+/// FR-05: status audit AI asinkron.
+enum AuditStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+}
+
 enum SessionStatus {
   FOCUS_ACTIVE
   AWAITING_JOL
@@ -208,17 +216,25 @@ model StudySession {
 }
 
 model EssaySubmission {
-  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sessionId            String   @map("session_id") @db.Uuid
-  userId               String   @map("user_id") @db.Uuid
-  imageStorageKey      String   @map("image_storage_key")
-  predictedJolScore    Int      @map("predicted_jol_score")
-  actualAiScore        Int      @map("actual_ai_score")
-  accurateConceptsJson Json     @map("accurate_concepts_json")
-  blindSpotsJson       Json     @map("blind_spots_json")
-  logicCorrectionsJson Json     @map("logic_corrections_json")
-  ledgerHash           String   @map("ledger_hash") @db.VarChar(64)
-  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id                   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId            String      @map("session_id") @db.Uuid
+  userId               String      @map("user_id") @db.Uuid
+  imageStorageKey      String      @map("image_storage_key")
+  predictedJolScore    Int         @map("predicted_jol_score")
+  // Kolom hasil terisi hanya saat DONE (migrasi essay_audit_async; trigger mengunci baris DONE).
+  actualAiScore        Int?        @map("actual_ai_score")
+  accurateConceptsJson Json?       @map("accurate_concepts_json")
+  blindSpotsJson       Json?       @map("blind_spots_json")
+  logicCorrectionsJson Json?       @map("logic_corrections_json")
+  encouragingSummary   String?     @map("encouraging_summary")
+  ledgerHash           String?     @map("ledger_hash") @db.VarChar(64)
+  auditStatus          AuditStatus @default(PENDING) @map("audit_status")
+  auditAttempts        Int         @default(0) @map("audit_attempts")
+  auditErrorCode       String?     @map("audit_error_code") @db.VarChar(64)
+  auditStartedAt       DateTime?   @map("audit_started_at") @db.Timestamptz(6)
+  auditedAt            DateTime?   @map("audited_at") @db.Timestamptz(6)
+  quotaChargedAt       DateTime?   @map("quota_charged_at") @db.Timestamptz(6)
+  createdAt            DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
 
   session         StudySession     @relation(fields: [sessionId], references: [id], onDelete: Restrict)
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -18,6 +18,9 @@ export type SessionRecord = {
   focusEndedAt: Date | null;
   completedAt: Date | null;
   hasSubmission: boolean;
+  submissionId: string | null;
+  /** Status audit foto (FR-05), null bila foto belum diunggah. */
+  submissionAuditStatus: 'PENDING' | 'PROCESSING' | 'DONE' | 'FAILED' | null;
 };
 
 export type CreateSessionData = {
@@ -81,7 +84,7 @@ const sessionSelect = {
   startedAt: true,
   focusEndedAt: true,
   completedAt: true,
-  submission: { select: { id: true } },
+  submission: { select: { id: true, auditStatus: true } },
 } as const;
 
 type SessionRow = Prisma.StudySessionGetPayload<{ select: typeof sessionSelect }>;
@@ -207,5 +210,7 @@ async function toRecords(tx: TxClient, userId: string, rows: SessionRow[]): Prom
     ...row,
     materialTitle: titles.get(row.materialId) ?? null,
     hasSubmission: submission !== null,
+    submissionId: submission?.id ?? null,
+    submissionAuditStatus: submission?.auditStatus ?? null,
   }));
 }

@@ -1,4 +1,5 @@
 import { AppError, NotFoundError } from '../../common/errors/AppError.js';
+import type { QrBridge, QrBridgeIssued } from '../essay-scans/qrBridge.gateway.js';
 import type { SessionRecord, SessionsRepository } from './sessions.repository.js';
 import {
   FOCUS_GRACE_SEC,
@@ -15,6 +16,8 @@ import {
 
 export type SessionsServiceDeps = {
   repo: SessionsRepository;
+  /** Jembatan laptop ↔ HP (FR-04); hanya bagian yang dipakai sesi. */
+  qrBridge: Pick<QrBridge, 'issue' | 'waitForUpload'>;
   /** Jam server. Disuntikkan di test; nilai waktu dari klien tidak pernah dipakai (FR-02). */
   now?: () => Date;
 };
@@ -146,12 +149,39 @@ export class SessionsService {
     if (!ACTIVE.includes(session.status)) {
       throw new InvalidSessionStateError('Sesi yang sudah selesai tidak bisa dibatalkan.');
     }
-    if (session.hasSubmission) {
+    // Foto yang auditnya gagal boleh ditinggalkan, supaya pelajar tidak terkunci dari sesi baru.
+    if (session.hasSubmission && session.submissionAuditStatus !== 'FAILED') {
       throw new InvalidSessionStateError('Foto catatan sudah diunggah dan sedang dicek, jadi sesi ini tidak bisa dibatalkan.');
     }
     const updated = await this.deps.repo.expire(userId, sessionId, ACTIVE);
     if (!updated) throw new NotFoundError(SESSION_NOT_FOUND);
     return toView(updated);
+  }
+
+  /**
+   * Token QR untuk mengunggah foto dari HP (FR-04 skenario B). Hanya setelah JOL tersimpan dan foto
+   * belum masuk; token lama untuk sesi yang sama langsung tidak berlaku.
+   */
+  async issueQrBridge(userId: string, sessionId: string): Promise<QrBridgeIssued> {
+    const session = await this.load(userId, sessionId);
+    if (session.status === 'EXPIRED') throw new SessionExpiredError();
+    if (session.status !== 'AWAITING_SCAN' || session.hasSubmission) {
+      throw new InvalidSessionStateError(
+        session.status === 'FOCUS_ACTIVE'
+          ? 'Simpan tebakan nilai dulu sebelum mengunggah foto.'
+          : 'Foto untuk sesi ini sudah diunggah.',
+      );
+    }
+    return this.deps.qrBridge.issue({ userId, sessionId });
+  }
+
+  /**
+   * Menunggu foto dari HP untuk layar laptop (SSE). Kepemilikan dicek dulu; hasilnya submissionId,
+   * atau null bila waktu habis atau koneksi ditutup.
+   */
+  async waitForQrUpload(userId: string, sessionId: string, signal: AbortSignal): Promise<string | null> {
+    await this.load(userId, sessionId);
+    return this.deps.qrBridge.waitForUpload(sessionId, { signal });
   }
 
   /** Membaca sesi milik user dan menerapkan aturan kedaluwarsa saat dibaca (tanpa cron, FR-02). */
@@ -198,6 +228,7 @@ export function toView(s: SessionRecord): SessionView {
     focusEndedAt: s.focusEndedAt ? s.focusEndedAt.toISOString() : null,
     scanDeadlineAt: scanDeadline ? scanDeadline.toISOString() : null,
     hasSubmission: s.hasSubmission,
+    submissionId: s.submissionId,
     completedAt: s.completedAt ? s.completedAt.toISOString() : null,
   };
 }

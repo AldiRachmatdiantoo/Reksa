@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 21 November 2026, `study-sessions` FR-01 sampai FR-03 (Adli, branch `feat/adli-sessions`)
+**Checkpoint terakhir:** 21 November 2026, unggah foto + audit asinkron FR-05 (Adli, branch `feat/adli-essay-scans`)
 
 ---
 
@@ -12,10 +12,67 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | :--- | :--- | :--- |
 | Langkah 0 | ✅ Selesai, di `main` (PR #1) | ⏳ Belum mulai (bagian frontend diambil alih Aldi) |
 | Fase 1 | ✅ Selesai: `auth` (PR #2, #3), CI + branch protection (PR #4) | — |
-| Fase 2 | ✅ Storage (PR #6) · ✅ `materials` (PR #8) · ✅ PRD v1.3 (PR #9) · ✅ `classes` FR-09 (PR #10) · 🟡 akun dasar FR-14 (branch `feat/aldi-account`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | 🟡 Variasi `MockAiProvider` + `study-sessions` (branch `feat/adli-sessions`) · ⬜ `essay-scans` |
+| Fase 2 | ✅ Storage (PR #6) · ✅ `materials` (PR #8) · ✅ PRD v1.3 (PR #9) · ✅ `classes` FR-09 (PR #10) · 🟡 akun dasar FR-14 (branch `feat/aldi-account`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | ✅ Variasi `MockAiProvider` + `study-sessions` (PR #13) · ✅ monorepo frontend (PR #14) · 🟡 `essay-scans` lengkap: foto, kuota, QR bridge, unggah + audit asinkron (branch `feat/adli-essay-scans`, menunggu review Aldi) |
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #13 · Unggah foto + audit AI asinkron (FR-04, FR-05, FR-06 sebagian) · branch `feat/adli-essay-scans`
+
+**Sinkron riwayat:** `main` ditulis ulang Aldi (commit `figma[bot]`). Commit #10 sampai #12 di-*cherry-pick* ke branch baru `feat/adli-essay-scans` dari `main` baru (tidak memuat `55c5172`). Branch lama `feat/adli-image-processor` dan `feat/adli-frontend-monorepo` lokal **jangan di-push**.
+
+**Keputusan:** opsi A (lihat `UNTUK-ALDI.md`), dikerjakan Adli karena belum ada jawaban; menunggu review Aldi.
+
+**Migrasi** `20261121000300_essay_audit_async`: kolom status audit + `encouraging_summary` + `quota_charged_at`, kolom hasil nullable, 2 CHECK baru, `GRANT UPDATE` + trigger `essay_submissions_guard` (baris DONE dan kolom bukti tidak bisa diubah), policy RLS update pemilik.
+
+**Selesai** di `backend/src/features/essay-scans/`
+- `scans.repository.ts`: *unit of work* dalam satu transaksi berkonteks RLS (kunci kuota + kunci sesi + insert submission atomik).
+- `scans.service.ts`: `upload` (202; login atau QR; cek sesi, cek cepat kuota, `imageProcessor`, simpan, `consume` token QR, potong kuota + buat submission dalam satu transaksi, foto yatim dihapus bila gagal, antre audit, beri tahu laptop), `get` (audit tertahan → `AUDIT_STALLED` + refund saat dibaca), `retry` (maks. 2, kuota dipotong lagi).
+- `audit.service.ts`: PENDING → PROCESSING → DONE/FAILED. Batas 60 detik, TRANSIENT diulang 2× (jeda 2 dan 5 detik), INVALID_OUTPUT 1×, output AI divalidasi ulang dengan Zod. DONE: `ledger_hash` (`ledgerHash.ts`), sesi `COMPLETED`, jadwal H+3/H+7 bila ada blind spot. FAILED: kuota dikembalikan sekali; jatah habis → sesi `EXPIRED`.
+- `audit.queue.ts`: antrean Redis `audit:v1:queue` + `AuditWorker` (2 bersamaan, `drain()` untuk test), dijalankan `server.ts`.
+- `scans.routes.ts`: `POST /scans/upload` (rate limit IP sebelum multer, auth hanya bila `sessionId`), `GET /scans/:id`, `POST /scans/:id/retry`.
+- Sesi: `submissionId` di `SessionView`; batal diizinkan bila audit `FAILED`.
+
+**Di area Aldi (dicatat di `UNTUK-ALDI.md`):** migrasi + `schema.prisma`, `config/storage.ts` (`getObject`), `server.ts` (start/stop worker), `tests/security/rls.security.test.ts` (sesuai opsi A), `tests/integration/storage.test.ts`.
+
+**Test:** unit `audit.service.test.ts`, `scans.service.test.ts` (+ `fakeScansRepository.ts`); integrasi `tests/integration/scans.test.ts` end-to-end (JPEG ber-EXIF → 202 → worker → DONE, foto tersimpan tanpa EXIF, ledger terkunci, QR + token dipakai ulang 410, kuota 3 lalu 429, FAILED → refund → retry → DONE, jatah habis → sesi EXPIRED, 415/413/400/401, IDOR 404). Hasil: 182 unit, 176 integrasi + security, `npm audit --omit=dev` 0, Semgrep 0, `npm run build` lulus. Uji asap Docker lewat nginx `:8080` berhasil (termasuk SSE real-time).
+
+### #12 · QR bridge laptop ↔ HP (FR-04 skenario B) · branch `feat/adli-image-processor`
+
+**Selesai**
+- `backend/src/features/essay-scans/qrBridge.gateway.ts` (`RedisQrBridge`): token 32 byte base64url, di Redis hanya SHA-256-nya (`qr:v1:token:<hash>`, TTL 300 detik). Token baru untuk sesi yang sama langsung membatalkan token lama (`SET ... GET` atomik). `consume` memakai `GETDEL`, jadi sekali pakai walau diminta paralel. `resolve` untuk validasi awal, `notifyUploaded` + `waitForUpload` untuk memberi tahu laptop (polling Redis tiap detik; tanpa koneksi subscriber, aman untuk banyak instance).
+- `POST /sessions/:id/qr-bridge` (STUDENT pemilik, 20/jam): `201 { qrToken, expiresInSec: 300 }`, hanya saat `AWAITING_SCAN` dan foto belum masuk.
+- `GET /sessions/:id/qr-bridge/events` (SSE, 60/jam): `retry`, `ready`, ping tiap 15 detik, lalu `uploaded {submissionId}` atau `timeout` (330 detik), lalu ditutup. Kepemilikan dicek sebelum header SSE dikirim (404 tetap JSON).
+
+**Keputusan:** path SSE diganti dari usulan `/scans/qr-bridge/:token/events` ke `/sessions/:id/qr-bridge/events` supaya token unggah tidak masuk URL/access log. Buffering nginx dimatikan per respons dengan `X-Accel-Buffering: no`, jadi tetap jalan dengan `nginx.conf` sekarang; permintaan merapikan `location` ada di `UNTUK-ALDI.md`. PRD §8.1 diperbarui.
+
+**Belum:** pemakaian token di `POST /scans/upload` (`resolve` → proses foto → `consume` → `notifyUploaded`) ikut modul unggah yang masih menunggu keputusan Aldi.
+
+**Test:** unit (aturan `issueQrBridge`, kepemilikan `waitForQrUpload`); integrasi `tests/integration/qrBridge.test.ts` (token tidak tersimpan mentah, TTL ≤ 300, token lama batal, 6 `consume` paralel → tepat 1, token aneh/SQLi ditolak, SSE asli lewat HTTP: header, `ready`, `uploaded`; 404 JSON untuk siswa lain). Hasil: 155 unit, 163 integrasi + security, `npm audit --omit=dev` 0, Semgrep (aturan CI) 0 temuan.
+
+### #11 · Kuota scan harian (FR-11, bagian Adli) · branch `feat/adli-image-processor`
+
+**Selesai** di `backend/src/features/essay-scans/`:
+- `quota.policy.ts`: aturan murni. Free 3 scan per hari WIB (00.00 WIB = 17.00 UTC, dihitung dari `last_scan_reset_at`, tanpa cron); Pro tanpa batas tapi tetap dihitung; pengembalian kuota hanya untuk scan yang dipotong di hari WIB yang sama.
+- `quota.repository.ts`: baris `users` dikunci `SELECT ... FOR UPDATE`. Helper `lockQuotaState(tx)` dan `writeQuotaCounters(tx)` diekspor supaya transaksi `POST /scans/upload` nanti bisa memotong kuota dan membuat submission secara atomik.
+- `quota.service.ts`: `get`, `consume` (429 `QUOTA_EXCEEDED` + `details.resetAt` + `details.quota`), `refund(userId, consumedAt)` untuk audit `FAILED`.
+- `GET /api/v1/me/quota` (STUDENT): `{ quota: { tier, used, limit, remaining, resetAt } }`, `Cache-Control: no-store`. Dipasang sebagai entri `'/me/quota'` di `container.ts`; router `/me` milik `auth` tidak diubah.
+
+**Test:** unit `tests/unit/features/essay-scans/quota.test.ts` (batas 00.00 WIB, batas Free, Pro, refund lintas hari); integrasi `tests/integration/quota.test.ts` (8 `consume` paralel → tepat 3 lolos, refund hanya baris pemilik, 403 guru, 401 tanpa login, `PATCH /me` tetap jalan). Hasil: 152 unit, 155 integrasi + security, `npm audit --omit=dev` 0.
+
+**Catatan:** tier masih dari `users.tier`; ganti ke `pro_expires_at` saat migrasi FR-11 Aldi masuk.
+
+### #10 · `imageProcessor` foto esai (Adli) · branch `feat/adli-image-processor`
+
+**Selesai:** `backend/src/common/utils/imageProcessor.ts` (`SharpImageProcessor`). Tipe dicek dari magic bytes (`file-type`), lalu piksel ditulis ulang sebagai WebP: orientasi EXIF diterapkan dulu, semua metadata (EXIF, GPS, perangkat, ICC, XMP) dibuang, lebar maks. 1600px tanpa memperbesar, batas 50 MP sebelum dekode (*decompression bomb*). Tipe salah 415, file rusak/terlalu besar 422.
+
+**Keputusan**
+- **HEIC tidak diterima.** `sharp` versi npm hanya membawa dekoder AV1 (`heif` → `.avif`), tanpa HEVC, jadi foto HEIC iPhone tidak bisa dibaca. `SCAN_ALLOWED_MIME_TYPES` kini JPEG/PNG/WebP. Frontend memakai `accept="image/jpeg,image/png,image/webp"` (Safari iOS otomatis mengirim JPEG).
+- **`sharp` 0.35.5**, bukan 0.34.x: 0.34.5 punya advisory *high* (libvips, libheif, librsvg) yang menggagalkan gerbang `npm audit`.
+
+**Test:** unit `tests/unit/common/utils/imageProcessor.test.ts` (fixture JPEG berisi EXIF + GPS + orientasi 6; output tanpa metadata, diputar benar, 1600×2400; `.exe`/SVG/PDF/GIF/AVIF ditolak 415; JPEG terpotong 422; batas piksel 422). Hasil: 140 unit lulus, `npm audit --omit=dev` 0, `sharp` diverifikasi jalan di image runner Alpine (musl).
+
+**Backlog Adli** sekarang di [BACKLOG.md](BACKLOG.md).
 
 ### #9 · `study-sessions` + variasi mock AI (Adli) · branch `feat/adli-sessions`
 
@@ -209,8 +266,9 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 
 **Adli** (lihat [UNTUK-ADLI.md](UNTUK-ADLI.md))
 1. ~~Review schema di foldernya, perkaya `mockAi.fixtures.ts`~~ ✅
-2. ~~Backend `study-sessions`~~ ✅ (PR `feat/adli-sessions`)
-3. `essay-scans`: menunggu keputusan Aldi soal `essay_submissions` append-only dan infra antrean (lihat `UNTUK-ALDI.md`)
+2. ~~Backend `study-sessions`~~ ✅ (PR #13)
+3. ~~`imageProcessor`, kuota, QR bridge~~ ✅ · ~~unggah + worker audit + `GET /scans/:id` + retry~~ ✅ (`feat/adli-essay-scans`)
+4. Unggah + worker `essay-scans`: menunggu keputusan Aldi soal `essay_submissions` append-only dan infra antrean (lihat `UNTUK-ALDI.md`)
 
 ## Catatan teknis yang perlu diingat
 

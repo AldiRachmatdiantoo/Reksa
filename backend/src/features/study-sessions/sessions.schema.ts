@@ -68,5 +68,7 @@ export type SessionView = {
   /** Batas unggah foto; hanya diisi saat AWAITING_SCAN dan foto belum masuk. */
   scanDeadlineAt: string | null;
   hasSubmission: boolean;
+  /** Id hasil cek (GET /scans/:id) setelah foto diunggah. */
+  submissionId: string | null;
   completedAt: string | null;
 };

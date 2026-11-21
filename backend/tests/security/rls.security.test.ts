@@ -52,7 +52,10 @@ async function seed() {
         accurateConceptsJson: [],
         blindSpotsJson: [],
         logicCorrectionsJson: [],
+        encouragingSummary: 'Bagus',
         ledgerHash: 'c'.repeat(64),
+        auditStatus: 'DONE',
+        auditedAt: new Date(),
       },
     });
   });
@@ -123,19 +126,76 @@ describe('Row-Level Security', () => {
   });
 });
 
-describe('Proof of Understanding Ledger is append-only', () => {
-  it('the owner cannot update a submission', async () => {
+// Sejak migrasi essay_audit_async (FR-05) aplikasi boleh UPDATE baris yang belum DONE (worker audit),
+// tetapi trigger essay_submissions_guard mengunci baris DONE dan kolom bukti. DELETE tetap dicabut.
+describe('Proof of Understanding Ledger is immutable once audited', () => {
+  it('the owner cannot update a DONE submission', async () => {
     await expect(
       withUserContext(ctx.prisma, studentA, (tx) =>
         tx.essaySubmission.update({ where: { id: submissionA }, data: { actualAiScore: 100 } }),
       ),
-    ).rejects.toThrow(/permission denied/i);
+    ).rejects.toThrow(/sudah DONE/i);
   });
 
   it('the owner cannot delete a submission', async () => {
     await expect(
       withUserContext(ctx.prisma, studentA, (tx) => tx.essaySubmission.delete({ where: { id: submissionA } })),
     ).rejects.toThrow(/permission denied/i);
+  });
+
+  it('evidence columns stay immutable even before the audit is done', async () => {
+    const pendingSession = randomUUID();
+    const pending = randomUUID();
+    await withUserContext(ctx.prisma, studentA, async (tx) => {
+      await tx.studySession.create({
+        data: { id: pendingSession, userId: studentA, materialId: materialA, sessionType: 'INITIAL_BLURTING', plannedDurationSec: 1500, status: 'EXPIRED' as const },
+      });
+      await tx.essaySubmission.create({
+        data: { id: pending, sessionId: pendingSession, userId: studentA, imageStorageKey: 'k2', predictedJolScore: 40 },
+      });
+    });
+    for (const data of [{ predictedJolScore: 99 }, { imageStorageKey: 'lain' }, { createdAt: new Date(0) }]) {
+      await expect(
+        withUserContext(ctx.prisma, studentA, (tx) => tx.essaySubmission.update({ where: { id: pending }, data })),
+      ).rejects.toThrow(/tidak boleh diubah/i);
+    }
+    // Kolom status audit boleh diubah oleh pemiliknya (worker berjalan dalam konteks user ini).
+    await withUserContext(ctx.prisma, studentA, (tx) =>
+      tx.essaySubmission.update({ where: { id: pending }, data: { auditStatus: 'PROCESSING', auditAttempts: 1 } }),
+    );
+  });
+
+  it("another user cannot update someone else's pending submission (RLS)", async () => {
+    const pendingSession = randomUUID();
+    const pending = randomUUID();
+    await withUserContext(ctx.prisma, studentA, async (tx) => {
+      await tx.studySession.create({
+        data: { id: pendingSession, userId: studentA, materialId: materialA, sessionType: 'INITIAL_BLURTING', plannedDurationSec: 1500, status: 'EXPIRED' as const },
+      });
+      await tx.essaySubmission.create({
+        data: { id: pending, sessionId: pendingSession, userId: studentA, imageStorageKey: 'k3', predictedJolScore: 40 },
+      });
+    });
+    const { count } = await withUserContext(ctx.prisma, educator, (tx) =>
+      tx.essaySubmission.updateMany({ where: { id: pending }, data: { auditStatus: 'FAILED' } }),
+    );
+    expect(count).toBe(0);
+  });
+
+  it('results cannot be stored without the DONE status, nor DONE without results', async () => {
+    const [s1, s2] = [randomUUID(), randomUUID()];
+    await withUserContext(ctx.prisma, studentA, (tx) =>
+      tx.studySession.createMany({
+        data: [s1, s2].map((id) => ({ id, userId: studentA, materialId: materialA, sessionType: 'INITIAL_BLURTING' as const, plannedDurationSec: 1500, status: 'EXPIRED' as const })),
+      }),
+    );
+    const insert = (data: Record<string, unknown>) =>
+      withUserContext(ctx.prisma, studentA, (tx) =>
+        tx.essaySubmission.create({ data: { userId: studentA, imageStorageKey: 'k', predictedJolScore: 40, ...data } as never }),
+      );
+
+    await expect(insert({ sessionId: s1, actualAiScore: 100 })).rejects.toThrow(/chk_submissions_results_only_when_done/);
+    await expect(insert({ sessionId: s2, auditStatus: 'DONE' })).rejects.toThrow(/chk_submissions_done_complete/);
   });
 });
 
