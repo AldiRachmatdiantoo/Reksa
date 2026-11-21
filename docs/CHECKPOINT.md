@@ -1,5 +1,18 @@
 # Checkpoint Frontend REKSA
 
+## #8 · 2026-11-21 · Akun dasar (FR-14)
+
+Branch: `feat/aldi-account` (backend: branch `feat/aldi-account` di repo Reksa)
+
+- **Halaman publik** dengan kerangka bersama `AuthCardLayout`: `/verifikasi-email` (otomatis memeriksa token, lalu terverifikasi, tautan tidak bisa dipakai, atau server tidak terhubung), `/lupa-password` (pesan netral setelah kirim), `/atur-ulang-password` (kata sandi baru + ketik ulang, setelah berhasil sesi di tab ini dikeluarkan).
+- Token dari tautan email dibaca sekali lalu dihapus dari address bar (`tokenFromUrl.ts`), supaya tidak tertinggal di riwayat browser. Verifikasi dijaga `useRef` agar StrictMode tidak mengirim token sekali pakai dua kali.
+- **`/akun`** (semua peran): email dengan status verifikasi, ubah nama, ganti kata sandi (perangkat ini tetap masuk, perangkat lain dikeluarkan). Dibuka dari nama di header (desktop) atau ikon akun (HP).
+- `VerifyEmailNotice`: pemberitahuan + tombol "Kirim tautan baru" untuk akun yang belum verifikasi, tampil di `/akun` dan di form gabung kelas. Hilang begitu terverifikasi.
+- `AuthProvider.updateUser` untuk memperbarui user tanpa memuat ulang. `AuthUser.emailVerified` ditambahkan. Aturan kata sandi dipindah ke `PasswordRules.tsx` dan dipakai di daftar, reset, dan ganti kata sandi.
+- Tautan "Lupa kata sandi?" di halaman masuk. `joinErrorMessage` menampilkan pesan backend untuk 403 `EMAIL_NOT_VERIFIED`.
+
+Diverifikasi di browser bersama Mailpit: kirim ulang tautan, buka tautan (token hilang dari URL), tautan yang sama ditolak saat dipakai ulang, ubah nama, kata sandi lama salah, lupa kata sandi sampai masuk dengan kata sandi baru, ganti kata sandi lalu muat ulang tetap masuk, siswa baru ditolak gabung kelas lalu bisa setelah verifikasi. HP dan desktop 1280px. Typecheck, 22 test, build lulus.
+
 ## #7 · 2026-11-21 · Kelola kelas (FR-09)
 
 Branch: `feat/aldi-classes` (backend: branch `feat/aldi-classes` di repo Reksa)

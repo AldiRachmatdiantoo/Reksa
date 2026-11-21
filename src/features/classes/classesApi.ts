@@ -51,7 +51,9 @@ export function joinErrorMessage(err: unknown): string {
   switch (err.status) {
     case 0:
       return 'Server REKSA tidak bisa dihubungi. Periksa koneksimu lalu coba lagi.';
+    case 403:
     case 404:
+      // 403 EMAIL_NOT_VERIFIED dan 404 kode salah: pesan backend sudah jelas untuk siswa.
       return err.message;
     case 429:
       return 'Sudah 10 kali mencoba dalam satu jam terakhir. Tanyakan kode yang benar ke gurumu, lalu coba lagi nanti.';
