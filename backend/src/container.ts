@@ -19,7 +19,14 @@ import { PrismaMaterialsRepository } from './features/materials/materials.reposi
 import { createMaterialsRouter } from './features/materials/materials.routes.js';
 import { MaterialsService } from './features/materials/materials.service.js';
 import { RedisRubricCache } from './features/materials/rubricCache.js';
+import { SharpImageProcessor } from './common/utils/imageProcessor.js';
+import { AuditWorker, RedisAuditQueue } from './features/essay-scans/audit.queue.js';
+import { AuditService } from './features/essay-scans/audit.service.js';
 import { RedisQrBridge } from './features/essay-scans/qrBridge.gateway.js';
+import { PrismaScansRepository } from './features/essay-scans/scans.repository.js';
+import { createScansRouter } from './features/essay-scans/scans.routes.js';
+import { SCAN_ALLOWED_MIME_TYPES } from './features/essay-scans/scans.schema.js';
+import { ScansService } from './features/essay-scans/scans.service.js';
 import { PrismaQuotaRepository } from './features/essay-scans/quota.repository.js';
 import { createQuotaRouter } from './features/essay-scans/quota.routes.js';
 import { QuotaService } from './features/essay-scans/quota.service.js';
@@ -74,6 +81,17 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
   const qrBridge = new RedisQrBridge(deps.redis);
   const sessionsService = new SessionsService({ repo: new PrismaSessionsRepository(deps.prisma), qrBridge });
   const quotaService = new QuotaService({ repo: new PrismaQuotaRepository(deps.prisma) });
+  const scansService = new ScansService({
+    repo: new PrismaScansRepository(deps.prisma),
+    sessions: sessionsService,
+    quota: quotaService,
+    images: new SharpImageProcessor({ allowedMimeTypes: SCAN_ALLOWED_MIME_TYPES }),
+    storage: deps.storage,
+    qrBridge,
+    queue: new RedisAuditQueue(deps.redis),
+    audit: createAuditService(deps),
+    onWarning: (message, data) => deps.logger.warn(data, message),
+  });
 
   return {
     '/auth': createAuthRouter({ service: authService, signer, redis: deps.redis }),
@@ -83,5 +101,32 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     '/sessions': createSessionsRouter({ service: sessionsService, signer, redis: deps.redis }),
     // Dipasang setelah '/me' (auth). Router '/me' tidak punya GET /quota, jadi permintaan diteruskan ke sini.
     '/me/quota': createQuotaRouter({ service: quotaService, signer }),
+    '/scans': createScansRouter({ service: scansService, signer, redis: deps.redis }),
   };
+}
+
+function createAuditService(deps: Pick<ContainerDeps, 'prisma' | 'storage' | 'ai' | 'logger'>): AuditService {
+  return new AuditService({
+    repo: new PrismaScansRepository(deps.prisma),
+    storage: deps.storage,
+    ai: deps.ai,
+    onWarning: (message, data) => deps.logger.warn(data, message),
+  });
+}
+
+/**
+ * Worker audit AI (FR-05). Dijalankan server.ts di proses yang sama dengan API; berhenti saat shutdown.
+ * Test integrasi memakai `drain()` untuk menjalankan antrean secara deterministik.
+ */
+export function buildAuditWorker(
+  deps: Pick<ContainerDeps, 'prisma' | 'redis' | 'storage' | 'ai' | 'logger'>,
+  options: { concurrency?: number; auditService?: AuditService } = {},
+): AuditWorker {
+  const audit = options.auditService ?? createAuditService(deps);
+  return new AuditWorker({
+    queue: new RedisAuditQueue(deps.redis),
+    handle: (job) => audit.run(job),
+    concurrency: options.concurrency ?? 2,
+    onError: (err, job) => deps.logger.error({ err, job }, 'Audit job gagal'),
+  });
 }

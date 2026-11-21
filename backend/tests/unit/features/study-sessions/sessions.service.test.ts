@@ -53,6 +53,8 @@ class FakeSessionsRepository implements SessionsRepository {
       focusEndedAt: null,
       completedAt: null,
       hasSubmission: false,
+      submissionId: null,
+      submissionAuditStatus: null,
     };
     this.sessions.set(created.id, created);
     return { created: { ...created } };
@@ -269,6 +271,13 @@ describe('cancel', () => {
 
     repo.sessions.get(s.id)!.status = 'COMPLETED';
     await expect(service.cancel(USER, s.id)).rejects.toMatchObject({ code: 'INVALID_SESSION_STATE' });
+  });
+
+  it('allows leaving a session whose photo audit failed', async () => {
+    const s = await service.start(USER, { materialId: MATERIAL, preset: 'CLASSIC_25_5' });
+    await service.submitJol(USER, s.id, 60);
+    Object.assign(repo.sessions.get(s.id)!, { hasSubmission: true, submissionAuditStatus: 'FAILED' });
+    expect((await service.cancel(USER, s.id)).status).toBe('EXPIRED');
   });
 
   it("answers 404 for another student's session", async () => {

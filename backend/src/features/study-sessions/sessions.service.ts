@@ -149,7 +149,8 @@ export class SessionsService {
     if (!ACTIVE.includes(session.status)) {
       throw new InvalidSessionStateError('Sesi yang sudah selesai tidak bisa dibatalkan.');
     }
-    if (session.hasSubmission) {
+    // Foto yang auditnya gagal boleh ditinggalkan, supaya pelajar tidak terkunci dari sesi baru.
+    if (session.hasSubmission && session.submissionAuditStatus !== 'FAILED') {
       throw new InvalidSessionStateError('Foto catatan sudah diunggah dan sedang dicek, jadi sesi ini tidak bisa dibatalkan.');
     }
     const updated = await this.deps.repo.expire(userId, sessionId, ACTIVE);
@@ -227,6 +228,7 @@ export function toView(s: SessionRecord): SessionView {
     focusEndedAt: s.focusEndedAt ? s.focusEndedAt.toISOString() : null,
     scanDeadlineAt: scanDeadline ? scanDeadline.toISOString() : null,
     hasSubmission: s.hasSubmission,
+    submissionId: s.submissionId,
     completedAt: s.completedAt ? s.completedAt.toISOString() : null,
   };
 }

@@ -82,6 +82,7 @@ function fakeStorage() {
   const objects = new Map<string, Buffer>();
   const storage: IStorageService = {
     putObject: vi.fn(async ({ key, body }) => void objects.set(key, body)),
+    getObject: vi.fn(async (key: string) => objects.get(key) ?? Buffer.alloc(0)),
     getSignedUrl: vi.fn(async (key: string) => `https://storage.test/${key}?sig=1`),
     deleteObject: vi.fn(async (key: string) => void objects.delete(key)),
     checkConnection: vi.fn(async () => undefined),

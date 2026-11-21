@@ -70,6 +70,15 @@ describe('S3StorageService against a real S3 bucket', () => {
     expect((await fetch(await ctx.storage.getSignedUrl(key))).status).toBe(404);
   });
 
+  it('reads an object back into memory, bounded by maxBytes', async () => {
+    const key = buildObjectKey('scans', owner, 'webp');
+    await ctx.storage.putObject({ key, body, contentType: 'image/webp' });
+
+    await expect(ctx.storage.getObject(key, 1024)).resolves.toEqual(body);
+    await expect(ctx.storage.getObject(key, body.length - 1)).rejects.toThrow(/melebihi batas/);
+    await expect(ctx.storage.getObject('../../etc/passwd', 1024)).rejects.toThrow();
+  });
+
   it('refuses to write to a key that was not built by buildObjectKey', async () => {
     await expect(
       ctx.storage.putObject({ key: '../../evil.pdf', body, contentType: 'application/pdf' }),

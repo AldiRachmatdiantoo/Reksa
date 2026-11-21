@@ -60,6 +60,11 @@ export type SignedUrlOptions = {
  */
 export interface IStorageService {
   putObject(input: PutObjectInput): Promise<void>;
+  /**
+   * Mengunduh isi objek ke memori (mis. worker audit membaca foto esai untuk AI). Dibatasi `maxBytes`
+   * supaya objek tak terduga tidak menghabiskan memori. Dipanggil hanya setelah kepemilikan dicek.
+   */
+  getObject(key: string, maxBytes: number): Promise<Buffer>;
   getSignedUrl(key: string, options?: SignedUrlOptions): Promise<string>;
   deleteObject(key: string): Promise<void>;
   /** Readiness check at startup. */
@@ -103,6 +108,19 @@ export class S3StorageService implements IStorageService {
         ContentLength: body.length,
       }),
     );
+  }
+
+  async getObject(key: string, maxBytes: number): Promise<Buffer> {
+    const out = await this.client.send(
+      new GetObjectCommand({ Bucket: this.config.bucket, Key: ObjectKeySchema.parse(key) }),
+    );
+    if (out.ContentLength !== undefined && out.ContentLength > maxBytes) {
+      throw new Error(`Objek ${key} melebihi batas ${maxBytes} byte`);
+    }
+    const bytes = await out.Body?.transformToByteArray();
+    if (!bytes) throw new Error(`Objek ${key} kosong`);
+    if (bytes.byteLength > maxBytes) throw new Error(`Objek ${key} melebihi batas ${maxBytes} byte`);
+    return Buffer.from(bytes);
   }
 
   async getSignedUrl(key: string, options: SignedUrlOptions = {}): Promise<string> {

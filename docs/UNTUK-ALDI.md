@@ -25,6 +25,25 @@ Contoh format:
 **Mendesak?** Ya, memblokir integration test sessions.
 -->
 
+### ⏳ 2026-11-21 — Review: audit asinkron `essay-scans` menyentuh area kamu (opsi A)
+Kamu belum sempat memutuskan, jadi atas persetujuan saya (Adli) Claude mengerjakan **opsi A** penuh di branch `feat/adli-essay-scans`. Mohon direview di PR; kalau tidak setuju, bilang saja dan saya ubah.
+
+**File di area kamu yang berubah**
+- `backend/prisma/migrations/20261121000300_essay_audit_async/` + `schema.prisma` (model `EssaySubmission`, enum `AuditStatus`):
+  - kolom `audit_status`, `audit_attempts` (0..3), `audit_error_code`, `audit_started_at`, `audited_at`, `quota_charged_at`, `encouraging_summary` (output AI `encouragingSummary` sebelumnya tidak punya kolom);
+  - kolom hasil jadi nullable; CHECK `chk_submissions_done_complete` (DONE wajib lengkap) dan `chk_submissions_results_only_when_done` (hasil hanya saat DONE);
+  - `GRANT UPDATE` (DELETE tetap dicabut) + trigger `essay_submissions_guard`: baris `DONE` terkunci total, kolom bukti (`session_id`, `user_id`, `image_storage_key`, `predicted_jol_score`, `created_at`) tidak bisa diubah kapan pun; policy RLS `submissions_owner_update`.
+- `backend/tests/security/rls.security.test.ts`: fixture submission diberi `auditStatus: 'DONE'`; test "owner cannot update" kini mengharapkan pesan trigger (`sudah DONE`), bukan `permission denied`; tambahan test kolom bukti, RLS update, dan dua CHECK baru.
+- `backend/src/config/storage.ts`: method baru `getObject(key, maxBytes)` (worker mengunduh foto untuk AI; signed URL tidak terjangkau dari dalam container). Test di `tests/integration/storage.test.ts`.
+- `backend/src/server.ts`: worker audit di-`start()` dan di-`stop()` sebelum DB/Redis ditutup.
+
+**Yang perlu kamu tahu untuk modulmu**
+- **FR-06:** saat audit `DONE` dengan ≥ 1 blind spot, worker membuat 2 baris `spaced_schedules` (H+3, H+7, `target_blind_spots_json` = blind spots) di transaksi yang sama. Modul `spaced-repetition` cukup membaca/menyelesaikannya.
+- **FR-07:** `ledger_hash` = SHA-256 dari JSON kanonik berversi `reksa-ledger-v1` (`essay-scans/ledgerHash.ts`, `computeLedgerHash`). `GET /ledger/verify/:hash` bisa menghitung ulang untuk mendeteksi perubahan data.
+- Antrean: daftar Redis `audit:v1:queue`, worker 2 audit bersamaan per proses. Job yang hilang (proses mati) tidak membuat data macet: `GET /scans/:id` menyatakan `AUDIT_STALLED` + kuota kembali.
+- Uji asap di Docker (`docker compose` + migrator) lewat nginx `:8080`: daftar → sesi → JOL → unggah 202 → `DONE` dalam 1 detik → sesi `COMPLETED`, foto WebP tanpa EXIF; SSE QR bridge real-time lewat nginx tanpa ubah `nginx.conf`.
+- Temuan kecil (area kamu, tidak mendesak): respons API membawa header `X-Content-Type-Options` dua kali (helmet + `add_header` nginx).
+
 ### ⏳ 2026-11-21 — `nginx.conf`: path SSE QR bridge final (tidak mendesak)
 **Butuh untuk:** FR-04 skenario B (checklist Adli poin 4 di `CLAUDE.md`).
 **Detail:** path final `GET /api/v1/sessions/<uuid>/qr-bridge/events`, bukan usulan lama `/api/v1/scans/qr-bridge/<token>/events` (token unggah sebaiknya tidak masuk URL karena tercatat di access log). Usul ganti `location` SSE di `frontend/nginx.conf` menjadi `~ ^/api/v1/sessions/[0-9a-f-]{36}/qr-bridge/events$` dengan isi yang sama (`proxy_buffering off`, `proxy_read_timeout 330s`).
@@ -43,7 +62,7 @@ Contoh format:
 - Kalau tidak setuju, PR cukup ditutup; tidak ada yang berubah di repo mana pun.
 **Mendesak?** Tidak. Kerja `study-sessions` ada di PR terpisah (`feat/adli-sessions`).
 
-### ⏳ 2026-11-21 — Keputusan: `essay_submissions` append-only vs audit asinkron (FR-05)
+### 🔧 2026-11-21 — Keputusan: `essay_submissions` append-only vs audit asinkron (FR-05) · dikerjakan Adli dengan opsi A, lihat entri review di atas
 **Butuh untuk:** `essay-scans` (unggah 202 → worker audit)
 **Masalah:** `security_hardening` mencabut `UPDATE, DELETE ON essay_submissions` dari `app_service_user`. PRD v1.3 FR-05 justru membuat baris saat unggah (`audit_status = PENDING`) lalu mengubahnya ke `PROCESSING` dan `DONE`/`FAILED`, sambil mengisi skor, `*_json`, dan `ledger_hash` saat `DONE`. Dengan grant sekarang, worker tidak bisa menulis hasil audit.
 **Usulan (pilih salah satu):**
@@ -61,14 +80,14 @@ Contoh format:
 - `schema.prisma`: hanya model `StudySession` + enum baru (kolomnya ikut di-*align* ulang oleh `prisma format`).
 **Mendesak?** Ya, `study-sessions` bergantung padanya. Semua test lulus: 129 unit, 148 integrasi + security.
 
-### ⏳ 2026-11-21 — Migrasi kolom audit untuk `essay-scans` (FR-05, FR-11)
+### 🔧 2026-11-21 — Migrasi kolom audit untuk `essay-scans` (FR-05, FR-11) · dikerjakan Adli (`20261121000300_essay_audit_async`), kecuali `pro_expires_at`
 **Detail** (sesuai PRD §7.1, menunggu keputusan append-only di atas):
 - `essay_submissions.audit_status` enum `AuditStatus (PENDING, PROCESSING, DONE, FAILED)` default `PENDING`, `audit_attempts INT DEFAULT 0 CHECK (audit_attempts >= 0)`, `audit_error_code VARCHAR(64) NULL`.
 - `actual_ai_score`, `accurate_concepts_json`, `blind_spots_json`, `logic_corrections_json`, `ledger_hash` menjadi nullable; CHECK diganti agar wajib terisi saat `audit_status = 'DONE'`.
 - `users.pro_expires_at` (FR-11). Kalau masih lama, saya pakai `users.tier` dulu sesuai UNTUK-ADLI §1e.
 Kalau kamu setuju opsi A di atas, saya bisa sekalian membuat migrasi ini di branch `essay-scans` lalu kamu review, seperti migrasi sesi.
 
-### ⏳ 2026-11-21 — Infra antrean worker audit (FR-05)
+### 🔧 2026-11-21 — Infra antrean worker audit (FR-05) · dikerjakan Adli (antrean Redis sederhana, tanpa BullMQ), lihat entri review di atas
 **Butuh untuk:** worker `evaluateHandwritingEssay` dengan batas audit bersamaan
 **Detail:** UNTUK-ADLI §1e menyebut antrean Redis disiapkan Aldi, tetapi belum ada di `package.json` maupun `container.ts`. Pertanyaannya: BullMQ jadi dipakai? Worker berjalan di proses backend yang sama atau service terpisah di `docker-compose.yml`? Sambil menunggu, `essay-scans` saya tulis terhadap antarmuka kecil `IAuditQueue { enqueue(submissionId) }` supaya implementasinya bisa ditukar.
 **Tambahan kecil (opsional):** env `MOCK_AI_AUDIT_FAILURE_RATE` (0..1, default 0) di `config/env.ts` dan diteruskan di `ai.factory.ts` ke opsi baru `MockAiProvider({ auditFailureRate })`, supaya alur `FAILED` bisa dicoba manual di frontend.
@@ -77,6 +96,13 @@ Kalau kamu setuju opsi A di atas, saya bisa sekalian membuat migrasi ini di bran
 ## Kabar & progres
 
 Hal yang perlu Aldi ketahui tapi tidak butuh tindakan (fitur selesai, perubahan kontrak di area Adli, keputusan desain).
+
+### 2026-11-21 — ✅ Unggah foto + hasil cek asli siap disambungkan (FR-04, FR-05)
+- `POST /api/v1/scans/upload` multipart: `image` (JPEG/PNG/WebP, maks. 5 MB) + **tepat satu** dari `sessionId` (login STUDENT) atau `qrToken` (HP tanpa login). → `202 { submissionId, auditStatus: 'PENDING', quota }`.
+  - Error: `400` field salah · `401` `sessionId` tanpa login · `404` sesi bukan milik · `409 INVALID_SESSION_STATE` (JOL belum / foto sudah ada) · `409 SESSION_EXPIRED` · `410 QR_TOKEN_INVALID` · `413` · `415` · `422` foto rusak · `429 QUOTA_EXCEEDED` (`details.quota`) atau `429` rate limit (30/jam per IP).
+- `GET /api/v1/scans/:id` → `{ scan }`: `auditStatus` (`PENDING`/`PROCESSING`/`DONE`/`FAILED`), `retriesLeft`, `errorCode`, `imageUrl` (signed 300 detik), `ledgerHash`, dan `result` saat `DONE`: `{ actualScore, jolDelta, accurateConcepts, blindSpots, logicCorrections, encouragingSummary }` (bentuk sama dengan `SAMPLE_AUDIT`, ditambah `jolDelta`). Poll tiap 2 detik sampai 90 detik (PRD FR-05).
+- `POST /api/v1/scans/:id/retry` → `202` sama seperti unggah. Hanya saat `FAILED`, maks. 2 kali, memotong kuota lagi (kuota audit gagal sudah dikembalikan).
+- `SessionView` kini punya `submissionId`; setelah muat ulang, halaman hasil bisa ditemukan dari `GET /sessions/active` atau `GET /sessions/:id`. Sesi yang auditnya `FAILED` boleh dibatalkan (`POST /sessions/:id/cancel`); bila jatah cek ulang habis, sesi otomatis `EXPIRED`.
 
 ### 2026-11-21 — ✅ QR bridge laptop ↔ HP siap disambungkan (FR-04 skenario B)
 Alur untuk frontend:
