@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, FR-12 ekspor PDF Proof of Understanding (Aldi, branch `feat/aldi-ledger-pdf`, ditumpuk di atas `feat/aldi-ledger`)
+**Checkpoint terakhir:** 22 November 2026, FR-08 peta bagian sulit kelas (Aldi, branch `feat/aldi-cohort-blind-spots`, ditumpuk di atas `feat/aldi-ledger-pdf`)
 
 ---
 
@@ -16,6 +16,14 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #23 · FR-08 peta bagian sulit kelas · branch `feat/aldi-cohort-blind-spots`
+
+- `GET /governance/classes/:classId/blind-spots` (materi yang sudah punya hasil cek) dan `GET /governance/classes/:classId/blind-spots/:materialId` (persentase per konsep + saran). EDUCATOR pemilik kelas, 404 untuk kelas lain dan materi tanpa hasil di kelas itu, 30/menit per pengajar. Pembacaan lewat RLS pengajar, jadi siswa yang keluar kelas tidak dihitung.
+- Hitungan memakai hasil cek **terakhir** tiap siswa per materi; satu siswa dihitung sekali per konsep; nama konsep disamakan tanpa beda huruf besar/spasi.
+- Saran dari `IAiService.clusterCohortBlindSpots` mulai 3 siswa. Yang dikirim ke AI hanya konsep, tingkat, dan penjelasan (tanpa nama/id/skor). Angka dari AI dibuang. Cache Redis `cohort:v1:<sha256>` 6 jam. Selama mode mock, respons membawa `sample: true` dan UI menandainya sebagai contoh. AI gagal: status `UNAVAILABLE`, persentase tetap tampil.
+- Frontend: bagian **Peta bagian sulit** di Portal Guru (pilih kelas dan materi, batang persentase, kartu saran). Daftar "Menyusul di portal ini" dihapus karena isinya sudah jalan.
+- **Hasil:** backend 528 lulus (3 skip), 7 unit + 6 integrasi baru, tanpa migrasi; frontend 42 unit; E2E 9/9.
 
 ### #22 · FR-12 ekspor PDF Proof of Understanding · branch `feat/aldi-ledger-pdf`
 

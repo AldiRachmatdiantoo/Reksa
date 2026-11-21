@@ -1,5 +1,13 @@
 # Checkpoint Frontend REKSA
 
+## #15 · 2026-11-22 · Peta bagian sulit (FR-08)
+
+Branch: `feat/aldi-cohort-blind-spots`.
+
+- `features/governance/CohortSection.tsx` di Portal Guru: pilih kelas, pilih materi (kalau lebih dari satu), daftar konsep dengan batang persentase "x dari y siswa", kartu saran AI. Saran dari AI tiruan diberi keterangan "Contoh". Di bawah 3 siswa hanya ada keterangan, bukan saran.
+- Daftar "Menyusul di portal ini" di `TeacherPage.tsx` dihapus.
+- Unit `conceptShareLabel`, E2E `governance.spec.ts` memeriksa bagian peta untuk kelas kosong. Diperiksa juga lewat screenshot (desktop dan 375 px, tanpa scroll horizontal).
+
 ## #14 · 2026-11-22 · PDF bukti belajar (FR-12)
 
 Branch: `feat/aldi-ledger-pdf`.

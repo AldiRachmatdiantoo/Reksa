@@ -34,7 +34,7 @@ function row(extra: Partial<LedgerRow> = {}): LedgerRow {
   };
 }
 
-class FakeRepo implements GovernanceRepository {
+class FakeRepo implements Pick<GovernanceRepository, 'isClassOwner' | 'listLedger' | 'lookupHash'> {
   owner = true;
   rows: LedgerRow[] = [row()];
   lookup: (LedgerContent & { ledgerHash: string }) | null = { ...content, ledgerHash: computeLedgerHash(content) };

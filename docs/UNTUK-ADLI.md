@@ -6,6 +6,11 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: FR-08 peta bagian sulit (branch `feat/aldi-cohort-blind-spots`)
+
+- Peta membaca `blind_spots_json` lewat `parseBlindSpots` (di `spaced.service.ts`) dan menghitung sendiri persentasenya. Mock Stage 3 tidak diubah.
+- Saya menambah `cohort.service.test.ts` di `backend/tests/unit/features/governance/` (area tes unit kamu) dan memperluas `governance.service.test.ts` sedikit (tipe `FakeRepo`). Tidak ada perubahan di file milikmu yang lain.
+
 ## 22 Nov 2026: FR-12 ekspor PDF bukti belajar (branch `feat/aldi-ledger-pdf`)
 
 - `POST /ledger/exports` membaca kolom audit di `submissions` (`accurate_concepts_json`, `blind_spots_json`, `image_storage_key`) dan foto webp hasil `imageProcessor`. Kalau bentuk JSON audit atau format foto berubah, kabari saya supaya `ledgerExport.service.ts` ikut disesuaikan. Data yang tidak dikenal dilewati, tidak menggagalkan PDF.

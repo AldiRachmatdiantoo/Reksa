@@ -9,6 +9,12 @@ export type LedgerRow = LedgerContent & {
   ledgerHash: string;
 };
 
+/** Satu pengumpulan DONE untuk peta bagian sulit (FR-08). */
+export type CohortRow = { userId: string; materialId: string; blindSpotsJson: unknown; auditedAt: Date };
+
+/** Batas baris yang dibaca untuk satu peta; kelas besar dengan riwayat panjang tetap ringan. */
+export const COHORT_ROW_LIMIT = 5000;
+
 export interface GovernanceRepository {
   isClassOwner(educatorId: string, classId: string): Promise<boolean>;
   /**
@@ -20,6 +26,13 @@ export interface GovernanceRepository {
     classId: string,
     opts: { cursor?: string; limit: number; studentId?: string },
   ): Promise<{ rows: LedgerRow[]; nextCursor: string | null }>;
+  /**
+   * Pengumpulan DONE di kelas ini, terbaru dulu, opsional satu materi. Lewat RLS pengajar seperti ledger,
+   * jadi siswa yang sudah keluar kelas tidak ikut dihitung.
+   */
+  listCohortRows(educatorId: string, classId: string, materialId?: string): Promise<CohortRow[]>;
+  /** Judul materi yang terbaca pengajar; materi pribadi siswa tidak ada di hasil. */
+  materialTitles(educatorId: string, materialIds: string[]): Promise<Map<string, string>>;
   /** Untuk verifikasi publik; lewat fungsi SECURITY DEFINER ledger_lookup. */
   lookupHash(hash: string): Promise<(LedgerContent & { ledgerHash: string }) | null>;
 }
@@ -120,6 +133,35 @@ export class PrismaGovernanceRepository implements GovernanceRepository {
         ledgerHash: r.ledgerHash!,
       }));
       return { rows, nextCursor };
+    });
+  }
+
+  listCohortRows(educatorId: string, classId: string, materialId?: string): Promise<CohortRow[]> {
+    return withUserContext(this.prisma, educatorId, async (tx) => {
+      const found = await tx.essaySubmission.findMany({
+        where: {
+          auditStatus: 'DONE',
+          auditedAt: { not: null },
+          session: { classId, class: { educatorId }, ...(materialId ? { materialId } : {}) },
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: COHORT_ROW_LIMIT,
+        select: { userId: true, blindSpotsJson: true, auditedAt: true, session: { select: { materialId: true } } },
+      });
+      return found.map((r) => ({
+        userId: r.userId,
+        materialId: r.session.materialId,
+        blindSpotsJson: r.blindSpotsJson,
+        auditedAt: r.auditedAt!,
+      }));
+    });
+  }
+
+  materialTitles(educatorId: string, materialIds: string[]): Promise<Map<string, string>> {
+    if (materialIds.length === 0) return Promise.resolve(new Map());
+    return withUserContext(this.prisma, educatorId, async (tx) => {
+      const found = await tx.studyMaterial.findMany({ where: { id: { in: materialIds } }, select: { id: true, title: true } });
+      return new Map(found.map((m) => [m.id, m.title]));
     });
   }
 

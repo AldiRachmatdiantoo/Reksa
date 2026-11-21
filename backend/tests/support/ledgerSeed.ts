@@ -30,16 +30,22 @@ export function createLedgerSeeds(ctx: TestContext) {
     title?: string;
     /** Foto WebP sungguhan (dibutuhkan ekspor PDF); default byte palsu. */
     realPhoto?: boolean;
+    /** Pakai materi yang sudah ada (peta bagian sulit butuh beberapa siswa di satu materi). */
+    materialId?: string;
+    /** Isi blind_spots_json; default dua konsep. */
+    blindSpots?: unknown[];
   }) {
     seq += 1;
-    const material = await ctx.owner.studyMaterial.create({
-      data: {
-        uploaderId: opts.materialOwner,
-        classId: opts.materialClassId ?? opts.classId,
-        title: opts.title ?? 'Homeostasis',
-        contentHash: seq.toString(16).padStart(64, 'c'),
-      },
-    });
+    const material = opts.materialId
+      ? { id: opts.materialId }
+      : await ctx.owner.studyMaterial.create({
+          data: {
+            uploaderId: opts.materialOwner,
+            classId: opts.materialClassId ?? opts.classId,
+            title: opts.title ?? 'Homeostasis',
+            contentHash: seq.toString(16).padStart(64, 'c'),
+          },
+        });
     const ago = (opts.minutesAgo ?? 0) * 60_000;
     const startedAt = new Date(Date.now() - ago - 30 * 60_000);
     const focusEndedAt = new Date(Date.now() - ago - 6 * 60_000);
@@ -91,10 +97,10 @@ export function createLedgerSeeds(ctx: TestContext) {
         predictedJolScore: 80,
         actualAiScore: 65,
         accurateConceptsJson: [{ concept: 'Reseptor', evidenceFromHandwriting: 'ditulis' }],
-        blindSpotsJson: [
+        blindSpotsJson: (opts.blindSpots ?? [
           { concept: 'Umpan balik negatif', importanceLevel: 'HIGH', explanation: 'Belum dijelaskan → perlu contoh.' },
           { concept: 'Efektor', importanceLevel: 'LOW', explanation: 'Disebut tanpa fungsi.' },
-        ],
+        ]) as object[],
         logicCorrectionsJson: [],
         encouragingSummary: 'Bagus.',
         ledgerHash,
@@ -103,7 +109,7 @@ export function createLedgerSeeds(ctx: TestContext) {
         createdAt,
       },
     });
-    return { submissionId, sessionId: session.id, ledgerHash, startedAt, createdAt };
+    return { submissionId, sessionId: session.id, materialId: material.id, ledgerHash, startedAt, createdAt };
   }
 
   return { createClass, seedSubmission };

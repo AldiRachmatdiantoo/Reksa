@@ -374,7 +374,8 @@ Seluruh endpoint berada di bawah prefix `/api/v1` dan menggunakan middleware val
 | `POST` | `/scans/upload` | `STUDENT` / QR Token | Menerima `multipart/form-data` foto esai, validasi *magic bytes*, menghapus EXIF, memotong kuota, lalu mengantrekan audit `IAiService` (v1.3: respons `202`, hasil dibaca lewat `GET /scans/:id`). |
 | `GET` | `/spaced/due` | `STUDENT` | Mengambil daftar sesi *micro-blurting* yang jatuh tempo hari ini. |
 | `GET` | `/governance/classes/:classId/ledger` | `EDUCATOR` (Owner) | Mengambil daftar *Proof of Understanding Ledger* siswa beserta *Signed URL* foto tulisan tangan. |
-| `GET` | `/governance/classes/:classId/blind-spots` | `EDUCATOR` / `ADMIN` | Mengambil hasil klasterisasi *Cohort Blind-Spots* & rekomendasi perbaikan kurikulum. |
+| `GET` | `/governance/classes/:classId/blind-spots` | `EDUCATOR` (Owner) | Daftar materi yang sudah punya hasil cek di kelas, dengan jumlah siswa (FR-08). |
+| `GET` | `/governance/classes/:classId/blind-spots/:materialId` | `EDUCATOR` (Owner) | Persentase siswa yang melewatkan tiap konsep (hasil cek terakhir per siswa) + rekomendasi `IAiService` Stage 3 (FR-08). |
 
 *Endpoint baru v1.2 (belum dibangun):*
 
@@ -471,7 +472,8 @@ Sumber kebenarannya adalah file `*.schema.ts`. Tabel ini ringkasan agar frontend
 
 **`governance`** (`features/governance/governance.schema.ts`)
 * `GET /governance/classes/:classId/ledger?cursor=&limit=` (cursor UUID, limit 1–100, default 20).
-* `GET /governance/classes/:classId/blind-spots?materialId=`.
+* `GET /governance/classes/:classId/blind-spots` → `{ materials[] { materialId, title|null, studentCount, lastAuditedAt } }`.
+* `GET /governance/classes/:classId/blind-spots/:materialId` → `{ material, studentCount, concepts[] { concept, studentCount, percent, importanceLevel|null }, recommendationStatus READY|NOT_ENOUGH_DATA|UNAVAILABLE, recommendation { sample, clusters[] { label, memberConcepts[], severity, remediationSuggestion }, curriculumRecommendation } | null, minStudentsForRecommendation: 3 }`. Angka dari AI (`affectedStudentCount`, `failureRatePercent`) tidak diteruskan; persentase dihitung server. Rekomendasi di-cache Redis 6 jam per isi data. 30 permintaan/menit per pengajar.
 
 **Output AI** (`common/ai/ai.schema.ts`, semua `.strict()`)
 * `AiRubricOutput`: `materialTitle`, `summary`, `keyConcepts[] { id (slug), concept, definition, weight 1..5 }`, `causalRelations[] { fromConceptId, toConceptId, relation }`. Setiap relasi wajib merujuk `id` konsep yang ada.

@@ -2,21 +2,11 @@ import { motion } from 'motion/react';
 import { useEffect } from 'react';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { TeacherClasses } from '@/features/classes/TeacherClasses';
+import { CohortSection } from './CohortSection';
 import { LedgerSection } from './LedgerSection';
-import { pageTransition, Reveal, Stagger, StaggerItem } from '@/shared/motion';
+import { pageTransition, Reveal } from '@/shared/motion';
 import { AppHeader } from '@/shared/ui/AppHeader';
-import { Icon } from '@/shared/ui/Icon';
 import { StateBlock } from '@/shared/ui/StateBlock';
-
-// Kelola kelas (FR-09) dan bukti belajar (FR-07) sudah jalan. Peta bagian sulit
-// menyusul; sampai endpoint-nya ada, hanya dijelaskan, bukan diisi data karangan.
-const UPCOMING = [
-  {
-    icon: 'analytics',
-    title: 'Peta bagian sulit di kelas',
-    body: 'Konsep yang paling sering terlewat oleh satu kelas, dikelompokkan otomatis, lengkap dengan saran untuk pertemuan berikutnya.',
-  },
-];
 
 export function TeacherPage() {
   const auth = useAuth();
@@ -59,22 +49,12 @@ export function TeacherPage() {
           </Reveal>
         )}
 
-        <section aria-labelledby="upcoming-title" className="flex flex-col gap-4">
-          <h2 id="upcoming-title" className="font-headline text-headline-md text-ink">
-            Menyusul di portal ini
-          </h2>
-          <Stagger as="ul" delay={0.2} className="grid gap-4">
-            {UPCOMING.map((item) => (
-              <StaggerItem as="li" key={item.title} className="flex gap-4 rounded-md border border-line-soft bg-card p-5">
-                <Icon name={item.icon} className="text-[28px] text-teal" />
-                <div className="flex flex-col gap-1">
-                  <h3 className="font-title text-title-md text-ink">{item.title}</h3>
-                  <p className="text-body-md text-ink-muted text-pretty">{item.body}</p>
-                </div>
-              </StaggerItem>
-            ))}
-          </Stagger>
-        </section>
+        {isEducator && (
+          <Reveal delay={0.2}>
+            <CohortSection />
+          </Reveal>
+        )}
+
       </motion.main>
     </>
   );
