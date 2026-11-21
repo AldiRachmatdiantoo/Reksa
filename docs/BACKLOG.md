@@ -34,6 +34,13 @@ Tugas Adli menuju MVP (PRD v1.3): `study-sessions`, `essay-scans`, Gemini Stage 
 - [ ] Saat Fase 3 dibuka: rangkai `AI_PROVIDER_MODE=gemini` di `ai.factory.ts` (bersama Aldi, Stage 1/3 harus sudah ada), lalu jalankan `RUN_LIVE_AI=1` dan kalibrasi prompt dengan foto tulisan tangan asli (termasuk diagram panah dan *code-switching*).
 - [ ] Pastikan paket Gemini yang dipakai tidak melatih model dengan data pengguna (PRD FR-13) sebelum uji live dengan foto asli.
 
+## Frontend (area Aldi, dikerjakan Adli atas persetujuan pengguna)
+
+- [x] Sambungkan Ruang Belajar, Tebak & Foto, Hasil Cek, QR bridge, dan halaman HP `/unggah` ke backend asli (checkpoint #16)
+- [x] E2E Playwright + axe-core untuk alur sesi, foto, QR, dan hasil (checkpoint #16)
+- [ ] Menunggu Aldi: perbaikan CSP untuk `NumberFlow` dan self-host font teks (lihat `UNTUK-ALDI.md`)
+- [ ] E2E masuk CI (butuh job dengan stack Docker penuh; workflow milik Aldi)
+
 ## Berjalan terus
 
 - [x] Test loop `AuditWorker` + `RedisAuditQueue`: `audit.queue.ts` 51% → 100% (checkpoint #15)

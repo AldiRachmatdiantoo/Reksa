@@ -1,7 +1,9 @@
 import NumberFlow from '@number-flow/react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { sessionErrorMessage } from '@/features/studio/sessionsApi';
+import { useLoad } from '@/shared/hooks/useLoad';
 import { pageTransition, Stagger, StaggerItem } from '@/shared/motion';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button, ButtonLink } from '@/shared/ui/Button';
@@ -9,11 +11,8 @@ import { Icon } from '@/shared/ui/Icon';
 import { StateBlock } from '@/shared/ui/StateBlock';
 import { StepIndicator } from '@/features/studio/StepIndicator';
 import { formatDuration, useStudySession } from '@/features/studio/studySession';
-
-// Sama dengan SCAN_ALLOWED_MIME_TYPES & SCAN_MAX_IMAGE_BYTES di backend.
-// Ini hanya pemeriksaan awal; backend tetap memvalidasi magic bytes.
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
-const MAX_BYTES = 5 * 1024 * 1024;
+import { QrBridgePanel } from './QrBridgePanel';
+import { photoProblem, quotaText, SCAN_ACCEPT, scansApi, uploadErrorMessage } from './scansApi';
 
 function confidenceLabel(v: number) {
   if (v < 40) return 'Masih ragu';
@@ -27,9 +26,14 @@ function formatBytes(n: number) {
 
 export function CalibratePage() {
   const navigate = useNavigate();
-  const { session, photoUrl, saveJol, setPhoto } = useStudySession();
+  const { session, syncing, photoUrl, photoFile, saveJol, setPhoto, setSubmission, clear } = useStudySession();
   const [guess, setGuess] = useState(session?.jolScore ?? 50);
   const [photoError, setPhotoError] = useState('');
+  const [jolError, setJolError] = useState('');
+  const [savingJol, setSavingJol] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [useQr, setUseQr] = useState(false);
+  const { state: quota } = useLoad((signal) => scansApi.quota(signal), []);
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const [coarsePointer] = useState(() => window.matchMedia?.('(pointer: coarse)').matches ?? false);
@@ -38,7 +42,43 @@ export function CalibratePage() {
     document.title = 'Tebak & Foto · REKSA';
   }, []);
 
-  if (!session || session.focusSeconds == null) {
+  if (session?.submissionId) return <Navigate to="/belajar/hasil" replace />;
+
+  if (syncing) {
+    return (
+      <>
+        <AppHeader subtitle="Tebak & Foto" />
+        <motion.main {...pageTransition} className="px-4 py-16">
+          <StateBlock icon="sync" title="Memeriksa sesi belajarmu...">
+            Sebentar, ya.
+          </StateBlock>
+        </motion.main>
+      </>
+    );
+  }
+
+  if (session?.status === 'EXPIRED') {
+    return (
+      <>
+        <AppHeader subtitle="Tebak & Foto" />
+        <motion.main {...pageTransition} className="px-4 py-16">
+          <StateBlock
+            icon="timer_off"
+            title="Sesi ini sudah kedaluwarsa"
+            action={
+              <Button variant="accent" onClick={() => void clear().then(() => navigate('/belajar'))}>
+                Mulai sesi baru
+              </Button>
+            }
+          >
+            Waktu fokus tidak diakhiri dalam batas waktunya, atau foto tidak dikirim dalam 2 jam setelah tebakan disimpan.
+          </StateBlock>
+        </motion.main>
+      </>
+    );
+  }
+
+  if (!session || (session.focusSeconds == null && session.status !== 'AWAITING_SCAN')) {
     return (
       <>
         <AppHeader subtitle="Tebak & Foto" />
@@ -55,23 +95,51 @@ export function CalibratePage() {
     );
   }
 
-  const jolLocked = session.jolScore != null;
-  const canSubmit = jolLocked && session.photo != null && photoUrl != null;
+  const jolLocked = session.jolScore != null && session.status === 'AWAITING_SCAN';
+  const quotaEmpty = quota.status === 'ready' && quota.data.remaining === 0;
+  const canSubmit = jolLocked && photoFile != null && !quotaEmpty && !sending;
+
+  const onSaveJol = async () => {
+    setSavingJol(true);
+    setJolError('');
+    try {
+      await saveJol(guess);
+    } catch (err) {
+      setJolError(sessionErrorMessage(err));
+    } finally {
+      setSavingJol(false);
+    }
+  };
 
   const onPick = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      setPhotoError('Pilih foto berformat JPG, PNG, WebP, atau HEIC.');
-      return;
-    }
-    if (file.size > MAX_BYTES) {
-      setPhotoError(`Ukuran foto ${formatBytes(file.size)}. Maksimal 5 MB, coba foto ulang dengan resolusi lebih kecil.`);
+    const problem = photoProblem(file);
+    if (problem) {
+      setPhotoError(problem);
       return;
     }
     setPhotoError('');
     setPhoto(file);
+  };
+
+  const goToResult = (submissionId: string) => {
+    setSubmission(submissionId);
+    navigate('/belajar/hasil');
+  };
+
+  const onSubmit = async () => {
+    if (!photoFile || !session.serverId) return;
+    setSending(true);
+    setPhotoError('');
+    try {
+      const { submissionId } = await scansApi.upload(photoFile, { sessionId: session.serverId });
+      goToResult(submissionId);
+    } catch (err) {
+      setPhotoError(uploadErrorMessage(err));
+      setSending(false);
+    }
   };
 
   return (
@@ -88,10 +156,12 @@ export function CalibratePage() {
             <Icon name="menu_book" className="text-teal" />
             {session.materialTitle}
           </span>
-          <span className="flex items-center gap-2 text-body-md text-ink-muted">
-            <Icon name="timer" className="text-teal" />
-            Fokus {formatDuration(session.focusSeconds)}
-          </span>
+          {session.focusSeconds != null && (
+            <span className="flex items-center gap-2 text-body-md text-ink-muted">
+              <Icon name="timer" className="text-teal" />
+              Fokus {formatDuration(session.focusSeconds)}
+            </span>
+          )}
         </div>
 
         <Stagger trigger="mount" gap={0.12} delay={0.1} className="grid items-start gap-6 lg:grid-cols-2">
@@ -153,12 +223,24 @@ export function CalibratePage() {
                 </motion.p>
               ) : (
                 <motion.div key="save" exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.15 }} className="flex flex-col">
-                  <Button variant="primary" size="lg" onClick={() => saveJol(guess)}>
-                    Simpan tebakan
+                  <Button variant="primary" size="lg" disabled={savingJol} onClick={() => void onSaveJol()}>
+                    {savingJol ? 'Menyimpan...' : 'Simpan tebakan'}
                   </Button>
                 </motion.div>
               )}
             </AnimatePresence>
+            {jolError && (
+              <p role="alert" className="flex items-start gap-2 rounded-md bg-danger-wash px-4 py-3 text-body-md text-on-danger-wash">
+                <Icon name="error" className="mt-px text-[20px]" />
+                {jolError}
+              </p>
+            )}
+            {jolLocked && session.validity === 'SHORT_FOCUS' && (
+              <p className="flex items-start gap-2 text-body-sm text-ink-muted">
+                <Icon name="info" className="text-[18px]" />
+                Waktu fokusmu kurang dari separuh durasi pilihan. Hasil tetap dicek, tapi sesi ini ditandai fokus singkat di catatan guru.
+              </p>
+            )}
           </section>
           </StaggerItem>
 
@@ -182,8 +264,17 @@ export function CalibratePage() {
               </p>
             </header>
 
-            <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} onChange={onPick} aria-hidden="true" />
-            <input ref={galleryRef} type="file" accept={ALLOWED_TYPES.join(',')} className="sr-only" tabIndex={-1} onChange={onPick} aria-hidden="true" />
+            <input ref={cameraRef} type="file" accept={SCAN_ACCEPT.join(',')} capture="environment" className="sr-only" tabIndex={-1} onChange={onPick} aria-hidden="true" />
+            <input ref={galleryRef} type="file" accept={SCAN_ACCEPT.join(',')} className="sr-only" tabIndex={-1} onChange={onPick} aria-hidden="true" />
+
+            {jolLocked && quota.status === 'ready' && (
+              <p className={`flex items-center gap-2 text-body-md ${quotaEmpty ? 'text-on-danger-wash' : 'text-ink-muted'}`}>
+                <Icon name="confirmation_number" className="text-[20px] text-teal" />
+                {quotaEmpty ? 'Jatah cek catatan hari ini sudah habis. Terisi lagi pukul 00.00 WIB.' : quotaText(quota.data)}
+              </p>
+            )}
+
+            {jolLocked && useQr && session.serverId && <QrBridgePanel sessionId={session.serverId} onUploaded={goToResult} />}
 
             <AnimatePresence initial={false}>
               {photoUrl && session.photo && (
@@ -202,7 +293,7 @@ export function CalibratePage() {
               )}
             </AnimatePresence>
 
-            {session.photo && !photoUrl && (
+            {session.photo && !photoUrl && !useQr && (
               <p className="text-body-md text-ink-muted">Halaman dimuat ulang, jadi foto perlu dipilih lagi.</p>
             )}
 
@@ -213,7 +304,7 @@ export function CalibratePage() {
               </p>
             )}
 
-            <div className={`flex flex-col gap-2 ${coarsePointer ? '' : 'sm:flex-row'}`}>
+            <div className={`flex flex-col gap-2 ${coarsePointer ? '' : 'sm:flex-row sm:flex-wrap'} ${useQr ? 'hidden' : ''}`}>
               {coarsePointer && (
                 <Button variant="primary" size="lg" disabled={!jolLocked} onClick={() => cameraRef.current?.click()}>
                   <Icon name="photo_camera" />
@@ -224,11 +315,23 @@ export function CalibratePage() {
                 <Icon name="image" />
                 {coarsePointer ? 'Pilih dari galeri' : photoUrl ? 'Ganti foto' : 'Pilih foto dari perangkat'}
               </Button>
+              {!coarsePointer && (
+                <Button variant="outline" size="lg" disabled={!jolLocked || quotaEmpty} onClick={() => setUseQr(true)}>
+                  <Icon name="qr_code_2" />
+                  Pakai kamera HP
+                </Button>
+              )}
             </div>
+            {useQr && (
+              <Button variant="ghost" onClick={() => setUseQr(false)}>
+                <Icon name="arrow_back" />
+                Pilih foto dari perangkat ini saja
+              </Button>
+            )}
 
             <p className="flex items-start gap-2 text-body-sm text-ink-muted">
               <Icon name="info" className="text-[18px]" />
-              Di versi ini foto belum dikirim ke server dan hasil cek memakai contoh. Pengecekan otomatis aktif setelah modul pindai selesai.
+              Foto dikirim ke server REKSA untuk dicek. Lokasi dan info kamera dihapus sebelum foto disimpan, dan hanya kamu serta guru kelasmu yang bisa melihatnya.
             </p>
           </motion.section>
           </StaggerItem>
@@ -245,13 +348,19 @@ export function CalibratePage() {
               size="lg"
               disabled={!canSubmit}
               aria-describedby={canSubmit ? undefined : 'submit-hint'}
-              onClick={() => navigate('/belajar/hasil')}
+              onClick={() => void onSubmit()}
             >
-              Lihat hasil cek catatan
+              {sending ? 'Mengirim foto...' : 'Kirim dan cek catatan'}
             </Button>
-            {!canSubmit && (
+            {!canSubmit && !sending && (
               <span id="submit-hint" className="text-body-sm text-ink-muted">
-                {jolLocked ? 'Pilih foto catatanmu dulu.' : 'Simpan tebakan dan pilih foto dulu.'}
+                {!jolLocked
+                  ? 'Simpan tebakan dan pilih foto dulu.'
+                  : quotaEmpty
+                    ? 'Jatah cek hari ini sudah habis.'
+                    : useQr
+                      ? 'Kirim foto dari HP lewat kode QR di atas.'
+                      : 'Pilih foto catatanmu dulu.'}
               </span>
             )}
           </div>

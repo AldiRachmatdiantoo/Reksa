@@ -1,5 +1,21 @@
 # Checkpoint Frontend REKSA
 
+## #9 · 2026-11-21 · Alur belajar tersambung ke backend asli + E2E (dikerjakan Adli)
+
+Branch: `feat/adli-frontend-scans` (repo Reksa, monorepo). Area frontend milik Aldi; dikerjakan Adli atas persetujuan pengguna, rinciannya di `../../docs/UNTUK-ALDI.md`.
+
+- **Sesi belajar dari server** (`studio/sessionsApi.ts`, `studySession.tsx`): `POST /sessions` (preset 15/25/45 → `FOCUS_SPRINT_15_3`/`CLASSIC_25_5`/`DEEP_45_10`), timer dari `startedAt` server, "Ulangi" dan "Mulai sesi baru" membatalkan sesi di server, sesi aktif dipulihkan dari `GET /sessions/active` (tab/perangkat lain), 409 `ACTIVE_SESSION_EXISTS` → dialog "Lanjutkan sesi itu" / "Batalkan sesi itu, mulai baru", sesi kedaluwarsa ditampilkan. sessionStorage tetap hanya cache tampilan (tanpa token, tanpa foto).
+- **Tebak & Foto** (`CalibratePage.tsx`): JOL disimpan lewat `PATCH /sessions/:id/jol` (catatan "fokus singkat" bila `SHORT_FOCUS`), sisa kuota dari `GET /me/quota`, foto dikirim ke `POST /scans/upload`, HEIC dikeluarkan dari pilihan (`accept="image/jpeg,image/png,image/webp"`). Di laptop ada **"Pakai kamera HP"** (`QrBridgePanel.tsx`): QR (`qrcode`, data URL), SSE `uploaded`/`timeout`, hitung mundur 5 menit, kode baru.
+- **Halaman HP `/unggah`** (`PhoneUploadPage.tsx`, rute publik): token dibaca dari fragment `#` lalu dihapus dari address bar, kamera/galeri, pesan jelas untuk token habis/terpakai.
+- **Hasil Cek** (`ResultPage.tsx`): `SAMPLE_AUDIT` dan label "Hasil contoh" diganti hasil asli `GET /scans/:id` (poll 2 detik sampai 90 detik, keadaan "sedang dicek", "lebih lama dari biasanya"), keadaan gagal + "Cek ulang (sisa n)" / "Tinggalkan sesi ini", selisih JOL dari server, foto dari signed URL, jadwal H+3/H+7 hanya bila ada blind spot. `sampleAudit.ts` tinggal dipakai untuk tipe.
+- `apiClient`: `ApiError.details` (mis. `activeSessionId`, `quota`).
+- **Ikon Material Symbols di-self-host** (`@fontsource-variable/material-symbols-outlined`, varian `fill` 1,1 MB) karena CSP nginx `font-src 'self'` memblokir Google Fonts sehingga di Docker ikon tampil sebagai kata (`dark_mode`, `arrow_back`); axe juga menggagalkannya (WCAG 2.5.3). Di `npm run dev` tidak terlihat karena tanpa CSP.
+- **E2E** `tests/e2e/` (Playwright 1.59 + `@axe-core/playwright` 4.14, cara jalan di `tests/e2e/README.md`): golden path, QR bridge dua perangkat, pulihkan sesi; audit WCAG 2.1 A/AA di setiap halaman yang dilewati.
+
+Diverifikasi: 3 E2E lulus terhadap stack Docker lewat nginx `:8080`, screenshot halaman QR dan hasil dicek manual, typecheck, 33 unit test, build, `npm audit` 0.
+
+**Masih rusak di stack nginx (area Aldi, belum diubah):** angka `NumberFlow` tampil sebagai deretan `0123456789...` dan melebarkan halaman (CSP `style-src 'self'` memblokir style inline), dan font teks (Plus Jakarta Sans, Radio Canada Big, Spline Sans Mono) tidak termuat dari Google Fonts. Usulan perbaikan di `UNTUK-ALDI.md`.
+
 ## #8 · 2026-11-21 · Akun dasar (FR-14)
 
 Branch: `feat/aldi-account` (backend: branch `feat/aldi-account` di repo Reksa)

@@ -1,7 +1,7 @@
 import NumberFlow, { NumberFlowGroup } from '@number-flow/react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/core/apiClient';
 import { formatMaterialDate, useMaterial, useMaterials, type Material } from '@/features/materials/materialsApi';
 import { useNow } from '@/shared/hooks/useNow';
@@ -12,7 +12,8 @@ import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { Icon } from '@/shared/ui/Icon';
 import { LoadingBlock, StateBlock } from '@/shared/ui/StateBlock';
 import { StepIndicator } from './StepIndicator';
-import { formatDuration, useStudySession } from './studySession';
+import { sessionErrorMessage } from './sessionsApi';
+import { ActiveSessionConflict, formatDuration, useStudySession } from './studySession';
 
 const PRESETS = [
   { minutes: 25, label: 'Biasa' },
@@ -23,15 +24,38 @@ const PRESETS = [
 const TWO_DIGITS = { minimumIntegerDigits: 2 } as const;
 
 export function StudioPage() {
-  const { session, clear } = useStudySession();
+  const { session, clear, syncing } = useStudySession();
   const { state } = useMaterial(session?.materialId ?? null);
 
   useEffect(() => {
     document.title = 'Ruang Belajar · REKSA';
   }, []);
 
+  // Tahap fokus sudah lewat menurut server: lanjutkan di halaman yang tepat.
+  if (session?.submissionId) return <Navigate to="/belajar/hasil" replace />;
+  if (session?.status === 'AWAITING_SCAN') return <Navigate to="/belajar/foto" replace />;
+
   let body: ReactNode = null;
-  if (!session) {
+  if (syncing) {
+    body = <LoadingBlock label="Memeriksa sesi belajarmu..." />;
+  } else if (session?.status === 'EXPIRED' || session?.status === 'COMPLETED') {
+    const expired = session.status === 'EXPIRED';
+    body = (
+      <StateBlock
+        icon={expired ? 'timer_off' : 'task_alt'}
+        title={expired ? 'Sesi sebelumnya sudah kedaluwarsa' : 'Sesi sebelumnya sudah selesai'}
+        action={
+          <Button variant="accent" onClick={() => void clear()}>
+            Mulai sesi baru
+          </Button>
+        }
+      >
+        {expired
+          ? 'Waktu fokus tidak diakhiri dalam batas waktunya, atau foto tidak dikirim dalam 2 jam. Tidak apa-apa, mulai lagi saja.'
+          : 'Pilih materi untuk sesi berikutnya.'}
+      </StateBlock>
+    );
+  } else if (!session) {
     body = <MaterialPicker />;
   } else if (state.status === 'loading') {
     body = <LoadingBlock label="Memuat materi..." />;
@@ -154,11 +178,28 @@ function MaterialPicker() {
 
 function FocusSession({ material }: { material: Material }) {
   const navigate = useNavigate();
-  const { session, start, setPreset, finishFocus, resetTimer, clear } = useStudySession();
+  const { session, start, resume, replaceActive, setPreset, finishFocus, resetTimer, clear } = useStudySession();
   const [confirm, setConfirm] = useState<'reset' | 'new' | null>(null);
+  const [conflictId, setConflictId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  /** Menjalankan aksi server dengan status sibuk dan pesan error yang ramah. */
+  const run = async (action: () => Promise<void>) => {
+    setBusy(true);
+    setError('');
+    try {
+      await action();
+    } catch (err) {
+      if (err instanceof ActiveSessionConflict) setConflictId(err.activeSessionId);
+      else setError(sessionErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const preset = session?.presetMinutes ?? 25;
-  const running = session?.startedAt != null && session.focusSeconds == null;
+  const running = session?.startedAt != null && session.focusSeconds == null && session.status === 'FOCUS_ACTIVE';
   const finished = session?.focusSeconds != null;
   const now = useNow(running);
 
@@ -345,20 +386,27 @@ function FocusSession({ material }: { material: Material }) {
                 : 'Siapkan kertas dan pulpen. Saat waktu mulai, bacaan ditutup supaya kamu berlatih mengingat sendiri.'}
             </p>
 
+            {error && (
+              <p role="alert" className="flex items-start gap-2 rounded-md bg-danger-wash px-4 py-3 text-body-md text-on-danger-wash">
+                <Icon name="error" className="mt-px text-[20px]" />
+                {error}
+              </p>
+            )}
+
             {running ? (
               <div className="flex flex-col gap-2">
                 <Button variant="accent" size="lg" onClick={onFinish}>
                   Selesai, lanjut tebak nilai
                 </Button>
-                <Button variant="ghost" onClick={() => setConfirm('reset')}>
+                <Button variant="ghost" disabled={busy} onClick={() => setConfirm('reset')}>
                   <Icon name="restart_alt" />
                   Ulangi dan buka bacaan
                 </Button>
               </div>
             ) : (
-              <Button variant="accent" size="lg" onClick={start}>
+              <Button variant="accent" size="lg" disabled={busy} onClick={() => void run(start)}>
                 <Icon name="play_arrow" fill />
-                Mulai waktu fokus
+                {busy ? 'Menyiapkan sesi...' : 'Mulai waktu fokus'}
               </Button>
             )}
           </section>
@@ -373,8 +421,8 @@ function FocusSession({ material }: { material: Material }) {
         cancelLabel="Lanjut fokus"
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
-          resetTimer();
           setConfirm(null);
+          void run(resetTimer);
         }}
       >
         Waktu yang sudah berjalan ({formatDuration(elapsed)}) akan dihapus dan bacaan dibuka lagi. Catatan di kertasmu tidak terpengaruh.
@@ -387,11 +435,30 @@ function FocusSession({ material }: { material: Material }) {
         cancelLabel="Batal"
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
-          clear();
           setConfirm(null);
+          void run(clear);
         }}
       >
-        Waktu fokus yang sudah tercatat akan dihapus dari perangkat ini. Kamu bisa memilih materi lagi setelahnya.
+        Sesi ini dibatalkan dan waktu fokus yang tercatat tidak dipakai. Kamu bisa memilih materi lagi setelahnya.
+      </ConfirmDialog>
+      <ConfirmDialog
+        open={conflictId !== null}
+        icon="pending_actions"
+        title="Masih ada sesi yang belum selesai"
+        confirmLabel="Batalkan sesi itu, mulai baru"
+        cancelLabel="Lanjutkan sesi itu"
+        onCancel={() => {
+          const id = conflictId!;
+          setConflictId(null);
+          void run(() => resume(id));
+        }}
+        onConfirm={() => {
+          const id = conflictId!;
+          setConflictId(null);
+          void run(() => replaceActive(id));
+        }}
+      >
+        Kamu punya sesi belajar lain yang masih berjalan, mungkin dari tab atau perangkat lain. Satu akun hanya boleh punya satu sesi aktif.
       </ConfirmDialog>
     </>
   );

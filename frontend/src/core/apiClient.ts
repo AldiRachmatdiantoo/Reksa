@@ -21,13 +21,16 @@ export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
   readonly issues: ApiIssue[];
+  /** `error.details` dari backend, mis. `activeSessionId` (409) atau `quota` (429 QUOTA_EXCEEDED). */
+  readonly details: unknown;
 
-  constructor(status: number, code: string, message: string, issues: ApiIssue[] = []) {
+  constructor(status: number, code: string, message: string, issues: ApiIssue[] = [], details?: unknown) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
     this.issues = issues;
+    this.details = details;
   }
 }
 
@@ -58,9 +61,9 @@ function refreshOnce(): Promise<boolean> {
 
 async function toApiError(res: Response): Promise<ApiError> {
   try {
-    const data = (await res.json()) as { error?: { code?: string; message?: string; issues?: ApiIssue[] } };
+    const data = (await res.json()) as { error?: { code?: string; message?: string; issues?: ApiIssue[]; details?: unknown } };
     const err = data.error ?? {};
-    return new ApiError(res.status, err.code ?? 'HTTP_ERROR', err.message ?? res.statusText, err.issues ?? []);
+    return new ApiError(res.status, err.code ?? 'HTTP_ERROR', err.message ?? res.statusText, err.issues ?? [], err.details);
   } catch {
     return new ApiError(res.status, 'HTTP_ERROR', res.statusText || 'Permintaan gagal');
   }

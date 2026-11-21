@@ -5,10 +5,10 @@ Urutan kasar sesuai ketergantungan ke backend. Tandai `✅` saat selesai dan cat
 ## Menunggu endpoint backend
 
 - [x] ✅ **Unggah materi** (`materials`): form PDF/teks, pratinjau rubrik, ganti `SAMPLE_MATERIAL` (checkpoint #4).
-- [ ] **Sesi belajar** (`POST /sessions`): simpan durasi fokus dan tebakan nilai ke server, validasi waktu di server. ✅ Endpoint backend siap (PR #13), kontraknya di `docs/UNTUK-ALDI.md` repo induk; tinggal disambungkan.
-- [ ] **Unggah foto** (`/scans/upload`): kirim foto, tampilkan sisa kuota harian, tangani 413/415/422/429. Input foto wajib `accept="image/jpeg,image/png,image/webp"` (HEIC tidak diterima server). ✅ Endpoint backend siap (`POST /scans/upload` 202, `GET /me/quota`); kontrak lengkap di `docs/UNTUK-ALDI.md` repo induk.
-- [ ] **Hasil cek asli**: ganti `SAMPLE_AUDIT` dengan hasil scan, tambah keadaan "sedang dicek". ✅ Backend siap: poll `GET /scans/:id` tiap 2 detik (maks. 90 detik), `result.jolDelta`, `POST /scans/:id/retry` saat `FAILED`.
-- [ ] **QR bridge laptop ke HP**: halaman QR + SSE, desain ada di `design-reference/qr_bridge_*`. ✅ Token + SSE backend siap (`POST /sessions/:id/qr-bridge`, `GET /sessions/:id/qr-bridge/events`, alur di `docs/UNTUK-ALDI.md`); unggah dari HP lewat `POST /scans/upload` dengan `qrToken` sudah siap.
+- [x] **Sesi belajar** (`POST /sessions`): simpan durasi fokus dan tebakan nilai ke server, validasi waktu di server. ✅ Endpoint backend siap (PR #13), kontraknya di `docs/UNTUK-ALDI.md` repo induk; tinggal disambungkan.
+- [x] **Unggah foto** (`/scans/upload`): kirim foto, tampilkan sisa kuota harian, tangani 413/415/422/429. Input foto wajib `accept="image/jpeg,image/png,image/webp"` (HEIC tidak diterima server). ✅ Endpoint backend siap (`POST /scans/upload` 202, `GET /me/quota`); kontrak lengkap di `docs/UNTUK-ALDI.md` repo induk.
+- [x] **Hasil cek asli**: ganti `SAMPLE_AUDIT` dengan hasil scan, tambah keadaan "sedang dicek". ✅ Backend siap: poll `GET /scans/:id` tiap 2 detik (maks. 90 detik), `result.jolDelta`, `POST /scans/:id/retry` saat `FAILED`.
+- [x] **QR bridge laptop ke HP**: halaman QR + SSE, desain ada di `design-reference/qr_bridge_*`. ✅ Token + SSE backend siap (`POST /sessions/:id/qr-bridge`, `GET /sessions/:id/qr-bridge/events`, alur di `docs/UNTUK-ALDI.md`); unggah dari HP lewat `POST /scans/upload` dengan `qrToken` sudah siap.
 - [ ] **Jadwal ulang** (`spaced-repetition`): daftar sesi jatuh tempo, ganti tanggal H+3/H+7 lokal.
 - [x] **Kelola kelas** (FR-09): portal guru dan halaman kelas siswa.
 - [x] **Akun dasar** (FR-14): verifikasi email, lupa dan atur ulang kata sandi, halaman Akun (checkpoint #8).
@@ -16,8 +16,11 @@ Urutan kasar sesuai ketergantungan ke backend. Tandai `✅` saat selesai dan cat
 
 ## Bisa dikerjakan sekarang
 
+- [ ] **CSP vs `NumberFlow`**: angka timer/skor rusak di stack nginx karena `style-src 'self'` memblokir style inline (lihat checkpoint #9).
+- [ ] **Font teks di-self-host** (Plus Jakarta Sans, Radio Canada Big, Spline Sans Mono) seperti ikon; `<link>` Google Fonts di `index.html` diblokir CSP dan mengirim IP pelajar ke Google.
+
 - [ ] `vercel.json`: rewrite `/api/*` ke Render (satu origin untuk cookie `SameSite=Strict`), header keamanan (CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`).
-- [ ] E2E Playwright + `@axe-core/playwright` di `tests/e2e/` untuk alur daftar, sesi, hasil.
+- [x] E2E Playwright + `@axe-core/playwright` di `tests/e2e/` untuk alur sesi, foto, QR, hasil (checkpoint #9, Adli). Belum: alur daftar/kelas/materi, dan job CI (butuh stack Docker).
 - [ ] CI GitHub Actions: typecheck, test, build.
 - [ ] Logo final (saat ini tanda sementara dari desain Figma).
 
