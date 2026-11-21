@@ -187,7 +187,7 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 
 ## Berikutnya
 
-**Aldi**
+**Aldi** (daftar lengkap dan perkiraan progres di [SISA-ALDI.md](SISA-ALDI.md))
 1. Merge PR `feat/aldi-account` di kedua repo
 2. Modul `spaced-repetition` (jadwal H+3/H+7) lalu `governance`
 3. Persiapan deploy: migrasi pencabutan hak `anon`/`authenticated` Supabase, `vercel.json` di reksa-frontend (rewrite + header), konfigurasi Render
