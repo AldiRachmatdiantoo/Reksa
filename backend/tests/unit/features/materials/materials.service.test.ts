@@ -25,7 +25,7 @@ import { buildPdf, SAMPLE_PDF_TEXT } from '../../../support/pdfFixture.js';
 
 class InMemoryMaterialsRepository implements MaterialsRepository {
   rows: MaterialRecord[] = [];
-  classes: { id: string; educatorId: string }[] = [];
+  classes: { id: string; educatorId: string; name: string; members: string[] }[] = [];
   failNextCreate = false;
   usedInSession = new Set<string>();
 
@@ -43,18 +43,24 @@ class InMemoryMaterialsRepository implements MaterialsRepository {
       storageKey: data.storageKey,
       extractedRubricJson: structuredClone(data.rubric),
       createdAt: new Date(),
+      className: this.classes.find((c) => c.id === data.classId)?.name ?? null,
     };
     this.rows.push(row);
     return row;
   }
-  async listByOwner(userId: string, limit: number) {
-    return this.rows.filter((r) => r.uploaderId === userId).slice(0, limit);
+  private canRead(userId: string, r: MaterialRecord) {
+    if (r.uploaderId === userId) return true;
+    const cls = this.classes.find((c) => c.id === r.classId);
+    return !!cls && (cls.educatorId === userId || cls.members.includes(userId));
   }
-  async findByIdForOwner(userId: string, id: string) {
-    return this.rows.find((r) => r.id === id && r.uploaderId === userId) ?? null;
+  async listAccessible(userId: string, limit: number) {
+    return this.rows.filter((r) => this.canRead(userId, r)).slice(0, limit);
+  }
+  async findByIdAccessible(userId: string, id: string) {
+    return this.rows.find((r) => r.id === id && this.canRead(userId, r)) ?? null;
   }
   async deleteForOwner(userId: string, id: string) {
-    const row = await this.findByIdForOwner(userId, id);
+    const row = this.rows.find((r) => r.id === id && r.uploaderId === userId) ?? null;
     if (!row) return null;
     if (this.usedInSession.has(id)) throw new ConflictError('dipakai');
     this.rows = this.rows.filter((r) => r !== row);
@@ -130,7 +136,7 @@ describe('MaterialsService', () => {
 
     it('rejects a classId the user does not own, without revealing whether it exists', async () => {
       const classId = randomUUID();
-      repo.classes.push({ id: classId, educatorId: other });
+      repo.classes.push({ id: classId, educatorId: other, name: 'Kelas lain', members: [] });
 
       await expect(service.createFromText(user, { ...textInput, classId })).rejects.toBeInstanceOf(NotFoundError);
       expect(repo.rows).toHaveLength(0);
@@ -139,7 +145,7 @@ describe('MaterialsService', () => {
 
     it('accepts a classId owned by the educator', async () => {
       const classId = randomUUID();
-      repo.classes.push({ id: classId, educatorId: user });
+      repo.classes.push({ id: classId, educatorId: user, name: 'Biologi XI', members: [] });
       const { material } = await service.createFromText(user, { ...textInput, classId });
       expect(material.classId).toBe(classId);
     });
@@ -240,6 +246,41 @@ describe('MaterialsService', () => {
       const { material } = await service.createFromText(user, textInput);
       repo.usedInSession.add(material.id);
       await expect(service.delete(user, material.id)).rejects.toBeInstanceOf(ConflictError);
+    });
+  });
+
+  describe('class materials (FR-09)', () => {
+    const student = randomUUID();
+    const outsider = randomUUID();
+
+    async function classMaterial() {
+      const classId = randomUUID();
+      repo.classes.push({ id: classId, educatorId: user, name: 'Biologi XI', members: [student] });
+      const { material } = await service.createFromPdf(user, { title: 'Bab 3', classId }, { buffer: buildPdf([SAMPLE_PDF_TEXT]), size: 1 });
+      return material;
+    }
+
+    it('lets class members read a class material, marked read-only with the class name', async () => {
+      const material = await classMaterial();
+
+      const list = await service.list(student);
+      expect(list).toEqual([expect.objectContaining({ id: material.id, isOwner: false, className: 'Biologi XI' })]);
+      await expect(service.get(student, material.id)).resolves.toMatchObject({ isOwner: false });
+      await expect(service.getFileUrl(student, material.id)).resolves.toMatchObject({ expiresInSec: 300 });
+      expect((await service.list(user))[0]?.isOwner).toBe(true);
+    });
+
+    it('does not let a member delete a class material', async () => {
+      const material = await classMaterial();
+      await expect(service.delete(student, material.id)).rejects.toBeInstanceOf(NotFoundError);
+      expect(repo.rows).toHaveLength(1);
+    });
+
+    it('hides class materials from users outside the class', async () => {
+      const material = await classMaterial();
+      expect(await service.list(outsider)).toEqual([]);
+      await expect(service.get(outsider, material.id)).rejects.toBeInstanceOf(NotFoundError);
+      await expect(service.getFileUrl(outsider, material.id)).rejects.toBeInstanceOf(NotFoundError);
     });
   });
 });
