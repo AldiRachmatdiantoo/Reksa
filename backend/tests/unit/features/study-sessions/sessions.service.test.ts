@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   CreateSessionData,
   CreateSessionResult,
@@ -316,5 +316,22 @@ describe('QR bridge', () => {
     const signal = new AbortController().signal;
     await expect(service.waitForQrUpload(OTHER, s.id, signal)).rejects.toMatchObject({ statusCode: 404 });
     await expect(service.waitForQrUpload(USER, s.id, signal)).resolves.toBe('submission-id');
+  });
+});
+
+describe('races with another request', () => {
+  it('cancel answers 404 when the session disappears between reading and expiring it', async () => {
+    const s = await service.start(USER, { materialId: MATERIAL, preset: 'CLASSIC_25_5' });
+    vi.spyOn(repo, 'expire').mockResolvedValueOnce(null);
+    await expect(service.cancel(USER, s.id)).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it('a stale session that cannot be expired anymore is returned as read, not lost', async () => {
+    const s = await service.start(USER, { materialId: MATERIAL, preset: 'CLASSIC_25_5' });
+    advance(56 * MIN);
+    vi.spyOn(repo, 'expire').mockResolvedValueOnce(null);
+    const view = await service.get(USER, s.id);
+    expect(view.id).toBe(s.id);
+    expect(view.status).toBe('FOCUS_ACTIVE');
   });
 });

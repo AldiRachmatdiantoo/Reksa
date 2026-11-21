@@ -116,6 +116,27 @@ describe('POST /sessions', () => {
     expect((await start(luar.cookie, { materialId: ownMaterial, preset: 'CLASSIC_25_5', classId })).status).toBe(404);
   });
 
+  it('keeps working after the student leaves the class that owns the material (title becomes null, no crash)', async () => {
+    const guru = await register('guru@reksa.id', 'EDUCATOR');
+    const siswa = await register('siswa@reksa.id', 'STUDENT', true);
+    const cls = await request(ctx.app).post('/api/v1/classes').set('Cookie', guru.cookie).send({ name: 'Biologi' });
+    const classId = cls.body.class.id as string;
+    await request(ctx.app).post('/api/v1/classes/join').set('Cookie', siswa.cookie).send({ classCode: cls.body.class.classCode });
+    const materialId = await createMaterial(guru.cookie, { classId });
+    const s = await start(siswa.cookie, { materialId, preset: 'CLASSIC_25_5', classId });
+    expect(s.body.session.materialTitle).toBe('Homeostasis');
+
+    const left = await request(ctx.app).delete(`/api/v1/classes/${classId}/members/${siswa.userId}`).set('Cookie', siswa.cookie);
+    expect(left.status).toBe(204);
+
+    // RLS kini menyembunyikan materi kelas itu dari siswa; sesi tetap bisa dibaca, judulnya null.
+    const detail = await request(ctx.app).get(`/api/v1/sessions/${s.body.session.id}`).set('Cookie', siswa.cookie);
+    expect(detail.status).toBe(200);
+    expect(detail.body.session).toMatchObject({ id: s.body.session.id, materialId, materialTitle: null, status: 'FOCUS_ACTIVE' });
+    const active = await request(ctx.app).get('/api/v1/sessions/active').set('Cookie', siswa.cookie);
+    expect(active.body.session).toMatchObject({ id: s.body.session.id, materialTitle: null });
+  });
+
   it('allows only one active session (409 with the active id), even under parallel requests', async () => {
     const siswa = await register('siswa@reksa.id');
     const materialId = await createMaterial(siswa.cookie);
