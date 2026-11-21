@@ -1,0 +1,163 @@
+
+  <div class="min-h-screen flex flex-col bg-light-surface" data-stitch-vh="min-h-screen===min-h-screen">
+
+    <!-- Desktop Contextual Top Bar -->
+    <header class="sticky top-0 z-30 bg-light-surface-container-lowest border-b border-light-outline-variant/60 px-gutter-lg py-3.5">
+      <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <a href="../landing-beranda-desktop/LandingBerandaDesktop.html" aria-label="Kembali ke Beranda" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-light-surface-container-low border border-light-outline-variant/70 text-light-on-surface transition-colors duration-state-change ease-state-change hover:bg-light-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">arrow_back</span>
+          </a>
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-md bg-light-primary text-light-on-primary flex items-center justify-center shadow-sm">
+              <span class="material-symbols-outlined text-title-lg" aria-hidden="true">edit_document</span>
+            </div>
+            <div class="flex flex-col">
+              <span data-design-text-token="title-md" class="font-headline text-title-md text-light-primary leading-none">REKSA</span>
+              <span data-design-text-token="label-sm" class="font-label text-label-sm text-light-on-surface-variant">Ruang Belajar</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step Progress Strip -->
+        <nav aria-label="Tahapan sesi belajar" class="flex items-center gap-2">
+          <span class="rounded-full bg-light-primary text-light-on-primary px-3.5 py-1.5 font-label text-label-sm whitespace-nowrap">1. Fokus</span>
+          <span class="rounded-full bg-light-surface-container text-light-on-surface-variant px-3.5 py-1.5 font-label text-label-sm whitespace-nowrap">2. Tebak &amp; Foto</span>
+          <span class="rounded-full bg-light-surface-container text-light-on-surface-variant px-3.5 py-1.5 font-label text-label-sm whitespace-nowrap">3. Cek Hasil</span>
+        </nav>
+
+        <span data-component-id="chip-action" data-component-type="chip" data-component-variant="action" class="inline-flex items-center gap-1.5 rounded-full bg-light-surface-container-low border border-light-outline-variant px-3.5 py-1.5 font-label text-label-sm text-light-primary tabular-nums whitespace-nowrap">
+          <span data-design-text-token="label-sm">Kuota 2/3</span>
+        </span>
+      </div>
+    </header>
+
+    <!-- Main 2-Column Workspace -->
+    <main class="flex-1 flex items-center justify-center px-gutter-lg py-gutter-xl">
+      <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-start">
+
+        <!-- Left Column: Material + Preset + Tip -->
+        <div class="lg:col-span-6 flex flex-col gap-gutter-lg">
+          <section aria-labelledby="material-heading" class="flex flex-col gap-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <h1 id="material-heading" data-design-text-token="title-lg" class="font-title text-title-lg text-light-on-surface">
+                Bahan Bacaanmu
+              </h1>
+              <button type="button" id="change-material-btn" class="font-label text-label-md text-light-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary rounded">
+                <span data-design-text-token="label-md">Ganti Bacaan</span>
+              </button>
+            </div>
+
+            <!-- Visible Material State -->
+            <article id="material-open-card" data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="rounded-md bg-light-surface-container-lowest border border-light-outline-variant/60 p-gutter-lg shadow-sm flex flex-col gap-3">
+              <header class="flex items-start justify-between gap-3">
+                <div class="flex items-start gap-3">
+                  <div class="w-11 h-11 rounded-md bg-light-surface-variant text-light-primary flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-title-lg" aria-hidden="true">description</span>
+                  </div>
+                  <div class="flex flex-col gap-0.5">
+                    <h2 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Arsitektur Enterprise — TOGAF.pdf</h2>
+                    <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant tabular-nums">2,4 MB • 6 Poin Penting Siap</p>
+                  </div>
+                </div>
+                <span class="material-symbols-outlined text-success text-title-lg" aria-hidden="true">check_circle</span>
+              </header>
+
+              <div class="flex flex-wrap gap-2 pt-2 border-t border-light-outline-variant/40">
+                <span class="inline-flex items-center rounded-full bg-light-surface-container-low px-3 py-1 font-label text-label-sm text-light-on-surface-variant">Arsitektur Bisnis</span>
+                <span class="inline-flex items-center rounded-full bg-light-surface-container-low px-3 py-1 font-label text-label-sm text-light-on-surface-variant">Arsitektur Data</span>
+                <span class="inline-flex items-center rounded-full bg-light-surface-container-low px-3 py-1 font-label text-label-sm text-light-on-surface-variant">TOGAF ADM</span>
+                <span class="inline-flex items-center rounded-full bg-light-surface-container-low px-3 py-1 font-label text-label-sm text-light-on-surface-variant">+3 lainnya</span>
+              </div>
+            </article>
+
+            <!-- Concealed Material State -->
+            <article id="material-locked-card" hidden class="rounded-md bg-light-surface-container border border-light-outline-variant p-gutter-lg flex flex-col items-center text-center gap-2.5">
+              <div class="w-11 h-11 rounded-full bg-light-primary text-light-on-primary flex items-center justify-center">
+                <span class="material-symbols-outlined text-title-lg" aria-hidden="true">lock</span>
+              </div>
+              <h2 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">Bacaan Ditutup Sementara</h2>
+              <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty max-w-prose">
+                Bahan bacaan ditutup sementara ya! Yuk tulis semua hal yang kamu ingat di atas kertas.
+              </p>
+            </article>
+          </section>
+
+          <!-- Focus Preset Selector -->
+          <section id="preset-section" aria-labelledby="preset-heading" class="flex flex-col gap-2.5">
+            <h2 id="preset-heading" data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface">
+              Pilih Lama Fokus
+            </h2>
+            <div class="grid grid-cols-3 gap-3" role="radiogroup" aria-label="Pilihan waktu fokus">
+              <button type="button" role="radio" aria-checked="true" data-minutes="25" class="preset-btn rounded-md bg-light-surface-container-lowest border-2 border-light-primary p-4 flex flex-col items-start gap-0.5 text-left transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+                <span data-design-text-token="title-lg" class="font-mono text-title-lg text-light-primary tabular-nums">25/5</span>
+                <span data-design-text-token="label-md" class="font-label text-label-md text-light-on-surface">Biasa</span>
+              </button>
+
+              <button type="button" role="radio" aria-checked="false" data-minutes="45" class="preset-btn rounded-md bg-light-surface-container-lowest border border-light-outline-variant/70 p-4 flex flex-col items-start gap-0.5 text-left transition-colors duration-state-change ease-state-change hover:bg-light-surface-container-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+                <span data-design-text-token="title-lg" class="font-mono text-title-lg text-light-on-surface tabular-nums">45/10</span>
+                <span data-design-text-token="label-md" class="font-label text-label-md text-light-on-surface-variant">Lama</span>
+              </button>
+
+              <button type="button" role="radio" aria-checked="false" data-minutes="15" class="preset-btn rounded-md bg-light-surface-container-lowest border border-light-outline-variant/70 p-4 flex flex-col items-start gap-0.5 text-left transition-colors duration-state-change ease-state-change hover:bg-light-surface-container-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+                <span data-design-text-token="title-lg" class="font-mono text-title-lg text-light-secondary tabular-nums">15/3</span>
+                <span data-design-text-token="label-md" class="font-label text-label-md text-light-on-surface-variant">Cepat</span>
+              </button>
+            </div>
+          </section>
+
+          <aside class="rounded-md bg-light-surface-container-low border border-light-outline-variant/50 p-4 flex items-start gap-3">
+            <span class="material-symbols-outlined text-light-primary text-title-lg shrink-0" aria-hidden="true">tips_and_updates</span>
+            <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant text-pretty">
+              Boleh pakai singkatan, panah gambar, atau coretan bebas. Yang dinilai idemu, bukan rapi atau tidaknya tulisan!
+            </p>
+          </aside>
+        </div>
+
+        <!-- Right Column: Timer Card -->
+        <section aria-labelledby="timer-heading" class="lg:col-span-6">
+          <article class="rounded-xl bg-light-surface-container-lowest border border-light-outline-variant/60 p-gutter-xl shadow-sm flex flex-col items-center text-center gap-gutter-lg">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-light-primary text-title-lg" aria-hidden="true">edit_note</span>
+              <h2 id="timer-heading" data-design-text-token="title-md" class="font-title text-title-md text-light-primary">
+                <span id="timer-status-text">Siap Mulai Catat di Kertas</span>
+              </h2>
+            </div>
+
+            <div class="py-4">
+              <span id="timer-display" data-design-text-token="display-lg" class="font-mono text-display-lg text-light-on-surface tabular-nums">25:00</span>
+            </div>
+
+            <p id="timer-instruction" data-design-text-token="body-lg" class="font-body text-body-lg text-light-on-surface-variant text-pretty max-w-prose">
+              Siapkan kertas dan pulpen di mejamu. Saat waktu mulai, bacaan akan ditutup biar kamu latihan mengingat sendiri.
+            </p>
+
+            <!-- Idle Action -->
+            <div id="idle-actions" class="w-full pt-2">
+              <button id="start-session-btn" data-component-id="button-with-icon" data-component-type="button" data-component-variant="with-icon" type="button" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-light-secondary text-light-on-secondary px-7 py-3.5 font-label text-label-lg shadow-sm transition-colors duration-state-change ease-state-change hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-secondary focus-visible:ring-offset-2 active:scale-[0.98]">
+                <span class="material-symbols-outlined text-title-lg" aria-hidden="true">play_arrow</span>
+                <span data-design-text-token="label-lg">Mulai Waktu Fokus</span>
+              </button>
+            </div>
+
+            <!-- Active Session Actions -->
+            <div id="active-actions" hidden class="w-full flex flex-col gap-3 pt-2">
+              <a href="../qr-bridge-desktop/QrBridgeDesktop.html" data-component-id="button-primary" data-component-type="button" data-component-variant="primary" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-light-primary text-light-on-primary px-7 py-3.5 font-label text-label-lg shadow-sm transition-colors duration-state-change ease-state-change hover:bg-light-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary">
+                <span class="material-symbols-outlined text-title-lg" aria-hidden="true">arrow_forward</span>
+                <span data-design-text-token="label-lg">Selesai — Lanjut Tebak &amp; QR</span>
+              </a>
+
+              <button id="reset-session-btn" data-component-id="button-tertiary" data-component-type="button" data-component-variant="tertiary" type="button" class="w-full inline-flex items-center justify-center rounded-full border border-light-outline-variant bg-light-surface-container-lowest text-light-primary px-7 py-3 font-label text-label-lg transition-colors duration-state-change ease-state-change hover:bg-light-surface-container-low">
+                <span data-design-text-token="label-lg">Ulangi Waktu</span>
+              </button>
+            </div>
+          </article>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  
+
+
