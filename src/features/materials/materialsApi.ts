@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
 import { ApiError, apiRequest } from '@/core/apiClient';
+import { useLoad } from '@/shared/hooks/useLoad';
 
 // Sama dengan backend/src/features/materials/materials.schema.ts dan ai.schema.ts (PRD §8.3).
 export const MATERIAL_MAX_TEXT_CHARS = 15_000;
@@ -20,6 +20,10 @@ export type Material = {
   id: string;
   title: string;
   classId: string | null;
+  /** Nama kelas bila materi dibagikan ke kelas. */
+  className: string | null;
+  /** false untuk materi kelas milik guru: hanya bisa dibaca, tidak bisa dihapus. */
+  isOwner: boolean;
   source: MaterialSource;
   createdAt: string;
   rubric: Rubric;
@@ -34,11 +38,12 @@ export const materialsApi = {
     apiRequest<{ materials: MaterialSummary[] }>('/materials', { signal }).then((r) => r.materials),
   get: (id: string, signal?: AbortSignal) =>
     apiRequest<{ material: Material }>(`/materials/${encodeURIComponent(id)}`, { signal }).then((r) => r.material),
-  createText: (title: string, content: string) =>
-    apiRequest<CreateMaterialResult>('/materials', { method: 'POST', body: { title, content } }),
-  createPdf: (title: string, file: File) => {
+  createText: (title: string, content: string, classId?: string) =>
+    apiRequest<CreateMaterialResult>('/materials', { method: 'POST', body: { title, content, ...(classId ? { classId } : {}) } }),
+  createPdf: (title: string, file: File, classId?: string) => {
     const form = new FormData();
     form.append('title', title);
+    if (classId) form.append('classId', classId);
     form.append('file', file);
     return apiRequest<CreateMaterialResult>('/materials', { method: 'POST', body: form });
   },
@@ -63,32 +68,6 @@ export function uploadErrorMessage(err: unknown): string {
     default:
       return err.status >= 500 ? 'Server sedang bermasalah. Coba lagi sebentar lagi.' : err.message;
   }
-}
-
-type LoadState<T> =
-  | { status: 'loading' }
-  | { status: 'ready'; data: T }
-  | { status: 'error'; error: ApiError | Error };
-
-function useLoad<T>(load: (signal: AbortSignal) => Promise<T>, deps: unknown[]) {
-  const [state, setState] = useState<LoadState<T>>({ status: 'loading' });
-  const [version, setVersion] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setState({ status: 'loading' });
-    load(controller.signal)
-      .then((data) => setState({ status: 'ready', data }))
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        setState({ status: 'error', error: error instanceof Error ? error : new Error(String(error)) });
-      });
-    return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps, version]);
-
-  const reload = useCallback(() => setVersion((v) => v + 1), []);
-  return { state, reload, setState };
 }
 
 export function useMaterials() {
