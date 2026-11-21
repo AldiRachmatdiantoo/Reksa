@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { Icon } from '@/shared/ui/Icon';
 import { LoadingBlock, StateBlock } from '@/shared/ui/StateBlock';
 import { TextField } from '@/shared/ui/TextField';
+import { VerifyEmailNotice } from '@/features/auth/VerifyEmailNotice';
 import { classesApi, formatJoinDate, joinErrorMessage, useClasses, type ClassInfo } from './classesApi';
 
 /** Kelas yang diikuti siswa: gabung lewat kode dari guru, lihat daftar, keluar. */
@@ -78,6 +79,7 @@ export function StudentClassesPage() {
             <h2 id="join-title" className="font-title text-title-lg text-ink">
               Gabung ke kelas
             </h2>
+            <VerifyEmailNotice reason="Verifikasi emailmu dulu supaya bisa bergabung ke kelas." />
             <form noValidate onSubmit={onJoin} aria-busy={joining} className="flex flex-col gap-4">
               <TextField
                 id="class-code"
