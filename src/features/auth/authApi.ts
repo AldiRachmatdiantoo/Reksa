@@ -9,6 +9,8 @@ export type AuthUser = {
   fullName: string;
   role: Role;
   tier: 'FREE' | 'PRO';
+  /** Wajib true untuk bergabung ke kelas (FR-14). */
+  emailVerified: boolean;
 };
 
 export type RegisterInput = {
@@ -30,6 +32,18 @@ export const authApi = {
   me: (signal?: AbortSignal) => apiRequest<UserResponse>('/auth/me', { signal }).then((r) => r.user),
   /** Logout ada di DELETE /auth/refresh karena cookie refresh hanya dikirim ke path itu. */
   logout: () => apiRequest<void>('/auth/refresh', { method: 'DELETE' }),
+  verifyEmail: (token: string) => apiRequest<void>('/auth/verify-email', { method: 'POST', body: { token } }),
+  resendVerification: () => apiRequest<{ message: string }>('/auth/verify-email/resend', { method: 'POST' }),
+  /** Selalu 202 dengan pesan yang sama, terdaftar atau tidak. */
+  forgotPassword: (email: string) =>
+    apiRequest<{ message: string }>('/auth/password/forgot', { method: 'POST', body: { email } }),
+  resetPassword: (token: string, newPassword: string) =>
+    apiRequest<void>('/auth/password/reset', { method: 'POST', body: { token, newPassword } }),
+  updateProfile: (fullName: string) =>
+    apiRequest<UserResponse>('/me', { method: 'PATCH', body: { fullName } }).then((r) => r.user),
+  /** Perangkat lain dikeluarkan; perangkat ini mendapat cookie sesi baru. */
+  changePassword: (currentPassword: string, newPassword: string) =>
+    apiRequest<UserResponse>('/me/password', { method: 'PATCH', body: { currentPassword, newPassword } }).then((r) => r.user),
 };
 
 /** Aturan password sama persis dengan StrongPasswordSchema di backend. */

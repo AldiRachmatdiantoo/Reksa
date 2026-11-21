@@ -1,7 +1,11 @@
 import { AnimatePresence, MotionConfig } from 'motion/react';
 import { cloneElement, type ReactElement } from 'react';
 import { BrowserRouter, Route, Routes, useLocation, useOutlet } from 'react-router-dom';
+import { AccountPage } from '@/features/auth/AccountPage';
 import { AuthPage } from '@/features/auth/AuthPage';
+import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage';
+import { VerifyEmailPage } from '@/features/auth/VerifyEmailPage';
 import { AuthProvider } from '@/features/auth/AuthProvider';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 import { ResultPage } from '@/features/audit-result/ResultPage';
@@ -46,6 +50,17 @@ function AnimatedRoutes() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/masuk" element={<AuthPage mode="masuk" />} />
         <Route path="/daftar" element={<AuthPage mode="daftar" />} />
+        <Route path="/lupa-password" element={<ForgotPasswordPage />} />
+        <Route path="/atur-ulang-password" element={<ResetPasswordPage />} />
+        <Route path="/verifikasi-email" element={<VerifyEmailPage />} />
+        <Route
+          path="/akun"
+          element={
+            <RequireAuth roles={['STUDENT', 'EDUCATOR', 'INSTITUTION_ADMIN']}>
+              <AccountPage />
+            </RequireAuth>
+          }
+        />
         <Route path="/belajar" element={<StudentArea />}>
           <Route index element={<StudioPage />} />
           <Route path="materi" element={<MaterialsPage />} />
