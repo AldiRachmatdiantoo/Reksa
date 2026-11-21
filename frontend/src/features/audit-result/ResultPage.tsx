@@ -3,6 +3,9 @@ import { motion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/core/apiClient';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { isEffectivePro } from '@/features/auth/authApi';
+import { LedgerPdfButton } from '@/features/governance/LedgerPdfExport';
 import { auditFailureText, scansApi, uploadErrorMessage, type Scan } from '@/features/scanner/scansApi';
 import { useSpeech } from '@/shared/hooks/useSpeech';
 import { EASE_OUT, FillBar, pageTransition, Stagger, StaggerItem } from '@/shared/motion';
@@ -221,6 +224,7 @@ export function ResultPage() {
 }
 
 function AuditResult({ scan, materialTitle, onStartOver }: { scan: Scan; materialTitle: string; onStartOver: () => Promise<void> }) {
+  const auth = useAuth();
   const { state: speech, toggle: toggleSpeech } = useSpeech();
   const audit = scan.result!;
   // Angka skor berangkat dari 0 lalu bergulir ke nilai asli setelah halaman tampil.
@@ -419,6 +423,8 @@ function AuditResult({ scan, materialTitle, onStartOver }: { scan: Scan; materia
               <img src={scan.imageUrl} alt="Foto catatan yang dicek untuk sesi ini" className="max-h-64 w-full bg-wash object-contain" />
               <figcaption className="px-4 py-2.5 text-body-sm text-ink-muted">Foto catatanmu, tanpa info lokasi dan kamera</figcaption>
             </figure>
+
+            {auth.status === 'authenticated' && isEffectivePro(auth.user) && <LedgerPdfButton submissionId={scan.id} />}
 
             <Button variant="accent" size="lg" onClick={() => setConfirmNew(true)}>
               Mulai sesi belajar baru

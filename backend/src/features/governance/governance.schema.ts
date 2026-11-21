@@ -26,6 +26,24 @@ export const LedgerHashParamsSchema = z
   .object({ hash: z.string().regex(/^[0-9a-f]{64}$/, 'Hash harus 64 karakter heksadesimal') })
   .strict();
 
+/** POST /ledger/exports (FR-12): pilih submission tertentu, ATAU rentang tanggal (WIB, inklusif). */
+export const LedgerExportSchema = z
+  .object({
+    submissionIds: z.array(z.uuid()).min(1).max(50).optional(),
+    from: z.iso.date().optional(),
+    to: z.iso.date().optional(),
+  })
+  .strict()
+  .refine((v) => (v.submissionIds !== undefined) !== (v.from !== undefined || v.to !== undefined), {
+    message: 'Kirim submissionIds, atau from dan to, tapi tidak keduanya',
+  })
+  .refine((v) => v.submissionIds !== undefined || (v.from !== undefined && v.to !== undefined), {
+    message: 'Rentang tanggal butuh from dan to',
+    path: ['to'],
+  });
+
+export type LedgerExportBody = z.infer<typeof LedgerExportSchema>;
+
 export type LedgerQuery = z.infer<typeof LedgerQuerySchema>;
 export type BlindSpotsQuery = z.infer<typeof BlindSpotsQuerySchema>;
 

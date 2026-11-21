@@ -86,3 +86,9 @@ export const ROLE_LABEL: Record<Role, string> = {
   EDUCATOR: 'Guru / Dosen',
   INSTITUTION_ADMIN: 'Admin Institusi',
 };
+
+/** Pro efektif, sama dengan effectiveTier di backend: tier PRO, atau masa aktif kode yang belum lewat (FR-11). */
+export function isEffectivePro(user: Pick<AuthUser, 'tier' | 'proExpiresAt'>, now = Date.now()): boolean {
+  if (user.tier === 'PRO') return true;
+  return user.proExpiresAt !== null && new Date(user.proExpiresAt).getTime() > now;
+}

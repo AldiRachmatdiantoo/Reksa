@@ -7,9 +7,10 @@ import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { TextField } from '@/shared/ui/TextField';
+import { LedgerPdfSection } from '@/features/governance/LedgerPdfExport';
 import { DataSection, PlanSection } from './AccountDataSections';
 import { useAuth } from './AuthProvider';
-import { authApi, ROLE_LABEL, type AuthUser } from './authApi';
+import { authApi, isEffectivePro, ROLE_LABEL, type AuthUser } from './authApi';
 import { isStrongPassword, PasswordRules } from './PasswordRules';
 import { VerifyEmailNotice } from './VerifyEmailNotice';
 
@@ -31,6 +32,7 @@ export function AccountPage() {
         <h1 className="font-display text-headline-lg-mobile text-ink sm:text-headline-lg">Akun</h1>
         <ProfileSection user={auth.user} onSaved={auth.updateUser} />
         <PlanSection user={auth.user} onChanged={auth.updateUser} />
+        {auth.user.role === 'STUDENT' && <LedgerPdfSection isPro={isEffectivePro(auth.user)} />}
         <PasswordSection onChanged={auth.updateUser} />
         <DataSection
           user={auth.user}

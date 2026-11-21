@@ -36,7 +36,12 @@ export const governanceApi = {
     return apiRequest<LedgerPage>(`/governance/classes/${encodeURIComponent(classId)}/ledger?${params}`, { signal });
   },
   verify: (hash: string) => apiRequest<LedgerVerification>(`/ledger/verify/${encodeURIComponent(hash)}`),
+  /** FR-12, khusus Pro. Tautan berlaku 5 menit, file dihapus setelah 24 jam. */
+  exportPdf: (body: { submissionIds: string[] } | { from: string; to: string }) =>
+    apiRequest<{ export: LedgerPdfExport }>('/ledger/exports', { method: 'POST', body }).then((r) => r.export),
 };
+
+export type LedgerPdfExport = { url: string; expiresAt: string; count: number };
 
 const dateTime = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const time = new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' });

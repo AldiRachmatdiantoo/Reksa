@@ -6,8 +6,9 @@ import { requireRole } from '../../common/middlewares/rbac.middleware.js';
 import { validate } from '../../common/middlewares/validate.middleware.js';
 import type { AccessTokenSigner } from '../../common/utils/jwt.js';
 import { GovernanceController } from './governance.controller.js';
-import { ClassIdParamsSchema, LedgerHashParamsSchema, LedgerQuerySchema } from './governance.schema.js';
+import { ClassIdParamsSchema, LedgerExportSchema, LedgerHashParamsSchema, LedgerQuerySchema } from './governance.schema.js';
 import type { GovernanceService } from './governance.service.js';
+import type { LedgerExportService } from './ledgerExport.service.js';
 
 export type GovernanceRouterDeps = { service: GovernanceService; signer: AccessTokenSigner; redis: Redis };
 
@@ -33,11 +34,27 @@ export function createGovernanceRouter({ service, signer, redis }: GovernanceRou
 }
 
 /**
- * GET /ledger/verify/:hash   publik, 30/menit per IP. Hanya { valid, sessionDate }: tanpa nama, skor, atau foto.
+ * GET  /ledger/verify/:hash   publik, 30/menit per IP. Hanya { valid, sessionDate }: tanpa nama, skor, atau foto.
+ * POST /ledger/exports        STUDENT Pro; PDF bukti belajar milik sendiri (FR-12), 5/jam per user.
  */
-export function createLedgerRouter({ service, redis }: Omit<GovernanceRouterDeps, 'signer'>): Router {
+export function createLedgerRouter({
+  service,
+  exports,
+  signer,
+  redis,
+}: GovernanceRouterDeps & { exports: LedgerExportService }): Router {
   const router = Router();
-  const controller = new GovernanceController(service);
+  const controller = new GovernanceController(service, exports);
+
+  router.post(
+    '/exports',
+    requireAuth(signer),
+    requireRole('STUDENT'),
+    // Validasi dulu: body yang salah tidak memakan jatah 5 ekspor per jam.
+    validate({ body: LedgerExportSchema }),
+    rateLimit({ redis, name: 'ledger:export', limit: 5, windowMs: 60 * MINUTE, key: (req) => getAuth(req.res!).userId }),
+    controller.exportPdf,
+  );
 
   router.get(
     '/verify/:hash',

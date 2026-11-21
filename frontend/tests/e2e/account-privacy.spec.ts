@@ -40,6 +40,10 @@ test('a minor registers with guardian consent, exports data, then deletes the ac
 
   await page.goto('/akun');
   await expect(page.getByText('Gratis, 3 foto catatan per hari.')).toBeVisible();
+  // PDF bukti belajar (FR-12) khusus Pro: akun gratis hanya melihat keterangannya, tanpa form.
+  await expect(page.getByRole('heading', { name: 'PDF bukti belajar' })).toBeVisible();
+  await expect(page.getByText('Fitur ini khusus paket Pro.', { exact: false })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Unduh PDF' })).toHaveCount(0);
   await expectAccessible(page, '/akun');
 
   // Kode salah: satu pesan umum (email belum terverifikasi dicek lebih dulu).

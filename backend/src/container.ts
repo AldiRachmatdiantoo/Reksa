@@ -18,6 +18,8 @@ import { UnpdfTextExtractor, type PdfTextExtractor } from './common/utils/pdfTex
 import { PrismaGovernanceRepository } from './features/governance/governance.repository.js';
 import { createGovernanceRouter, createLedgerRouter } from './features/governance/governance.routes.js';
 import { GovernanceService } from './features/governance/governance.service.js';
+import { PrismaLedgerExportRepository } from './features/governance/ledgerExport.repository.js';
+import { LedgerExportService } from './features/governance/ledgerExport.service.js';
 import { PrismaSpacedRepository } from './features/spaced-repetition/spaced.repository.js';
 import { createSpacedRouter } from './features/spaced-repetition/spaced.routes.js';
 import { SpacedService } from './features/spaced-repetition/spaced.service.js';
@@ -136,7 +138,18 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     '/me/quota': createQuotaRouter({ service: quotaService, signer }),
     '/scans': createScansRouter({ service: scansService, signer, redis: deps.redis }),
     '/governance': createGovernanceRouter({ service: governanceService, signer, redis: deps.redis }),
-    '/ledger': createLedgerRouter({ service: governanceService, redis: deps.redis }),
+    '/ledger': createLedgerRouter({
+      service: governanceService,
+      exports: new LedgerExportService({
+        repo: new PrismaLedgerExportRepository(deps.prisma),
+        storage: deps.storage,
+        exports: privacyService,
+        appUrl: (deps.env.APP_URL ?? deps.env.CORS_ORIGIN).replace(/\/+$/, ''),
+        onWarning: (message, data) => deps.logger.warn(data, message),
+      }),
+      signer,
+      redis: deps.redis,
+    }),
   };
 }
 

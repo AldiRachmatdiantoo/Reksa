@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, FR-07 Proof of Understanding Ledger (Aldi, branch `feat/aldi-ledger`, ditumpuk di atas `feat/aldi-spaced-review`)
+**Checkpoint terakhir:** 22 November 2026, FR-12 ekspor PDF Proof of Understanding (Aldi, branch `feat/aldi-ledger-pdf`, ditumpuk di atas `feat/aldi-ledger`)
 
 ---
 
@@ -16,6 +16,14 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #22 · FR-12 ekspor PDF Proof of Understanding · branch `feat/aldi-ledger-pdf`
+
+- `POST /ledger/exports` (STUDENT, Pro efektif, 5/jam per user): body `{ submissionIds: uuid[1..50] }` atau `{ from, to }` (tanggal WIB, `to` inklusif, maks 366 hari). 403 `PRO_REQUIRED`, 404 jika ada id yang bukan milik sendiri atau rentang kosong (tidak ada PDF yang dibuat), 400 `TOO_MANY_SUBMISSIONS` di atas 50.
+- PDF dibuat di server dengan `pdf-lib` 1.17.1 (`ledgerPdf.ts`, A4, font standar): satu bagian per pengumpulan berisi waktu sesi, fokus vs rencana, status sesi, tebakan vs skor, foto (webp ke jpeg lewat `sharp`; foto gagal dimuat tidak menggagalkan PDF), konsep tepat dan terlewat. Setiap halaman memuat `ledger_hash` dan tautan `<APP_URL>/cek-bukti/<hash>`.
+- Disimpan lewat `PrivacyService.storeExport` (kind `LEDGER_PDF`, `exports/<userId>/<uuid>.pdf`, dihapus 24 jam, signed URL 300 detik). Pembacaan lewat RLS siswa sendiri.
+- Frontend: bagian **PDF bukti belajar** di halaman Akun (rentang tanggal; akun gratis hanya melihat keterangan Pro) dan tombol **Unduh PDF bukti belajar** di halaman Hasil untuk akun Pro. Helper `isEffectivePro` mengikuti `effectiveTier` backend.
+- **Hasil:** backend 515 lulus (3 skip), 8 integrasi + 9 unit baru, tanpa migrasi baru (`prisma migrate diff` kosong); frontend 41 unit; E2E 9/9.
 
 ### #21 · FR-07 Proof of Understanding Ledger · branch `feat/aldi-ledger`
 
