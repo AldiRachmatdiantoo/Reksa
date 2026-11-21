@@ -171,6 +171,8 @@ apiClient.interceptors.response.use(undefined, async (error) => {
   ```
   `issues` hanya ada untuk error validasi; cocok untuk menampilkan pesan per field di form.
 - Aturan password: 12–128 karakter, wajib huruf kecil, huruf besar, dan angka. Validasi yang sama sebaiknya ada di form.
+- *(21 Nov 2026, FR-14)* Objek user dari backend kini punya `emailVerified: boolean`. Siswa yang belum verifikasi ditolak saat bergabung ke kelas (403 `EMAIL_NOT_VERIFIED`); belajar mandiri tetap jalan. Untuk test integrasi di foldermu yang butuh siswa anggota kelas, verifikasi lewat endpoint asli: ambil token dari `ctx.emails.tokenFor(email, 'verifikasi-email')` lalu `POST /auth/verify-email` (contoh di `tests/integration/classes.test.ts`).
+- Email lokal ditangkap Mailpit (`docker compose up -d mailpit`, kotak masuk http://localhost:8025). Kalau backend jalan di luar Docker, isi `SMTP_URL=smtp://127.0.0.1:1025` di `backend/.env`.
 
 ## 5. Kalau butuh perubahan di area saya
 

@@ -204,10 +204,10 @@ export class AuthService {
   async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<AuthResult> {
     const user = await this.requireUser(userId);
     if (!(await this.deps.hasher.verify(user.passwordHash, currentPassword))) {
-      throw new AppError(400, 'INVALID_CURRENT_PASSWORD', 'Password lama salah');
+      throw new AppError(400, 'INVALID_CURRENT_PASSWORD', 'Kata sandi lama salah');
     }
     if (currentPassword === newPassword) {
-      throw new BadRequestError('Password baru harus berbeda dari password lama');
+      throw new BadRequestError('Kata sandi baru harus berbeda dari kata sandi lama');
     }
     const passwordHash = await this.deps.hasher.hash(newPassword);
     await this.deps.repo.withTransaction(async (tx) => {

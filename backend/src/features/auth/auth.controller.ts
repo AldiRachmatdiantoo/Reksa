@@ -14,7 +14,7 @@ import {
 import type { AuthService } from './auth.service.js';
 
 /** Satu pesan untuk semua permintaan reset, terdaftar atau tidak (anti enumerasi akun). */
-const FORGOT_MESSAGE = 'Kalau email itu terdaftar, tautan untuk mengatur ulang password sudah dikirim. Cek kotak masuk dan folder spam.';
+const FORGOT_MESSAGE = 'Kalau email itu terdaftar, tautan untuk mengatur ulang kata sandi sudah dikirim. Cek kotak masuk dan folder spam.';
 
 export class AuthController {
   constructor(private readonly service: AuthService) {}

@@ -44,23 +44,23 @@ export function resetPasswordMessage(to: string, fullName: string, link: string)
   const name = fullName.trim() || 'kamu';
   return {
     to,
-    subject: 'Atur ulang password REKSA',
+    subject: 'Atur ulang kata sandi REKSA',
     text: [
       `Halo ${name},`,
       '',
-      'Ada permintaan untuk mengatur ulang password akun REKSA-mu. Tautan berlaku 30 menit dan hanya bisa dipakai sekali.',
+      'Ada permintaan untuk mengatur ulang kata sandi akun REKSA-mu. Tautan berlaku 30 menit dan hanya bisa dipakai sekali.',
       link,
       '',
-      'Kalau kamu tidak memintanya, abaikan email ini. Password lamamu tetap berlaku.',
+      'Kalau kamu tidak memintanya, abaikan email ini. Kata sandi lamamu tetap berlaku.',
     ].join('\n'),
     html: layout(
       [
         `Halo ${escapeHtml(name)},`,
-        'Ada permintaan untuk mengatur ulang password akun REKSA-mu. Tautan berlaku 30 menit dan hanya bisa dipakai sekali.',
-        'Kalau kamu tidak memintanya, abaikan email ini. Password lamamu tetap berlaku.',
+        'Ada permintaan untuk mengatur ulang kata sandi akun REKSA-mu. Tautan berlaku 30 menit dan hanya bisa dipakai sekali.',
+        'Kalau kamu tidak memintanya, abaikan email ini. Kata sandi lamamu tetap berlaku.',
       ],
       link,
-      'Atur ulang password',
+      'Atur ulang kata sandi',
     ),
   };
 }
