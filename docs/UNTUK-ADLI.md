@@ -6,6 +6,31 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## ⚠️ 21 Nov 2026: riwayat `main` ditulis ulang, wajib sinkron sebelum push
+
+Setelah PR #14 (monorepo), riwayat `main` membawa dua commit pertama `reksa-frontend` yang dibuat otomatis oleh `figma[bot]` (`55c5172`, `42caaec`). Dua commit itu saya tulis ulang atas nama saya, lalu `main` di-force-push. Isi file sama persis, tidak ada kode yang berubah.
+
+- **Tidak berubah:** semua commit backend, termasuk tiga commit `feat/adli-sessions`-mu (`3122df6`, `7466280`, `6152b48`) dan merge PR #13 (`f101e66`).
+- **Hash baru:** 18 commit dari jalur frontend dan merge monorepo. Commit monorepo-mu tetap atas namamu, hash barunya `git log origin/main --author=AdliXSec`.
+- `main` lama: `c2b6fb8`. `main` baru: `5fdb207`.
+
+Langkah sinkron (sekali saja):
+
+```bash
+git fetch --prune origin
+git checkout main
+git reset --hard origin/main        # pastikan tidak ada kerja yang belum di-commit di main
+git branch -D feat/adli-frontend-monorepo   # sudah di-merge; jangan di-push lagi
+```
+
+Branch yang kamu buat **sebelum** PR #14 (dari `f101e66` atau lebih lama) aman, lanjutkan seperti biasa. Branch yang kamu buat dari `main` **setelah** PR #14 dipindah ke `main` baru:
+
+```bash
+git rebase --onto origin/main c2b6fb8 nama-branch
+```
+
+Cek terakhir: `git branch --contains 55c5172` harus kosong. Kalau masih ada branch di daftar itu, jangan di-push, kabari saya.
+
 ## 0. Penting: frontend pindah repo dan sekarang dipegang saya
 
 Frontend dibangun di repo terpisah https://github.com/AldiRachmatdiantoo/reksa-frontend dari desain Figma Make. Jadi kamu **tidak perlu** membuat kerangka `frontend/`, `apiClient`, atau halaman Login/Register (checklist poin 3 di CLAUDE.md gugur). Halaman Ruang Belajar, Tebak & Foto, dan Hasil Cek sudah ada di sana dengan data contoh yang sama dengan `MockAiProvider`.
