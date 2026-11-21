@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useScroll, useTransform } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { homePathFor } from '@/features/auth/authApi';
@@ -8,30 +8,8 @@ import { EASE_OUT, pageTransition, Reveal, Stagger, StaggerItem, WordReveal } fr
 import { Brand } from '@/shared/ui/Brand';
 import { ButtonLink } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
-import { SegmentedTabs } from '@/shared/ui/SegmentedTabs';
 import { ThemeToggle } from '@/shared/ui/ThemeToggle';
-
-type Audience = 'pelajar' | 'guru';
-
-const STUDENT_STEPS = [
-  {
-    title: 'Siapkan materimu',
-    body: 'Tempel teks atau unggah PDF bab yang mau dipelajari. REKSA menyusun konsep kunci yang nanti jadi patokan penilaian.',
-  },
-  {
-    title: 'Fokus dan tulis di kertas',
-    body: 'Pilih waktu 15, 25, atau 45 menit. Bahan bacaan ditutup selama waktu berjalan, jadi kamu menulis dari ingatan sendiri.',
-  },
-  {
-    title: 'Tebak nilaimu, lalu foto',
-    body: 'Sebelum dicek, tebak dulu seberapa paham kamu (0 sampai 100%). Dari sini kamu belajar membedakan benar-benar paham dan merasa paham.',
-    highlight: true,
-  },
-  {
-    title: 'Lihat yang terlewat, ulangi singkat',
-    body: 'Hasil menunjukkan konsep yang sudah tepat, yang masih terlewat, dan latihan ulang 3 sampai 5 menit di hari ke-3 dan ke-7.',
-  },
-];
+import { StoryTour } from './StoryTour';
 
 /** Hanya pertanyaan yang jawabannya sudah benar untuk versi saat ini. */
 const FAQ = [
@@ -73,7 +51,6 @@ const TEACHER_POINTS = [
 export function LandingPage() {
   const auth = useAuth();
   const { reopen: openCookieSettings } = useConsent();
-  const [audience, setAudience] = useState<Audience>('pelajar');
   const user = auth.status === 'authenticated' ? auth.user : null;
   // Parallax tipis pada foto hero: bergeser 40px selama hero digulir keluar layar.
   const heroRef = useRef<HTMLElement>(null);
@@ -96,11 +73,11 @@ export function LandingPage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <Brand />
           <nav aria-label="Navigasi utama" className="hidden items-center gap-6 md:flex">
-            <a href="#cara-kerja" className="text-label-lg text-ink-muted hover:text-teal">
+            <a href="#kenalan" className="text-label-lg text-ink-muted hover:text-teal">
               Cara kerja
             </a>
-            <a href="#penilaian" className="text-label-lg text-ink-muted hover:text-teal">
-              Cara menilai
+            <a href="#guru" className="text-label-lg text-ink-muted hover:text-teal">
+              Untuk guru
             </a>
             <a href="#tanya-jawab" className="text-label-lg text-ink-muted hover:text-teal">
               Tanya jawab
@@ -143,8 +120,8 @@ export function LandingPage() {
                 <ButtonLink to={user ? homePathFor(user.role) : '/daftar'} variant="accent" size="lg">
                   {user ? 'Lanjut belajar' : 'Buat akun gratis'}
                 </ButtonLink>
-                <a href="#cara-kerja" className="inline-flex min-h-13 items-center gap-1.5 rounded-full px-4 text-title-md text-teal hover:bg-wash">
-                  Lihat alurnya
+                <a href="#kenalan" className="inline-flex min-h-13 items-center gap-1.5 rounded-full px-4 text-title-md text-teal hover:bg-wash">
+                  Kenalan dulu
                   <Icon name="arrow_downward" className="text-[20px]" />
                 </a>
               </Reveal>
@@ -172,119 +149,31 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="cara-kerja" aria-labelledby="cara-kerja-title" className="px-4 py-14 sm:px-6 lg:py-20">
-          <div className="mx-auto flex max-w-6xl flex-col gap-8">
-            <Reveal className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-              <div className="flex max-w-xl flex-col gap-2">
-                <h2 id="cara-kerja-title" className="font-headline text-headline-lg-mobile text-ink text-balance sm:text-headline-lg">
-                  Satu tempat untuk belajar dan mengajar
-                </h2>
-                <p className="text-body-lg text-ink-muted text-pretty">Pilih peranmu untuk melihat alurnya.</p>
-              </div>
-              <SegmentedTabs
-                label="Pilih peran"
-                value={audience}
-                onChange={setAudience}
-                options={[
-                  { value: 'pelajar', label: 'Untuk pelajar', panelId: 'panel-audience' },
-                  { value: 'guru', label: 'Untuk guru', panelId: 'panel-audience' },
-                ]}
-              />
-            </Reveal>
+        <StoryTour />
 
-            <div id="panel-audience" role="tabpanel" aria-label={audience === 'pelajar' ? 'Alur untuk pelajar' : 'Manfaat untuk guru'}>
-              <AnimatePresence mode="wait">
-                {audience === 'pelajar' ? (
-                  <Stagger
-                    as="ol"
-                    key="pelajar"
-                    gap={0.1}
-                    exit={{ opacity: 0, x: -16, transition: { duration: 0.15 } }}
-                    className="grid gap-px overflow-hidden rounded-lg border border-line-soft bg-line-soft md:grid-cols-2 lg:grid-cols-4"
-                  >
-                    {STUDENT_STEPS.map((step, i) => (
-                      <StaggerItem
-                        as="li"
-                        key={step.title}
-                        className={`flex flex-col gap-3 p-6 sm:p-7 ${step.highlight ? 'bg-teal-wash' : 'bg-card'}`}
-                      >
-                        <span className="font-display text-[56px] leading-none text-teal tabular-nums" aria-hidden="true">
-                          {i + 1}
-                        </span>
-                        <h3 className="font-title text-title-lg text-ink">
-                          <span className="sr-only">Langkah {i + 1}: </span>
-                          {step.title}
-                        </h3>
-                        <p className="text-body-md text-ink-muted text-pretty">{step.body}</p>
-                        {step.highlight && (
-                          <p className="mt-auto text-label-md text-teal">Langkah yang jarang ada di aplikasi belajar lain.</p>
-                        )}
-                      </StaggerItem>
-                    ))}
-                  </Stagger>
-                ) : (
-                  <Stagger
-                    as="ul"
-                    key="guru"
-                    gap={0.1}
-                    exit={{ opacity: 0, x: -16, transition: { duration: 0.15 } }}
-                    className="grid gap-4 md:grid-cols-2"
-                  >
-                    {TEACHER_POINTS.map((point) => (
-                      <StaggerItem as="li" key={point.title} className="flex gap-4 rounded-lg border border-line-soft bg-card p-6 sm:p-7">
-                        <Icon name={point.icon} className="text-[32px] text-teal" />
-                        <div className="flex flex-col gap-2">
-                          <h3 className="font-title text-title-lg text-ink">{point.title}</h3>
-                          <p className="text-body-md text-ink-muted text-pretty">{point.body}</p>
-                        </div>
-                      </StaggerItem>
-                    ))}
-                  </Stagger>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </section>
-
-        <section id="penilaian" aria-labelledby="penilaian-title" className="border-y border-line-soft bg-card px-4 py-14 sm:px-6 lg:py-20">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-12">
-            <motion.img
-              initial={{ opacity: 0, x: -32, rotate: -2 }}
-              whileInView={{ opacity: 1, x: 0, rotate: 0 }}
-              viewport={{ once: true, margin: '0px 0px -15% 0px' }}
-              transition={{ duration: 0.8, ease: EASE_OUT }}
-              src="/assets/inclusive-learning.jpg"
-              alt="Kertas berisi peta konsep dengan panah dan pensil, di samping HP yang memotretnya"
-              width={1024}
-              height={1024}
-              loading="lazy"
-              className="aspect-square w-full max-w-md rounded-lg border border-line-soft object-cover lg:col-span-5"
-            />
-            <Reveal delay={0.1} className="flex flex-col gap-5 lg:col-span-7">
-              <h2 id="penilaian-title" className="font-headline text-headline-lg-mobile text-ink text-balance sm:text-headline-lg">
-                Yang dinilai idemu, bukan rapinya tulisan
+        <section id="guru" aria-labelledby="guru-title" className="border-y border-line-soft bg-card px-4 py-14 sm:px-6 lg:py-20">
+          <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-12">
+            <Reveal className="flex flex-col gap-3 lg:col-span-5">
+              <h2 id="guru-title" className="font-headline text-headline-lg-mobile text-ink text-balance sm:text-headline-lg">
+                Lihat proses belajar siswa, bukan hanya jawaban akhirnya
               </h2>
-              <p className="max-w-prose text-body-lg text-ink-muted text-pretty">
-                Catatan dinilai dari konsep dan hubungan sebab-akibat di materi. Panah, singkatan, dan coretan dihitung sebagai ide, bukan
-                dikurangi nilainya karena kurang rapi.
+              <p className="text-body-lg text-ink-muted text-pretty">
+                Tugas yang dikerjakan dari ingatan di atas kertas susah disalin dari internet. Guru bisa melihat buktinya dan bagian materi
+                yang paling sering terlewat di kelas.
               </p>
-              <ul className="grid gap-4 border-t border-line-soft pt-5 sm:grid-cols-2">
-                <li className="flex gap-3">
-                  <Icon name="volume_up" className="text-teal" />
-                  <span className="text-body-md text-ink">
-                    <strong className="font-semibold">Bacakan hasil.</strong> Hasil cek bisa didengarkan, membantu yang lebih nyaman
-                    mendengar daripada membaca.
-                  </span>
-                </li>
-                <li className="flex gap-3">
-                  <Icon name="photo_camera" className="text-teal" />
-                  <span className="text-body-md text-ink">
-                    <strong className="font-semibold">Kamera HP atau laptop.</strong> Foto langsung dari kamera belakang HP, atau unggah
-                    foto dari laptop.
-                  </span>
-                </li>
-              </ul>
+              <p className="text-body-sm text-ink-muted">Portal guru masih dalam pengembangan. Dua fitur ini menyusul bertahap.</p>
             </Reveal>
+            <Stagger as="ul" gap={0.1} className="grid gap-4 self-center lg:col-span-7">
+              {TEACHER_POINTS.map((point) => (
+                <StaggerItem as="li" key={point.title} className="flex gap-4 rounded-lg border border-line-soft bg-paper p-6 sm:p-7">
+                  <Icon name={point.icon} className="text-[32px] text-teal" />
+                  <div className="flex flex-col gap-2">
+                    <h3 className="font-title text-title-lg text-ink">{point.title}</h3>
+                    <p className="text-body-md text-ink-muted text-pretty">{point.body}</p>
+                  </div>
+                </StaggerItem>
+              ))}
+            </Stagger>
           </div>
         </section>
 
@@ -339,7 +228,7 @@ export function LandingPage() {
             <span className="font-headline text-title-md text-teal">REKSA</span> · Belajar aktif dari kertas
           </p>
           <nav aria-label="Tautan bawah" className="flex flex-wrap gap-x-6">
-            <a href="#cara-kerja" className="inline-flex min-h-11 items-center hover:text-teal">
+            <a href="#kenalan" className="inline-flex min-h-11 items-center hover:text-teal">
               Cara kerja
             </a>
             <a href="#tanya-jawab" className="inline-flex min-h-11 items-center hover:text-teal">
