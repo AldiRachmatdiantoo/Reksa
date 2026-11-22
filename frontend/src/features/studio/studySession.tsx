@@ -1,5 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ApiError } from '@/core/apiClient';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { scansApi } from '@/features/scanner/scansApi';
+import { outbox as defaultOutbox, outboxId, type OutboxStore } from '@/shared/offline/outbox';
+import { flushOutbox } from './offlineSync';
 import { activeSessionIdOf, minutesOf, sessionsApi, type ServerSession, type SessionStatus } from './sessionsApi';
 
 /**
@@ -40,6 +44,11 @@ export type StudySession = {
   sessionType?: 'INITIAL_BLURTING' | 'SPACED_REVIEW';
   /** Konsep yang dilatih ulang, disalin dari kartu jadwal (hanya tampilan). */
   reviewConcepts?: string[];
+  /**
+   * F2: kiriman yang menunggu koneksi (tersimpan di IndexedDB, lihat shared/offline/outbox.ts). Selama tebakan
+   * menunggu, status AWAITING_SCAN di cache ini baru keadaan lokal; server belum menerimanya.
+   */
+  pendingSync?: { jol?: boolean; photo?: boolean };
 };
 
 const STORAGE_KEY = 'reksa-study-session';
@@ -60,6 +69,30 @@ const emptySession = (materialId: string, materialTitle: string, presetMinutes =
   submissionId: null,
   photo: null,
 });
+
+/** Koneksi putus atau server tidak terjangkau: kiriman boleh disimpan dulu di perangkat. */
+export function isNetworkError(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 0;
+}
+
+/**
+ * Seperti fromServer, tetapi kiriman yang masih menunggu koneksi tidak ditimpa keadaan server yang belum
+ * menerimanya: tebakan yang menunggu tetap terkunci di layar dan langkah foto tetap terbuka.
+ */
+export function mergeServer(s: ServerSession, previous?: StudySession | null): StudySession {
+  const next = fromServer(s, previous);
+  const pending = previous?.serverId === s.id ? previous.pendingSync : undefined;
+  if (!pending) return next;
+  const jolWaiting = pending.jol === true && (s.status === 'FOCUS_ACTIVE' || s.status === 'AWAITING_JOL');
+  const photoWaiting = pending.photo === true && !s.submissionId && s.status !== 'EXPIRED' && s.status !== 'COMPLETED';
+  if (jolWaiting) {
+    next.status = 'AWAITING_SCAN';
+    next.jolScore = previous!.jolScore;
+    next.focusSeconds = previous!.focusSeconds;
+  }
+  next.pendingSync = jolWaiting || photoWaiting ? { jol: jolWaiting || undefined, photo: photoWaiting || undefined } : undefined;
+  return next;
+}
 
 /** Menyalin keadaan server ke cache. Judul materi lama dipakai bila server tidak bisa membacanya lagi. */
 export function fromServer(s: ServerSession, previous?: StudySession | null): StudySession {
@@ -139,19 +172,33 @@ type Ctx = {
   setSubmission: (submissionId: string) => void;
   /** Muat ulang keadaan sesi dari server. */
   refresh: () => Promise<void>;
+  /** F2: simpan foto di perangkat dan kirim otomatis saat koneksi kembali. */
+  queuePhoto: (file: File) => Promise<void>;
+  /** F2: kirim antrean sekarang (juga berjalan otomatis saat online dan tiap 30 detik). */
+  syncNow: () => Promise<void>;
+  /** F2: alasan kiriman tertunda yang ditolak server, untuk ditampilkan sekali. */
+  syncNotice: string | null;
+  dismissSyncNotice: () => void;
   /** Tutup sesi: sesi yang masih aktif di server dibatalkan dulu. */
   clear: () => Promise<void>;
 };
 
 const StudySessionContext = createContext<Ctx | null>(null);
 
-export function StudySessionProvider({ children }: { children: ReactNode }) {
+/** Jeda percobaan ulang antrean selama masih ada kiriman yang menunggu. */
+export const OUTBOX_RETRY_MS = 30_000;
+
+export function StudySessionProvider({ children, store = defaultOutbox }: { children: ReactNode; store?: OutboxStore }) {
+  const auth = useAuth();
+  const userId = auth.status === 'authenticated' ? auth.user.id : null;
   const [session, setSession] = useState<StudySession | null>(load);
   const [syncing, setSyncing] = useState(true);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const sessionRef = useRef(session);
   sessionRef.current = session;
+  const flushing = useRef(false);
 
   useEffect(() => {
     try {
@@ -169,7 +216,7 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     [photoUrl],
   );
 
-  const adopt = useCallback((s: ServerSession) => setSession((prev) => fromServer(s, prev)), []);
+  const adopt = useCallback((s: ServerSession) => setSession((prev) => mergeServer(s, prev)), []);
 
   const refresh = useCallback(async () => {
     const current = sessionRef.current;
@@ -187,15 +234,72 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     }
   }, [adopt]);
 
+  /** F2: kirim antrean, lalu cocokkan hasilnya dengan sesi di layar. Sesi lain cukup terlihat di Riwayat. */
+  const syncNow = useCallback(async () => {
+    if (!userId || flushing.current) return;
+    flushing.current = true;
+    try {
+      const { events } = await flushOutbox(
+        store,
+        { submitJol: sessionsApi.submitJol, upload: (photo, sessionId) => scansApi.upload(photo, { sessionId }) },
+        userId,
+      );
+      let reload = false;
+      for (const event of events) {
+        if (sessionRef.current?.serverId !== event.sessionId) continue;
+        if (event.kind === 'jol-sent') {
+          adopt(event.session);
+        } else if (event.kind === 'photo-sent') {
+          setSession((prev) => (prev ? { ...prev, submissionId: event.submissionId, pendingSync: undefined } : prev));
+        } else {
+          if (event.kind === 'dropped') setSyncNotice(event.message);
+          // Tebakan yang ditolak permanen ikut membuang foto sesi itu dari antrean.
+          const clearsAll = event.kind === 'dropped' && event.what === 'jol';
+          setSession((prev) => {
+            if (!prev) return prev;
+            const left = clearsAll ? {} : { ...prev.pendingSync, [event.what]: undefined };
+            return { ...prev, pendingSync: left.jol || left.photo ? left : undefined };
+          });
+          reload = true;
+        }
+      }
+      if (reload) await refresh();
+    } catch {
+      // IndexedDB tidak terbaca: antrean dicoba lagi pada giliran berikutnya.
+    } finally {
+      flushing.current = false;
+    }
+  }, [userId, store, adopt, refresh]);
+
   useEffect(() => {
     let cancelled = false;
-    void refresh().finally(() => {
-      if (!cancelled) setSyncing(false);
-    });
+    // Antrean dikirim dulu supaya keadaan server yang dimuat sesudahnya sudah memuat kiriman tertunda.
+    void syncNow()
+      .then(refresh)
+      .finally(() => {
+        if (!cancelled) setSyncing(false);
+      });
     return () => {
       cancelled = true;
     };
-  }, [refresh]);
+  }, [refresh, syncNow]);
+
+  const waiting = Boolean(session?.pendingSync);
+  useEffect(() => {
+    const run = () => void syncNow();
+    window.addEventListener('online', run);
+    const timer = waiting ? window.setInterval(run, OUTBOX_RETRY_MS) : undefined;
+    return () => {
+      window.removeEventListener('online', run);
+      window.clearInterval(timer);
+    };
+  }, [syncNow, waiting]);
+
+  /** Kiriman tertunda milik sesi yang ditutup atau dibatalkan tidak perlu dikirim lagi. */
+  const dropQueued = async (sessionId: string | null | undefined) => {
+    if (!sessionId) return;
+    await Promise.all([store.remove(outboxId('jol', sessionId)), store.remove(outboxId('photo', sessionId))]).catch(() => undefined);
+  };
 
   const update = useCallback((fn: (s: StudySession) => StudySession) => {
     setSession((prev) => (prev ? fn(prev) : prev));
@@ -247,12 +351,32 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     resetTimer: async () => {
       const current = sessionRef.current;
       if (current?.serverId) await sessionsApi.cancel(current.serverId);
+      await dropQueued(current?.serverId);
       update((s) => ({ ...emptySession(s.materialId, s.materialTitle, s.presetMinutes, s.classId ?? null) }));
     },
     saveJol: async (score) => {
       const current = sessionRef.current;
-      if (!current?.serverId) return;
-      adopt(await sessionsApi.submitJol(current.serverId, score));
+      if (!current?.serverId || !userId) return;
+      try {
+        adopt(await sessionsApi.submitJol(current.serverId, score));
+      } catch (err) {
+        if (!isNetworkError(err)) throw err;
+        // F2: koneksi putus. Tebakan disimpan di perangkat; server tetap menghitung waktu fokus saat tebakan tiba.
+        const sessionId = current.serverId;
+        await store.put({ id: outboxId('jol', sessionId), kind: 'jol', userId, sessionId, score, savedAt: Date.now() });
+        update((s) =>
+          s.serverId === sessionId
+            ? {
+                ...s,
+                jolScore: score,
+                status: 'AWAITING_SCAN',
+                validity: null,
+                scanDeadlineAt: null,
+                pendingSync: { ...s.pendingSync, jol: true },
+              }
+            : s,
+        );
+      }
     },
     setPhoto: (file) => {
       setPhotoFile(file);
@@ -261,6 +385,26 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     },
     setSubmission: (submissionId) => update((s) => ({ ...s, submissionId })),
     refresh,
+    queuePhoto: async (file) => {
+      const current = sessionRef.current;
+      if (!current?.serverId || !userId) return;
+      const sessionId = current.serverId;
+      await store.put({
+        id: outboxId('photo', sessionId),
+        kind: 'photo',
+        userId,
+        sessionId,
+        bytes: await file.arrayBuffer(),
+        name: file.name,
+        type: file.type,
+        savedAt: Date.now(),
+      });
+      update((s) => (s.serverId === sessionId ? { ...s, pendingSync: { ...s.pendingSync, photo: true } } : s));
+      void syncNow();
+    },
+    syncNow,
+    syncNotice,
+    dismissSyncNotice: () => setSyncNotice(null),
     clear: async () => {
       const current = sessionRef.current;
       const active = current?.status === 'FOCUS_ACTIVE' || (current?.status === 'AWAITING_SCAN' && !current.submissionId);
@@ -268,6 +412,7 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
         // Gagal membatalkan (mis. offline) tidak menahan pelajar; server menutupnya sendiri saat kedaluwarsa.
         await sessionsApi.cancel(current.serverId).catch(() => undefined);
       }
+      await dropQueued(current?.serverId);
       resetPhoto();
       setSession(null);
     },

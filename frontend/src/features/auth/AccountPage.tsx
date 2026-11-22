@@ -7,6 +7,7 @@ import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { TextField } from '@/shared/ui/TextField';
+import { outbox } from '@/shared/offline/outbox';
 import { LedgerPdfSection } from '@/features/governance/LedgerPdfExport';
 import { InstitutionJoinSection } from '@/features/institution/InstitutionJoinSection';
 import { DataSection, PlanSection } from './AccountDataSections';
@@ -40,12 +41,13 @@ export function AccountPage() {
         <DataSection
           user={auth.user}
           onDeleted={() => {
-            // Cookie sesi sudah dihapus server. Sisa state sesi belajar di tab ini ikut dibuang.
+            // Cookie sesi sudah dihapus server. Sisa state sesi belajar dan antrean offline ikut dibuang.
             try {
               sessionStorage.clear();
             } catch {
               /* diabaikan */
             }
+            void outbox.clear().catch(() => undefined);
             // Satu transition: react-router menjalankan navigasi sebagai transition, jadi recheck di luar
             // transition akan tampil lebih dulu dan halaman Akun yang masih aktif membelokkan ke /masuk.
             startTransition(() => {

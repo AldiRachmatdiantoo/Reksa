@@ -1,0 +1,12 @@
+{
+  "name": "REKSA",
+  "short_name": "REKSA",
+  "description": "Belajar aktif: fokus, tulis ulang dari ingatan, tebak nilai, lalu cek catatanmu.",
+  "lang": "id",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6faf9",
+  "theme_color": "#006763",
+  "icons": [{ "src": "/favicon.png", "sizes": "96x96", "type": "image/png" }]
+}

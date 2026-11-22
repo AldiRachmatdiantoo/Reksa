@@ -1,6 +1,7 @@
 import { createContext, startTransition, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ApiError, onSessionExpired } from '@/core/apiClient';
 import { authApi, type AuthUser, type LoginInput, type RegisterInput } from './authApi';
+import { outbox } from '@/shared/offline/outbox';
 import { hasSessionHint } from './sessionHint';
 
 type AuthState =
@@ -48,6 +49,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => onSessionExpired(() => setState({ status: 'anonymous', user: null })), []);
 
+  // F2: begitu koneksi kembali, periksa sesi lagi tanpa menunggu tombol "Coba hubungkan lagi" ditekan.
+  const unreachable = state.status === 'unreachable';
+  useEffect(() => {
+    if (!unreachable) return;
+    const retry = () => setAttempt((n) => n + 1);
+    window.addEventListener('online', retry);
+    return () => window.removeEventListener('online', retry);
+  }, [unreachable]);
+
   const login = useCallback(async (input: LoginInput) => {
     const user = await authApi.login(input);
     setState({ status: 'authenticated', user });
@@ -61,6 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async (then?: () => void) => {
+    // F2: foto dan tebakan yang belum terkirim tidak ditinggal di perangkat (komputer bersama).
+    void outbox.clear().catch(() => undefined);
     try {
       await authApi.logout();
     } finally {

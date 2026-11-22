@@ -216,7 +216,7 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
 ### 4.5 Peta Jalan Pengembangan Fitur (Pasca-MVP)
 * **Mode Audio-First Feynman:** Lawan bicara AI berbasis *Speech-to-Text* dan *Text-to-Speech* di mana AI berperan sebagai murid awam yang menginterogasi penjelasan lisan pelajar (aksesibilitas utama untuk tunanetra).
 * **Interleaving Engine:** Penggabungan dua topik materi berbeda secara otomatis dalam satu sesi evaluasi esai.
-* **Offline-First PWA:** Penyimpanan lokal (*IndexedDB*) untuk timer Pomodoro dan antrean foto tulisan tangan saat perangkat kehilangan koneksi internet.
+* ~~**Offline-First PWA:** Penyimpanan lokal (*IndexedDB*) untuk timer Pomodoro dan antrean foto tulisan tangan saat perangkat kehilangan koneksi internet.~~ Selesai 22 Nov 2026: service worker menyimpan file aplikasi (tanpa respons `/api/`), tebakan dan foto menunggu di IndexedDB lalu terkirim otomatis saat online. Memulai sesi tetap butuh koneksi.
 * ~~**Ganti email** dengan verifikasi ke alamat baru (lanjutan FR-14).~~ Selesai 22 Nov 2026 (lihat FR-14).
 * **Pengguna di bawah 18 tahun**, hanya setelah ada penyedia AI yang ketentuannya mengizinkan, lengkap dengan konfirmasi izin orang tua lewat email.
 * **Pembayaran Pro langsung:** integrasi payment gateway (misal Midtrans atau Xendit) dengan webhook bertanda tangan, menggantikan kode aktivasi manual dari FR-11.

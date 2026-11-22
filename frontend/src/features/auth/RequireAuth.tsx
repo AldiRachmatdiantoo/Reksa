@@ -27,7 +27,7 @@ export function RequireAuth({ roles, children }: { roles: Role[]; children: Reac
           title="Server REKSA belum bisa dihubungi"
           action={<Button onClick={auth.recheck}>Coba hubungkan lagi</Button>}
         >
-          Periksa koneksi internetmu. Kalau kamu sedang mengembangkan REKSA, pastikan backend berjalan.
+          Periksa koneksi internetmu. Tebakan dan foto yang tersimpan di perangkat ini tetap aman dan dikirim setelah terhubung lagi.
         </StateBlock>
       </div>
     );

@@ -93,7 +93,7 @@ Daftar ini urut: kerjakan dari atas. Centang `[x]` saat PR-nya sudah masuk `main
 ## Fase F · Pasca-MVP (PRD §4.5), dari yang paling kecil
 
 - [x] **F1. Ganti email** dengan verifikasi ke alamat baru (22 November 2026, `feat/aldi-change-email`, `CHECKPOINT.md` #39).
-- [ ] **F2. Offline-first PWA:** timer dan antrean foto disimpan di IndexedDB saat koneksi putus.
+- [x] **F2. Offline-first PWA:** timer dan antrean foto disimpan di IndexedDB saat koneksi putus (22 November 2026, `feat/aldi-offline-pwa`, `CHECKPOINT.md` #40).
 - [ ] **CP-5 · Gerbang Lengkap.**
 - [ ] **F3. Interleaving engine:** dua materi berbeda dalam satu sesi.
 - [ ] **F4. Pembayaran Pro langsung** (Midtrans atau Xendit, webhook bertanda tangan), menggantikan kode aktivasi manual. Aldi menyiapkan akun merchant.

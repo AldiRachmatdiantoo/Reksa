@@ -4,13 +4,14 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { sessionErrorMessage } from '@/features/studio/sessionsApi';
 import { useLoad } from '@/shared/hooks/useLoad';
+import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { pageTransition, Stagger, StaggerItem } from '@/shared/motion';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button, ButtonLink } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { StateBlock } from '@/shared/ui/StateBlock';
 import { StepIndicator } from '@/features/studio/StepIndicator';
-import { formatDuration, useStudySession } from '@/features/studio/studySession';
+import { formatDuration, isNetworkError, useStudySession } from '@/features/studio/studySession';
 import { QrBridgePanel } from './QrBridgePanel';
 import { PHOTO_PRIVACY_TIP, photoProblem, quotaText, SCAN_ACCEPT, scansApi, uploadErrorMessage } from './scansApi';
 
@@ -26,7 +27,21 @@ function formatBytes(n: number) {
 
 export function CalibratePage() {
   const navigate = useNavigate();
-  const { session, syncing, photoUrl, photoFile, saveJol, setPhoto, setSubmission, clear } = useStudySession();
+  const {
+    session,
+    syncing,
+    photoUrl,
+    photoFile,
+    saveJol,
+    setPhoto,
+    setSubmission,
+    clear,
+    queuePhoto,
+    syncNow,
+    syncNotice,
+    dismissSyncNotice,
+  } = useStudySession();
+  const online = useOnlineStatus();
   const [guess, setGuess] = useState(session?.jolScore ?? 50);
   const [photoError, setPhotoError] = useState('');
   const [jolError, setJolError] = useState('');
@@ -100,10 +115,15 @@ export function CalibratePage() {
   }
 
   const jolLocked = session.jolScore != null && session.status === 'AWAITING_SCAN';
+  // F2: kiriman yang menunggu koneksi, tersimpan di perangkat ini.
+  const jolPending = session.pendingSync?.jol === true;
+  const photoPending = session.pendingSync?.photo === true;
   // Latihan ulang H+3/H+7 tidak memotong jatah cek harian (FR-06).
   const isReview = session.sessionType === 'SPACED_REVIEW';
   const quotaEmpty = !isReview && quota.status === 'ready' && quota.data.remaining === 0;
-  const canSubmit = jolLocked && photoFile != null && !quotaEmpty && !sending;
+  const canSubmit = jolLocked && photoFile != null && !quotaEmpty && !sending && !photoPending;
+  // Kode QR dibuat server, jadi butuh koneksi dan tebakan yang sudah sampai di server.
+  const qrAvailable = online && !jolPending;
 
   const onSaveJol = async () => {
     setSavingJol(true);
@@ -135,14 +155,33 @@ export function CalibratePage() {
     navigate('/belajar/hasil');
   };
 
+  /** F2: simpan foto di perangkat; dikirim otomatis saat koneksi kembali. */
+  const queueForLater = async (file: File) => {
+    try {
+      await queuePhoto(file);
+    } catch {
+      setPhotoError('Foto gagal disimpan di perangkat ini. Kirim lagi setelah koneksi kembali.');
+    }
+    setSending(false);
+  };
+
   const onSubmit = async () => {
     if (!photoFile || !session.serverId) return;
     setSending(true);
     setPhotoError('');
+    // Tebakan masih menunggu koneksi: server baru menerima foto setelah tebakan sampai, jadi foto antre di belakangnya.
+    if (jolPending) {
+      await queueForLater(photoFile);
+      return;
+    }
     try {
       const { submissionId } = await scansApi.upload(photoFile, { sessionId: session.serverId });
       goToResult(submissionId);
     } catch (err) {
+      if (isNetworkError(err)) {
+        await queueForLater(photoFile);
+        return;
+      }
       setPhotoError(uploadErrorMessage(err));
       setSending(false);
     }
@@ -153,6 +192,21 @@ export function CalibratePage() {
       <AppHeader subtitle="Tebak & Foto" />
       <motion.main {...pageTransition} className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
         <StepIndicator current={2} />
+
+        {syncNotice && (
+          <div
+            role="alert"
+            className="flex flex-wrap items-start justify-between gap-3 rounded-md bg-danger-wash px-4 py-3 text-body-md text-on-danger-wash"
+          >
+            <p className="flex min-w-0 flex-1 items-start gap-2">
+              <Icon name="error" className="mt-px text-[20px]" />
+              <span>Kiriman yang tersimpan di perangkat ditolak server. {syncNotice}</span>
+            </p>
+            <Button variant="ghost" onClick={dismissSyncNotice}>
+              Tutup
+            </Button>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border border-line-soft bg-card px-5 py-4">
           <span className="flex items-center gap-2 text-body-md text-ink">
@@ -222,7 +276,9 @@ export function CalibratePage() {
                     >
                       <Icon name="check_circle" fill />
                     </motion.span>
-                    Tebakan {session.jolScore}% tersimpan. Tebakan tidak bisa diubah setelah disimpan.
+                    {jolPending
+                      ? `Tebakan ${session.jolScore}% disimpan di perangkat ini dan dikirim otomatis saat koneksi kembali. Tebakan tidak bisa diubah lagi.`
+                      : `Tebakan ${session.jolScore}% tersimpan. Tebakan tidak bisa diubah setelah disimpan.`}
                   </motion.p>
                 ) : (
                   <motion.div key="save" exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.15 }} className="flex flex-col">
@@ -306,7 +362,9 @@ export function CalibratePage() {
                 </p>
               )}
 
-              {jolLocked && useQr && session.serverId && <QrBridgePanel sessionId={session.serverId} onUploaded={goToResult} />}
+              {jolLocked && useQr && qrAvailable && session.serverId && (
+                <QrBridgePanel sessionId={session.serverId} onUploaded={goToResult} />
+              )}
 
               <AnimatePresence initial={false}>
                 {photoUrl && session.photo && (
@@ -325,8 +383,24 @@ export function CalibratePage() {
                 )}
               </AnimatePresence>
 
-              {session.photo && !photoUrl && !useQr && (
+              {session.photo && !photoUrl && !useQr && !photoPending && (
                 <p className="text-body-md text-ink-muted">Halaman dimuat ulang, jadi foto perlu dipilih lagi.</p>
+              )}
+
+              {photoPending && (
+                <div role="status" className="flex flex-col gap-3 rounded-md bg-teal-wash px-4 py-3 text-body-md text-ink">
+                  <p className="flex items-start gap-2">
+                    <Icon name="cloud_upload" className="mt-px text-[20px] text-teal" />
+                    <span>
+                      Foto tersimpan di perangkat ini dan dikirim otomatis begitu koneksi kembali. Hasil cek muncul di sini atau di Riwayat.
+                      Jangan keluar dari akun sebelum fotonya terkirim.
+                    </span>
+                  </p>
+                  <Button variant="outline" className="self-start" disabled={!online} onClick={() => void syncNow()}>
+                    <Icon name="sync" />
+                    {online ? 'Kirim sekarang' : 'Menunggu koneksi...'}
+                  </Button>
+                </div>
               )}
 
               {photoError && (
@@ -336,7 +410,9 @@ export function CalibratePage() {
                 </p>
               )}
 
-              <div className={`flex flex-col gap-2 ${coarsePointer ? '' : 'sm:flex-row sm:flex-wrap'} ${useQr ? 'hidden' : ''}`}>
+              <div
+                className={`flex flex-col gap-2 ${coarsePointer ? '' : 'sm:flex-row sm:flex-wrap'} ${useQr || photoPending ? 'hidden' : ''}`}
+              >
                 {coarsePointer && (
                   <Button variant="primary" size="lg" disabled={!jolLocked} onClick={() => cameraRef.current?.click()}>
                     <Icon name="photo_camera" />
@@ -353,12 +429,17 @@ export function CalibratePage() {
                   {coarsePointer ? 'Pilih dari galeri' : photoUrl ? 'Ganti foto' : 'Pilih foto dari perangkat'}
                 </Button>
                 {!coarsePointer && (
-                  <Button variant="outline" size="lg" disabled={!jolLocked || quotaEmpty} onClick={() => setUseQr(true)}>
+                  <Button variant="outline" size="lg" disabled={!jolLocked || quotaEmpty || !qrAvailable} onClick={() => setUseQr(true)}>
                     <Icon name="qr_code_2" />
                     Pakai kamera HP
                   </Button>
                 )}
               </div>
+              {useQr && !qrAvailable && (
+                <p className="text-body-md text-ink-muted">
+                  Kode QR butuh koneksi internet. Pilih foto dari perangkat ini saja, nanti dikirim otomatis.
+                </p>
+              )}
               {useQr && (
                 <Button variant="ghost" onClick={() => setUseQr(false)}>
                   <Icon name="arrow_back" />
@@ -388,17 +469,19 @@ export function CalibratePage() {
               aria-describedby={canSubmit ? undefined : 'submit-hint'}
               onClick={() => void onSubmit()}
             >
-              {sending ? 'Mengirim foto...' : 'Kirim dan cek catatan'}
+              {sending ? 'Mengirim foto...' : online && !jolPending ? 'Kirim dan cek catatan' : 'Simpan dan kirim nanti'}
             </Button>
             {!canSubmit && !sending && (
               <span id="submit-hint" className="text-body-sm text-ink-muted">
                 {!jolLocked
                   ? 'Simpan tebakan dan pilih foto dulu.'
-                  : quotaEmpty
-                    ? 'Jatah cek hari ini sudah habis.'
-                    : useQr
-                      ? 'Kirim foto dari HP lewat kode QR di atas.'
-                      : 'Pilih foto catatanmu dulu.'}
+                  : photoPending
+                    ? 'Foto sudah menunggu dikirim.'
+                    : quotaEmpty
+                      ? 'Jatah cek hari ini sudah habis.'
+                      : useQr
+                        ? 'Kirim foto dari HP lewat kode QR di atas.'
+                        : 'Pilih foto catatanmu dulu.'}
               </span>
             )}
           </div>
