@@ -14,6 +14,8 @@ const serverSession = (overrides: Partial<ServerSession> = {}): ServerSession =>
   id: S1,
   materialId: '33333333-3333-4333-8333-333333333333',
   materialTitle: 'Fotosintesis',
+  secondMaterialId: null,
+  secondMaterialTitle: null,
   classId: null,
   sessionType: 'INITIAL_BLURTING',
   preset: 'CLASSIC_25_5',

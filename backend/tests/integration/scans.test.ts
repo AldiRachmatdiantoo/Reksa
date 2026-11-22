@@ -120,6 +120,34 @@ describe('golden path: upload → worker → result', () => {
     expect(schedules.map((s) => s.intervalDay)).toEqual(scan.result.blindSpots.length > 0 ? [3, 7] : []);
   });
 
+  it('an interleaved session (F3) is graded once, verifies publicly, and schedules only its own materials', async () => {
+    const siswa = await register('siswa@reksa.id');
+    const create = (title: string, content: string) =>
+      request(ctx.app).post('/api/v1/materials').set('Cookie', siswa.cookie).send({ title, content });
+    const first = (await create('Homeostasis', 'Homeostasis menjaga kondisi internal tubuh tetap stabil.')).body.material.id as string;
+    const second = (await create('Fotosintesis', 'Fotosintesis mengubah cahaya menjadi energi kimia di klorofil.')).body.material
+      .id as string;
+    const s = await request(ctx.app)
+      .post('/api/v1/sessions')
+      .set('Cookie', siswa.cookie)
+      .send({ materialId: first, secondMaterialId: second, preset: 'CLASSIC_25_5' });
+    expect(s.status).toBe(201);
+    const sessionId = s.body.session.id as string;
+    await request(ctx.app).patch(`/api/v1/sessions/${sessionId}/jol`).set('Cookie', siswa.cookie).send({ predictedJolScore: 60 });
+
+    const res = await upload({ sessionId }, await phonePhoto(7), siswa.cookie);
+    expect(res.status).toBe(202);
+    expect(res.body.quota.used).toBe(1);
+    await worker.drain();
+
+    const scan = (await getScan(siswa.cookie, res.body.submissionId)).body.scan;
+    expect(scan.auditStatus).toBe('DONE');
+    expect((await request(ctx.app).get(`/api/v1/ledger/verify/${scan.ledgerHash}`)).body.valid).toBe(true);
+    const schedules = await ctx.owner.spacedSchedule.findMany({ where: { originSubmissionId: res.body.submissionId } });
+    expect(schedules.every((row) => row.materialId === first || row.materialId === second)).toBe(true);
+    expect(schedules.length % 2).toBe(0);
+  });
+
   it('the stored ledger cannot be modified after DONE', async () => {
     const siswa = await register('siswa@reksa.id');
     const sessionId = await readySession(siswa.cookie);

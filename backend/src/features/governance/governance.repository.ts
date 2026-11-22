@@ -42,6 +42,7 @@ type LookupRow = {
   session_id: string;
   user_id: string;
   material_id: string;
+  second_material_id: string | null;
   started_at: Date;
   focus_ended_at: Date | null;
   actual_duration_sec: number | null;
@@ -90,6 +91,7 @@ export class PrismaGovernanceRepository implements GovernanceRepository {
             select: {
               id: true,
               materialId: true,
+              secondMaterialId: true,
               startedAt: true,
               focusEndedAt: true,
               plannedDurationSec: true,
@@ -103,7 +105,9 @@ export class PrismaGovernanceRepository implements GovernanceRepository {
       const nextCursor = found.length > opts.limit ? (page.at(-1)?.id ?? null) : null;
 
       const userIds = [...new Set(page.map((r) => r.userId))];
-      const materialIds = [...new Set(page.map((r) => r.session.materialId))];
+      const materialIds = [
+        ...new Set(page.flatMap((r) => [r.session.materialId, ...(r.session.secondMaterialId ? [r.session.secondMaterialId] : [])])),
+      ];
       const [users, materials] = await Promise.all([
         tx.user.findMany({ where: { id: { in: userIds } }, select: { id: true, fullName: true } }),
         // Materi pribadi siswa tidak terbaca oleh pengajar (RLS); judulnya menjadi null.
@@ -117,6 +121,7 @@ export class PrismaGovernanceRepository implements GovernanceRepository {
         sessionId: r.session.id,
         userId: r.userId,
         materialId: r.session.materialId,
+        secondMaterialId: r.session.secondMaterialId,
         startedAt: r.session.startedAt,
         focusEndedAt: r.session.focusEndedAt,
         actualDurationSec: r.session.actualDurationSec,
@@ -127,7 +132,7 @@ export class PrismaGovernanceRepository implements GovernanceRepository {
         submittedAt: r.createdAt,
         auditedAt: r.auditedAt!,
         studentName: names.get(r.userId) ?? 'Siswa',
-        materialTitle: titles.get(r.session.materialId) ?? null,
+        materialTitle: ledgerTitle(titles, r.session.materialId, r.session.secondMaterialId),
         plannedDurationSec: r.session.plannedDurationSec,
         blindSpotsJson: r.blindSpotsJson,
         ledgerHash: r.ledgerHash!,
@@ -174,6 +179,7 @@ export class PrismaGovernanceRepository implements GovernanceRepository {
       sessionId: r.session_id,
       userId: r.user_id,
       materialId: r.material_id,
+      secondMaterialId: r.second_material_id,
       startedAt: r.started_at,
       focusEndedAt: r.focus_ended_at,
       actualDurationSec: r.actual_duration_sec,
@@ -186,4 +192,12 @@ export class PrismaGovernanceRepository implements GovernanceRepository {
       ledgerHash: hash,
     };
   }
+}
+
+/** Judul di ledger kelas; sesi interleaving menampilkan "A + B". null bila materi utama tidak terbaca pengajar. */
+function ledgerTitle(titles: Map<string, string>, materialId: string, secondMaterialId: string | null): string | null {
+  const first = titles.get(materialId);
+  if (!first) return null;
+  const second = secondMaterialId ? titles.get(secondMaterialId) : undefined;
+  return second ? `${first} + ${second}` : first;
 }

@@ -9,6 +9,9 @@ export type ServerSession = {
   id: string;
   materialId: string;
   materialTitle: string | null;
+  /** F3 interleaving: materi kedua yang dicampur, null untuk sesi satu materi. */
+  secondMaterialId: string | null;
+  secondMaterialTitle: string | null;
   classId: string | null;
   sessionType: 'INITIAL_BLURTING' | 'SPACED_REVIEW';
   preset: PomodoroPreset | null;
@@ -42,10 +45,15 @@ const path = (id: string) => `/sessions/${encodeURIComponent(id)}`;
 
 export const sessionsApi = {
   /** classId untuk materi kelas: tanpa itu sesi tidak terlihat di ledger guru (FR-07). */
-  start: (materialId: string, minutes: number, classId: string | null = null) =>
+  start: (materialId: string, minutes: number, classId: string | null = null, secondMaterialId: string | null = null) =>
     apiRequest<{ session: ServerSession }>('/sessions', {
       method: 'POST',
-      body: { materialId, preset: PRESET_BY_MINUTES[minutes] ?? 'CLASSIC_25_5', ...(classId ? { classId } : {}) },
+      body: {
+        materialId,
+        preset: PRESET_BY_MINUTES[minutes] ?? 'CLASSIC_25_5',
+        ...(classId ? { classId } : {}),
+        ...(secondMaterialId ? { secondMaterialId } : {}),
+      },
     }).then((r) => r.session),
   active: (signal?: AbortSignal) => apiRequest<{ session: ServerSession | null }>('/sessions/active', { signal }).then((r) => r.session),
   get: (id: string, signal?: AbortSignal) => apiRequest<{ session: ServerSession }>(path(id), { signal }).then((r) => r.session),

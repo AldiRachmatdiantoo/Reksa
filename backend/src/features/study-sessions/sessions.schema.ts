@@ -14,14 +14,19 @@ export const REVIEW_FOCUS_SEC = 5 * 60;
 /** Paling banyak 3 sesi latihan ulang per jadwal (termasuk yang dibatalkan atau kedaluwarsa), karena tanpa kuota. */
 export const MAX_REVIEW_SESSIONS_PER_SCHEDULE = 3;
 
-/** POST /sessions */
+/** POST /sessions. `secondMaterialId` (F3 interleaving): materi kedua yang dicampur, wajib berbeda. */
 export const StartSessionSchema = z
   .object({
     materialId: z.uuid(),
     preset: PomodoroPresetSchema,
     classId: z.uuid().optional(),
+    secondMaterialId: z.uuid().optional(),
   })
-  .strict();
+  .strict()
+  .refine((v) => v.secondMaterialId === undefined || v.secondMaterialId !== v.materialId, {
+    path: ['secondMaterialId'],
+    message: 'Materi kedua harus berbeda dari materi pertama',
+  });
 
 /** PATCH /sessions/:id/jol (FR-03) */
 export const SubmitJolSchema = z
@@ -55,6 +60,9 @@ export type SessionView = {
   materialId: string;
   /** null bila materi tidak lagi bisa dibaca (mis. pelajar sudah keluar dari kelas pemilik materi). */
   materialTitle: string | null;
+  /** F3 interleaving: materi kedua, null untuk sesi satu materi. Judul null bila tidak lagi bisa dibaca. */
+  secondMaterialId: string | null;
+  secondMaterialTitle: string | null;
   classId: string | null;
   sessionType: 'INITIAL_BLURTING' | 'SPACED_REVIEW';
   /** null untuk durasi di luar preset (mis. sesi SPACED_REVIEW nanti). */

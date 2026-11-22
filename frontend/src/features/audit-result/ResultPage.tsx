@@ -15,7 +15,7 @@ import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { Icon } from '@/shared/ui/Icon';
 import { LoadingBlock, StateBlock } from '@/shared/ui/StateBlock';
 import { StepIndicator } from '@/features/studio/StepIndicator';
-import { useStudySession } from '@/features/studio/studySession';
+import { sessionTitle, useStudySession } from '@/features/studio/studySession';
 import type { ImportanceLevel } from './sampleAudit';
 
 /** PRD FR-05: cek status tiap 2 detik, paling lama 90 detik. */
@@ -239,7 +239,7 @@ export function ResultPage() {
   return (
     <AuditResult
       scan={scan}
-      materialTitle={session?.materialTitle ?? ''}
+      materialTitle={session ? sessionTitle(session) : ''}
       review={session?.sessionType === 'SPACED_REVIEW'}
       onStartOver={leave}
     />

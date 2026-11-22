@@ -29,6 +29,8 @@ export type ScanRecord = {
 export type SessionForScan = {
   id: string;
   materialId: string;
+  /** F3: materi kedua sesi interleaving, null untuk sesi satu materi. */
+  secondMaterialId: string | null;
   status: 'FOCUS_ACTIVE' | 'AWAITING_JOL' | 'AWAITING_SCAN' | 'COMPLETED' | 'EXPIRED';
   predictedJolScore: number | null;
   startedAt: Date;
@@ -138,6 +140,7 @@ const submissionSelect = {
 type SessionRow = {
   id: string;
   material_id: string;
+  second_material_id: string | null;
   status: SessionForScan['status'];
   predicted_jol_score: number | null;
   started_at: Date;
@@ -168,7 +171,7 @@ class PrismaScansUnitOfWork implements ScansUnitOfWork {
 
   async lockSession(sessionId: string): Promise<SessionForScan | null> {
     const rows = await this.tx.$queryRaw<SessionRow[]>`
-      SELECT id, material_id, status, predicted_jol_score, started_at, focus_ended_at, actual_duration_sec, validity,
+      SELECT id, material_id, second_material_id, status, predicted_jol_score, started_at, focus_ended_at, actual_duration_sec, validity,
              session_type, spaced_schedule_id
       FROM study_sessions
       WHERE id = ${sessionId}::uuid AND user_id = ${this.userId}::uuid
@@ -178,6 +181,7 @@ class PrismaScansUnitOfWork implements ScansUnitOfWork {
       ? {
           id: r.id,
           materialId: r.material_id,
+          secondMaterialId: r.second_material_id,
           status: r.status,
           predictedJolScore: r.predicted_jol_score,
           startedAt: r.started_at,

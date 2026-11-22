@@ -28,6 +28,7 @@ export class FakeScansRepository implements ScansRepository {
     const session: SessionForScan = {
       id: randomUUID(),
       materialId: randomUUID(),
+      secondMaterialId: null,
       status: 'AWAITING_SCAN',
       predictedJolScore: 70,
       startedAt: new Date('2026-11-21T02:00:00Z'),
@@ -118,8 +119,13 @@ export class FakeScansRepository implements ScansRepository {
       },
       loadRubric: async (materialId) => (owned ? (this.rubrics.get(materialId) ?? null) : null),
       insertSpacedSchedules: async (rows) => {
+        // Sama dengan idx_spaced_origin_material_interval.
         for (const r of rows) {
-          if (!this.schedules.some((x) => x.originSubmissionId === r.originSubmissionId && x.intervalDay === r.intervalDay)) {
+          if (
+            !this.schedules.some(
+              (x) => x.originSubmissionId === r.originSubmissionId && x.materialId === r.materialId && x.intervalDay === r.intervalDay,
+            )
+          ) {
             this.schedules.push(r);
           }
         }

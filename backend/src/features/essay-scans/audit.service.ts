@@ -3,6 +3,7 @@ import { AiProviderError } from '../../common/ai/ai.errors.js';
 import type { IAiService } from '../../common/ai/ai.provider.interface.js';
 import { AiEssayAuditOutputSchema, AiRubricOutputSchema, type AiEssayAuditOutput, type AiRubricOutput } from '../../common/ai/ai.schema.js';
 import type { IStorageService } from '../../config/storage.js';
+import { mergeRubrics, splitBlindSpots } from './interleave.js';
 import { computeLedgerHash } from './ledgerHash.js';
 import { planRefund } from './quota.policy.js';
 import type { ScansRepository } from './scans.repository.js';
@@ -120,6 +121,7 @@ export class AuditService {
       const session = await uow.lockSession(submission.sessionId);
       if (!session) return null;
       const rubric = await uow.loadRubric(session.materialId);
+      const secondRubric = session.secondMaterialId ? await uow.loadRubric(session.secondMaterialId) : null;
       const targets = session.spacedScheduleId ? await uow.loadScheduleTargets(session.spacedScheduleId) : null;
       const ok = await uow.updateSubmission(submission.id, ['PENDING'], {
         auditStatus: 'PROCESSING',
@@ -127,7 +129,7 @@ export class AuditService {
         auditStartedAt: startedAt,
         auditErrorCode: null,
       });
-      return ok ? { submission, session, rubric, targets } : null;
+      return ok ? { submission, session, rubric, secondRubric, targets } : null;
     });
     // Sudah diproses worker lain, dibatalkan, atau bukan milik user ini.
     if (!claimed) return 'SKIPPED';
@@ -136,6 +138,14 @@ export class AuditService {
     const parsed = AiRubricOutputSchema.safeParse(claimed.rubric);
     if (!parsed.success) return this.failed(job, 'MATERIAL_UNAVAILABLE');
     let rubric = parsed.data;
+    // F3: sesi interleaving dinilai dengan gabungan rubrik kedua materi.
+    let pair: { first: AiRubricOutput; second: AiRubricOutput } | null = null;
+    if (session.secondMaterialId) {
+      const second = AiRubricOutputSchema.safeParse(claimed.secondRubric);
+      if (!second.success) return this.failed(job, 'MATERIAL_UNAVAILABLE');
+      pair = { first: rubric, second: second.data };
+      rubric = mergeRubrics(rubric, second.data);
+    }
     if (session.spacedScheduleId) {
       const focus = focusRubric(rubric, claimed.targets);
       if (!focus.focused) {
@@ -163,6 +173,7 @@ export class AuditService {
         sessionId: session.id,
         userId: job.userId,
         materialId: session.materialId,
+        secondMaterialId: session.secondMaterialId,
         startedAt: session.startedAt,
         focusEndedAt: session.focusEndedAt,
         actualDurationSec: session.actualDurationSec,
@@ -189,15 +200,23 @@ export class AuditService {
       if (session.spacedScheduleId) {
         // Latihan ulang selesai dinilai: jadwalnya ditutup, dan tidak membuat jadwal baru (FR-06).
         await uow.completeSchedule(session.spacedScheduleId);
-      } else if (audit.blindSpots.length > 0) {
+      } else {
+        // Sesi interleaving: bagian yang terlewat dijadwalkan ulang di materi asalnya masing-masing.
+        const split = pair ? splitBlindSpots(audit.blindSpots, pair.first, pair.second) : null;
+        const targets = [
+          { materialId: session.materialId, blindSpots: split ? split.first : audit.blindSpots },
+          ...(split && session.secondMaterialId ? [{ materialId: session.secondMaterialId, blindSpots: split.second }] : []),
+        ].filter((t) => t.blindSpots.length > 0);
         await uow.insertSpacedSchedules(
-          SPACED_INTERVALS.map((intervalDay) => ({
-            originSubmissionId: submission.id,
-            materialId: session.materialId,
-            targetBlindSpots: audit.blindSpots,
-            intervalDay,
-            nextReviewAt: new Date(auditedAt.getTime() + intervalDay * DAY_MS),
-          })),
+          targets.flatMap((t) =>
+            SPACED_INTERVALS.map((intervalDay) => ({
+              originSubmissionId: submission.id,
+              materialId: t.materialId,
+              targetBlindSpots: t.blindSpots,
+              intervalDay,
+              nextReviewAt: new Date(auditedAt.getTime() + intervalDay * DAY_MS),
+            })),
+          ),
         );
       }
       return true;

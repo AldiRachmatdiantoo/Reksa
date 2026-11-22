@@ -10,6 +10,8 @@ export type LedgerContent = {
   sessionId: string;
   userId: string;
   materialId: string;
+  /** F3: hanya sesi interleaving. Kosong berarti format sama persis dengan hash sebelum F3. */
+  secondMaterialId?: string | null;
   startedAt: Date;
   focusEndedAt: Date | null;
   actualDurationSec: number | null;
@@ -40,6 +42,8 @@ export function computeLedgerHash(c: LedgerContent): string {
     c.imageStorageKey,
     c.submittedAt.toISOString(),
     c.auditedAt.toISOString(),
+    // Ditambahkan di ujung hanya bila ada, jadi hash sesi satu materi (termasuk yang lama) tidak berubah.
+    ...(c.secondMaterialId ? [c.secondMaterialId] : []),
   ]);
   return createHash('sha256').update(canonical).digest('hex');
 }

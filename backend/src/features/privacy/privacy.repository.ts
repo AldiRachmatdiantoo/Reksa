@@ -151,6 +151,7 @@ export class PrismaPrivacyRepository implements PrivacyRepository {
         select: {
           id: true,
           materialId: true,
+          secondMaterialId: true,
           sessionType: true,
           status: true,
           validity: true,
@@ -166,7 +167,9 @@ export class PrismaPrivacyRepository implements PrivacyRepository {
       const titles = new Map(
         (
           await tx.studyMaterial.findMany({
-            where: { id: { in: [...new Set(sessions.map((s) => s.materialId))] } },
+            where: {
+              id: { in: [...new Set(sessions.flatMap((s) => (s.secondMaterialId ? [s.materialId, s.secondMaterialId] : [s.materialId])))] },
+            },
             select: { id: true, title: true },
           })
         ).map((m) => [m.id, m.title]),
@@ -200,7 +203,11 @@ export class PrismaPrivacyRepository implements PrivacyRepository {
         account,
         classes: memberships.map((m) => ({ classId: m.classId, name: m.class.name, joinedAt: m.joinedAt })),
         materials: materials.map((m) => ({ id: m.id, title: m.title, createdAt: m.createdAt, rubric: m.extractedRubricJson })),
-        sessions: sessions.map((s) => ({ ...s, materialTitle: titles.get(s.materialId) ?? null })),
+        sessions: sessions.map((s) => ({
+          ...s,
+          materialTitle: titles.get(s.materialId) ?? null,
+          secondMaterialTitle: s.secondMaterialId ? (titles.get(s.secondMaterialId) ?? null) : null,
+        })),
         submissions: submissions.map((s) => ({
           id: s.id,
           sessionId: s.sessionId,

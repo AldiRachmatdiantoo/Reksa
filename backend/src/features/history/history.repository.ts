@@ -11,10 +11,12 @@ export type HistoryRow = {
   session: {
     sessionType: 'INITIAL_BLURTING' | 'SPACED_REVIEW';
     materialId: string;
+    secondMaterialId: string | null;
     startedAt: Date;
     actualDurationSec: number | null;
     validity: string | null;
   };
+  /** Sesi interleaving (F3) bertuliskan "A + B"; null bila materi utama tidak lagi terbaca. */
   materialTitle: string | null;
 };
 
@@ -56,15 +58,30 @@ export class PrismaHistoryRepository implements HistoryRepository {
           auditStatus: true,
           blindSpotsJson: true,
           createdAt: true,
-          session: { select: { sessionType: true, materialId: true, startedAt: true, actualDurationSec: true, validity: true } },
+          session: {
+            select: {
+              sessionType: true,
+              materialId: true,
+              secondMaterialId: true,
+              startedAt: true,
+              actualDurationSec: true,
+              validity: true,
+            },
+          },
         },
       });
       if (rows.length === 0) return [];
       // Judul dibaca terpisah: materi kelas bisa sudah tidak terlihat oleh RLS.
-      const ids = [...new Set(rows.map((r) => r.session.materialId))];
+      const ids = [
+        ...new Set(rows.flatMap((r) => [r.session.materialId, ...(r.session.secondMaterialId ? [r.session.secondMaterialId] : [])])),
+      ];
       const materials = await tx.studyMaterial.findMany({ where: { id: { in: ids } }, select: { id: true, title: true } });
       const titles = new Map(materials.map((m) => [m.id, m.title]));
-      return rows.map((r) => ({ ...r, materialTitle: titles.get(r.session.materialId) ?? null })) as HistoryRow[];
+      return rows.map((r) => {
+        const first = titles.get(r.session.materialId);
+        const second = r.session.secondMaterialId ? titles.get(r.session.secondMaterialId) : undefined;
+        return { ...r, materialTitle: first ? (second ? `${first} + ${second}` : first) : null };
+      }) as HistoryRow[];
     });
   }
 

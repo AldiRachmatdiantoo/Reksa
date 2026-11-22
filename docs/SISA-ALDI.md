@@ -94,8 +94,8 @@ Daftar ini urut: kerjakan dari atas. Centang `[x]` saat PR-nya sudah masuk `main
 
 - [x] **F1. Ganti email** dengan verifikasi ke alamat baru (22 November 2026, `feat/aldi-change-email`, `CHECKPOINT.md` #39).
 - [x] **F2. Offline-first PWA:** timer dan antrean foto disimpan di IndexedDB saat koneksi putus (22 November 2026, `feat/aldi-offline-pwa`, `CHECKPOINT.md` #40).
-- [ ] **CP-5 · Gerbang Lengkap.**
-- [ ] **F3. Interleaving engine:** dua materi berbeda dalam satu sesi.
+- [x] **CP-5 · Gerbang Lengkap** poin 1 sampai 6 (22 November 2026, hasil di `CHECKPOINT.md` #41). Poin 7 (AI asli) tidak diulang karena kuota free tier; terakhir lulus di CP-2. Poin 8 dicek lewat E2E dan screenshot.
+- [x] **F3. Interleaving engine:** dua materi berbeda dalam satu sesi (22 November 2026, `feat/aldi-interleaving`, `CHECKPOINT.md` #41).
 - [ ] **F4. Pembayaran Pro langsung** (Midtrans atau Xendit, webhook bertanda tangan), menggantikan kode aktivasi manual. Aldi menyiapkan akun merchant.
 - [ ] **CP-6 · Gerbang Lengkap.**
 - [ ] **F5. Mode Audio-First Feynman** (Stage 4): AI berperan sebagai murid awam yang bertanya lewat suara.
