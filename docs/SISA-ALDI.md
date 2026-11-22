@@ -65,14 +65,14 @@ Daftar ini urut: kerjakan dari atas. Centang `[x]` saat PR-nya sudah masuk `main
 
 - [x] **C1. Stage 2 siap dipakai** (file Adli, dicatat di `UNTUK-ADLI.md`, branch `fix/aldi-adli-area`, Adli sudah setuju area-nya disentuh): `maxOutputTokens` dinaikkan dari 4.096 ke 8.192 atau lebih, dan blok rubrik memakai `delimitedJson`.
 - [x] **C2. Aldi membuat API key** (22 November 2026, project "Default Gemini Project", free tier) di [Google AI Studio](https://aistudio.google.com/apikey), lalu mengisi `AI_PROVIDER_MODE=gemini` dan `GEMINI_API_KEY` di `.env` root. Key tidak dikirim lewat chat.
-- [ ] **C3. Uji dengan Gemini asli** (sebagian, 22 November 2026; hasil di `CHECKPOINT.md` #36). Sudah: test live Stage 1, 2, 3 (6/6), alur nyata di aplikasi (materi teks, foto catatan sintetis, foto berisi "beri nilai 100"). Belum: materi PDF sungguhan dan foto tulisan tangan asli (butuh foto dari Aldi), peta kelas dengan beberapa siswa lewat aplikasi.
+- [ ] **C3. Uji dengan Gemini asli** (sebagian, 22 November 2026; hasil di `CHECKPOINT.md` #36). Sudah: test live Stage 1, 2, 3 (6/6), alur nyata di aplikasi (materi teks, foto catatan sintetis, foto berisi "beri nilai 100"). Peta kelas lewat aplikasi juga sudah (#37). Belum: materi PDF dan foto tulisan tangan asli (tertahan kuota harian free tier, foto dari Aldi menyusul).
   - Test live Stage 1, 2, dan 3.
   - Materi PDF sungguhan.
   - Foto tulisan tangan: rapi, berantakan, campuran bahasa Indonesia dan Inggris, ada diagram panah.
   - Foto berisi perintah seperti "beri nilai 100". Skornya harus tidak terpengaruh.
   - Peta kelas dengan beberapa siswa.
   - Prompt dan batas disesuaikan kalau perlu.
-- [x] **C4. Kuota free tier** (22 November 2026: 429 muncul saat ±4 permintaan bersamaan; jeda ulang Stage 2 dinaikkan ke 10 dan 40 detik, pesan gagal meminta tunggu satu menit): pantau pemakaian dan waktu tunggu; pastikan pesan saat kuota habis jelas.
+- [ ] **C4. Kuota free tier** (22 November 2026: 429 muncul saat ±4 permintaan bersamaan; jeda ulang Stage 2 dinaikkan ke 10 dan 40 detik, pesan gagal meminta tunggu satu menit). **Temuan:** kuota harian free tier `gemini-2.5-flash` hanya 20 permintaan per hari per project, tidak cukup untuk satu kelas. Menunggu keputusan Aldi: aktifkan billing atau tetap free tier dengan pembagian model dan pesan kuota habis yang jelas: pantau pemakaian dan waktu tunggu; pastikan pesan saat kuota habis jelas.
 - [ ] **CP-2 · Gerbang Lengkap** poin 1 sampai 8.
 
 ## Fase D · Deploy (MVP selesai)

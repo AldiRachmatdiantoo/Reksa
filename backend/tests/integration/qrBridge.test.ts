@@ -3,6 +3,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { ACCESS_COOKIE } from '../../src/common/utils/authCookies.js';
 import { QR_BRIDGE_TTL_SEC, RedisQrBridge } from '../../src/features/essay-scans/qrBridge.gateway.js';
+import { SCAN_UPLOAD_IP_LIMIT_PER_HOUR } from '../../src/features/essay-scans/scans.routes.js';
 import { CONSENT, cookieHeader, createTestContext, parseSetCookies, VALID_PASSWORD } from '../support/testContext.js';
 
 const ctx = createTestContext();
@@ -171,5 +172,19 @@ describe('GET /sessions/:id/qr-bridge/events (SSE)', () => {
     } finally {
       await stream.close();
     }
+  });
+});
+
+describe('POST /scans/upload per-IP limit', () => {
+  it('lets a whole class on one school IP upload in the same hour, then stops a flood', async () => {
+    expect(SCAN_UPLOAD_IP_LIMIT_PER_HOUR).toBeGreaterThanOrEqual(100);
+    // Token QR palsu: ditolak 410 setelah lolos pembatas IP, jadi tiap permintaan tetap dihitung.
+    const upload = () =>
+      request(ctx.app)
+        .post('/api/v1/scans/upload')
+        .field('qrToken', 'a'.repeat(43))
+        .attach('image', Buffer.from('bukan foto'), { filename: 'x.jpg', contentType: 'image/jpeg' });
+    for (let i = 0; i < SCAN_UPLOAD_IP_LIMIT_PER_HOUR; i++) expect((await upload()).status).not.toBe(429);
+    expect((await upload()).status).toBe(429);
   });
 });
