@@ -1,5 +1,15 @@
 # Checkpoint Frontend REKSA
 
+## #19 · 2026-11-22 · Catatan kualitas: code splitting, token URL, formatter, CSP
+
+Branch: `fix/aldi-qa-bugs`.
+
+- `App.tsx`: halaman selain beranda, masuk/daftar, dan 404 dimuat lewat `React.lazy`. Bundle utama 646 kB ke 285 kB.
+- `shared/hooks/useUrlToken.ts` menggantikan `features/auth/tokenFromUrl.ts` dan `takeTokenFromHash` di `PhoneUploadPage`: token dibaca tanpa efek samping saat render, dihapus dari URL di `useEffect`. Perlu karena halaman lazy membuat React kadang membuang render pertama. Tes: `tests/unit/useUrlToken.test.ts`.
+- `.oxfmtrc.json` (root) + `npm run format:check`. Semua file sudah diformat kecuali `tests/e2e/helpers.ts` (area Adli).
+- `nginx.conf`: `img-src` tanpa `https:`, `frame-src 'none'`.
+- E2E: `expectAccessible` menunggu animasi masuk selesai sebelum axe.
+
 ## #18 · 2026-11-22 · Perbaikan bug QA 5 sampai 9
 
 Branch: `fix/aldi-qa-bugs`.

@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, perbaikan bug hasil QA 1 sampai 9 (Aldi, branch `fix/aldi-qa-bugs`, ditumpuk di atas `feat/aldi-institution-admin`)
+**Checkpoint terakhir:** 22 November 2026, perbaikan bug QA 1 sampai 9 dan catatan kualitas (Aldi, branch `fix/aldi-qa-bugs`, ditumpuk di atas `feat/aldi-institution-admin`)
 
 ---
 
@@ -16,6 +16,16 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #27 · Catatan kualitas QA · branch `fix/aldi-qa-bugs`
+
+- **Code splitting per halaman.** `App.tsx` memuat semua halaman selain beranda, masuk/daftar, dan 404 lewat `React.lazy` (helper `page()`). Bundle utama turun dari 646 kB ke 285 kB (motion 172 kB terpisah), tanpa peringatan ukuran chunk. `Suspense` berkunci jadi anak langsung `AnimatePresence` supaya animasi keluar tetap jalan; `/belajar/*` punya `Suspense` sendiri di dalam `StudySessionProvider`.
+- **Bug yang muncul karena lazy loading, ikut diperbaiki.** `PhoneUploadPage`, `VerifyEmailPage`, dan `ResetPasswordPage` membaca token dari URL sambil menghapusnya di dalam initializer `useState`. Halaman lazy membuat React kadang membuang render pertama; render ulang tidak lagi menemukan token, jadi HP menampilkan "Kode QR tidak terbaca" (tertangkap E2E QR bridge). Hook baru `shared/hooks/useUrlToken.ts` membaca token tanpa efek samping saat render dan menghapusnya dari address bar di `useEffect`. Unit test mereproduksi render yang dibuang lewat `Suspense` (gagal dengan cara lama, lulus dengan hook baru).
+- **Coverage backend.** Tes baru `cohortCache.test.ts`, `config/email.test.ts` (nodemailer `jsonTransport`, tanpa jaringan), dan `ledgerPdf.test.ts` (teks dibaca balik dari content stream PDF: data kosong, fokus pendek, kata tanpa spasi yang dipotong, halaman lanjutan, tautan cek di setiap halaman). `safeEqualHex` di `crypto.ts` dihapus karena tidak dipakai. `cohortCache`, `email`, `crypto` kini 100%; `ledgerPdf` 99% statement / 89% branch (sisa cabang defensif).
+- **Formatter.** `.oxfmtrc.json` di root (`singleQuote`, `printWidth` 140, abaikan `design-reference`, Markdown, lockfile), `oxfmt` ditambahkan ke backend, script `format` dan `format:check` di kedua paket. Yang diformat baru area Aldi; area Adli (`essay-scans`, `study-sessions`, berkas mock/Gemini Vision, `backend/tests/unit`, `frontend/tests/e2e`) belum, jadi `format:check` belum dipasang di CI.
+- **CSP nginx lebih sempit.** `img-src` tidak lagi mengizinkan semua `https:` (tinggal `'self' data: blob: http://localhost:8333`), dan `frame-src` jadi `'none'` karena aplikasi tidak memakai iframe (PDF dan file materi dibuka di tab baru).
+- **Hasil:** backend 573 lulus (3 skip), coverage statements 96.05% / branch 89.68%. Frontend 52 unit, build tanpa peringatan, E2E 14/14 (`study-flow` diulang 3 kali, 9/9). Dicek juga di stack lokal: foto hasil cek termuat dari `localhost:8333` tanpa pelanggaran CSP; tautan verifikasi email dan reset kata sandi dari Mailpit berhasil dan token hilang dari URL.
+- Helper E2E `expectAccessible` kini menunggu animasi masuk selesai sebelum audit axe. Tanpa itu, axe yang jalan di tengah fade pemberitahuan cookie membaca teks setengah transparan sebagai kontras rendah.
 
 ### #26 · Perbaikan bug QA 5 sampai 9 · branch `fix/aldi-qa-bugs`
 

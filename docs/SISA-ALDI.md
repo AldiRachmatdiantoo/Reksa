@@ -48,7 +48,8 @@ Centang `[x]` saat selesai dan catat di `docs/CHECKPOINT.md`.
 
 - [x] Bug 1 sampai 4: menu HP meluber, balapan refresh antartab, logout saat refresh 429/jaringan, batas laju per IP untuk NAT sekolah (branch `fix/aldi-qa-bugs`)
 - [x] Bug 5 sampai 9: form gabung kelas, kode bukti lengkap + tautan cek, foto ledger utuh, target sentuh 44px, pengunjung tanpa sesi tidak memanggil auth (branch `fix/aldi-qa-bugs`)
-- [ ] Kualitas: bundle JS 646 kB tanpa code splitting, coverage rendah (`cohortCache.ts`, `config/email.ts`, `crypto.ts`, cabang `ledgerPdf.ts`), oxfmt tanpa config, CSP `img-src`/`frame-src` mengizinkan semua `https:`
+- [x] Kualitas: code splitting per halaman (646 kB ke 285 kB), tes untuk `cohortCache`, `email`, `ledgerPdf` (`safeEqualHex` dihapus), `.oxfmtrc.json` + script `format`/`format:check`, CSP `img-src` tanpa `https:` dan `frame-src 'none'` (branch `fix/aldi-qa-bugs`)
+- [ ] Format area Adli dengan oxfmt, lalu pasang `npm run format:check` di CI (menunggu keputusan)
 
 ## Perkiraan progres
 

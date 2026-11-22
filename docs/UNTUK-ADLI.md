@@ -13,6 +13,10 @@ Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ad
 - `RefreshTokenRecord` sekarang punya `rotatedAt`, dan ada migrasi baru `20261122000400_refresh_rotation_grace`.
 - `apiClient` (frontend): refresh dikunci antartab lewat Web Locks, `401 REFRESH_RACE` diulang otomatis, dan refresh yang gagal karena 429/5xx/jaringan menjadi `503 SESSION_REFRESH_UNAVAILABLE` tanpa mengeluarkan pengguna.
 - E2E baru `frontend/tests/e2e/mobile-layout.spec.ts` dan `session.spec.ts` (file baru, tidak mengubah spec lain).
+- Tes baru di `backend/tests/unit` (areamu): `features/governance/cohortCache.test.ts`, `features/governance/ledgerPdf.test.ts`, `config/email.test.ts`. Isinya tes modul milikku, tidak mengubah tes lain.
+- `frontend/tests/e2e/helpers.ts`: `expectAccessible` sekarang menunggu animasi masuk selesai sebelum audit axe (animasi tak berujung diabaikan). Tanpa itu, audit di tengah fade pemberitahuan cookie gagal kontras.
+- Halaman frontend sekarang dimuat lazy. Karena itu token QR di `PhoneUploadPage` dibaca lewat hook `shared/hooks/useUrlToken.ts`: dibaca tanpa efek samping saat render, dihapus dari address bar setelah halaman tampil. Cara lama (hapus hash di dalam `useState`) kadang membuat HP menampilkan "Kode QR tidak terbaca".
+- Formatter: `.oxfmtrc.json` di root dan script `npm run format` / `npm run format:check` di backend dan frontend. Area-mu belum kuformat supaya tidak bentrok dengan kerjaanmu; kalau sudah siap, jalankan `npm run format` di foldermu.
 - Cookie baru `__Host-reksa_session=1` dipasang bersama cookie auth. Isinya bukan token dan sengaja tidak HttpOnly: `AuthProvider` membacanya untuk melewati `/auth/me` bagi pengunjung yang belum login. Kalau kamu menulis tes yang memasang cookie auth secara manual di browser, tambahkan penanda ini juga, atau halaman terproteksi akan menganggapmu belum login.
 
 ## 22 Nov 2026: FR-10 portal admin institusi (branch `feat/aldi-institution-admin`)

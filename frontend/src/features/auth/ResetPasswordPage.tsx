@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { ApiError } from '@/core/apiClient';
+import { EMAIL_TOKEN_RE, useUrlToken } from '@/shared/hooks/useUrlToken';
 import { Button, ButtonLink } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { TextField } from '@/shared/ui/TextField';
@@ -7,12 +8,11 @@ import { AuthCardLayout } from './AuthCardLayout';
 import { useAuth } from './AuthProvider';
 import { authApi } from './authApi';
 import { isStrongPassword, PasswordRules } from './PasswordRules';
-import { readTokenFromUrl } from './tokenFromUrl';
 
 /** Tujuan tautan di email reset: /atur-ulang-password?token=... */
 export function ResetPasswordPage() {
   const auth = useAuth();
-  const [token] = useState(readTokenFromUrl);
+  const token = useUrlToken('query', EMAIL_TOKEN_RE);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [show, setShow] = useState(false);

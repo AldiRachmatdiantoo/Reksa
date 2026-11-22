@@ -28,6 +28,11 @@ export async function createMaterial(request: APIRequestContext, title: string) 
 export async function expectAccessible(page: Page, name: string) {
   // Tipe Page di @axe-core/playwright tertinggal satu versi dari @playwright/test; objeknya sama saat runtime.
   type AxePage = ConstructorParameters<typeof AxeBuilder>[0]['page'];
+  // Tunggu animasi masuk selesai (misalnya pemberitahuan cookie yang fade in setelah 0,6 detik). Axe yang jalan di
+  // tengah fade membaca teks setengah transparan sebagai kontras rendah. Animasi tak berujung (spinner) diabaikan.
+  await page.waitForFunction(() =>
+    document.getAnimations().every((a) => a.playState !== 'running' || a.effect?.getComputedTiming().iterations === Infinity),
+  );
   const results = await new AxeBuilder({ page: page as unknown as AxePage }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   const blocking = results.violations
     .filter((v) => v.impact === 'critical' || v.impact === 'serious')
