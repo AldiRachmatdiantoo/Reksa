@@ -100,7 +100,9 @@ export function CalibratePage() {
   }
 
   const jolLocked = session.jolScore != null && session.status === 'AWAITING_SCAN';
-  const quotaEmpty = quota.status === 'ready' && quota.data.remaining === 0;
+  // Latihan ulang H+3/H+7 tidak memotong jatah cek harian (FR-06).
+  const isReview = session.sessionType === 'SPACED_REVIEW';
+  const quotaEmpty = !isReview && quota.status === 'ready' && quota.data.remaining === 0;
   const canSubmit = jolLocked && photoFile != null && !quotaEmpty && !sending;
 
   const onSaveJol = async () => {
@@ -291,7 +293,13 @@ export function CalibratePage() {
                 aria-hidden="true"
               />
 
-              {jolLocked && quota.status === 'ready' && (
+              {jolLocked && isReview && (
+                <p className="flex items-center gap-2 text-body-md text-ink-muted">
+                  <Icon name="confirmation_number" className="text-[20px] text-teal" />
+                  Latihan ulang tidak memotong jatah cek harian.
+                </p>
+              )}
+              {jolLocked && !isReview && quota.status === 'ready' && (
                 <p className={`flex items-center gap-2 text-body-md ${quotaEmpty ? 'text-on-danger-wash' : 'text-ink-muted'}`}>
                   <Icon name="confirmation_number" className="text-[20px] text-teal" />
                   {quotaEmpty ? 'Jatah cek catatan hari ini sudah habis. Terisi lagi pukul 00.00 WIB.' : quotaText(quota.data)}

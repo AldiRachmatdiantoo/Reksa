@@ -211,6 +211,8 @@ function FocusSession({ material }: { material: Material }) {
     navigate('/belajar/foto');
   };
 
+  const isReview = session?.sessionType === 'SPACED_REVIEW';
+  const concepts = session?.reviewConcepts ?? [];
   const status = timeUp ? 'Waktu fokus habis. Kerja bagus!' : running ? 'Waktunya menulis di kertas' : 'Siap mulai catat di kertas';
 
   return (
@@ -237,7 +239,7 @@ function FocusSession({ material }: { material: Material }) {
           <section aria-labelledby="material-title" className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h1 id="material-title" className="font-headline text-headline-lg-mobile text-ink sm:text-headline-md">
-                Bahan bacaanmu
+                {isReview ? 'Latihan ulang' : 'Bahan bacaanmu'}
               </h1>
               {!running && (
                 <ButtonLink to="/belajar/materi" variant="ghost" className="px-3">
@@ -257,12 +259,32 @@ function FocusSession({ material }: { material: Material }) {
                   transition={{ duration: 0.2 }}
                   className="flex flex-col items-center gap-3 rounded-lg border-2 border-dashed border-line bg-wash px-6 py-14 text-center"
                 >
-                  <Icon name="lock" className="text-[36px] text-teal" />
-                  <h2 className="font-title text-title-lg text-ink">Bacaan ditutup sementara</h2>
-                  <p className="max-w-sm text-body-md text-ink-muted">
-                    Tulis semua yang kamu ingat tentang <strong className="text-ink">{material.title}</strong> di kertas. Bacaan terbuka
-                    lagi kalau kamu menekan Ulangi.
-                  </p>
+                  <Icon name={isReview ? 'event_repeat' : 'lock'} className="text-[36px] text-teal" />
+                  <h2 className="font-title text-title-lg text-ink">
+                    {isReview ? 'Tulis ulang dari ingatan' : 'Bacaan ditutup sementara'}
+                  </h2>
+                  {isReview ? (
+                    <>
+                      <p className="max-w-sm text-body-md text-ink-muted">
+                        Jelaskan konsep {concepts.length > 0 ? 'berikut' : 'yang terlewat'} dari{' '}
+                        <strong className="text-ink">{material.title}</strong> dengan kata-katamu sendiri. Hanya konsep ini yang dicek.
+                      </p>
+                      {concepts.length > 0 && (
+                        <ul className="flex flex-wrap justify-center gap-2">
+                          {concepts.map((c) => (
+                            <li key={c} className="rounded-md bg-card px-3 py-1.5 text-body-md text-ink">
+                              {c}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
+                  ) : (
+                    <p className="max-w-sm text-body-md text-ink-muted">
+                      Tulis semua yang kamu ingat tentang <strong className="text-ink">{material.title}</strong> di kertas. Bacaan terbuka
+                      lagi kalau kamu menekan Ulangi.
+                    </p>
+                  )}
                 </motion.div>
               ) : (
                 <motion.article
@@ -392,10 +414,17 @@ function FocusSession({ material }: { material: Material }) {
                 <Button variant="accent" size="lg" onClick={onFinish}>
                   Selesai, lanjut tebak nilai
                 </Button>
-                <Button variant="ghost" disabled={busy} onClick={() => setConfirm('reset')}>
-                  <Icon name="restart_alt" />
-                  Ulangi dan buka bacaan
-                </Button>
+                {isReview ? (
+                  <Button variant="ghost" disabled={busy} onClick={() => setConfirm('new')}>
+                    <Icon name="close" />
+                    Batalkan latihan
+                  </Button>
+                ) : (
+                  <Button variant="ghost" disabled={busy} onClick={() => setConfirm('reset')}>
+                    <Icon name="restart_alt" />
+                    Ulangi dan buka bacaan
+                  </Button>
+                )}
               </div>
             ) : (
               <Button variant="accent" size="lg" disabled={busy} onClick={() => void run(start)}>
@@ -430,10 +459,15 @@ function FocusSession({ material }: { material: Material }) {
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
           setConfirm(null);
-          void run(clear);
+          void run(async () => {
+            await clear();
+            if (isReview) navigate('/belajar/ulang');
+          });
         }}
       >
-        Sesi ini dibatalkan dan waktu fokus yang tercatat tidak dipakai. Kamu bisa memilih materi lagi setelahnya.
+        {isReview
+          ? 'Latihan ini dibatalkan dan jadwalnya tetap terbuka di menu Ulang. Satu jadwal bisa dicoba paling banyak 3 kali.'
+          : 'Sesi ini dibatalkan dan waktu fokus yang tercatat tidak dipakai. Kamu bisa memilih materi lagi setelahnya.'}
       </ConfirmDialog>
       <ConfirmDialog
         open={conflictId !== null}

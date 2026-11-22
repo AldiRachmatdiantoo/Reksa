@@ -29,6 +29,9 @@ export type CreateSessionData = {
   classId: string | null;
   plannedDurationSec: number;
   startedAt: Date;
+  /** Default INITIAL_BLURTING. SPACED_REVIEW wajib membawa spacedScheduleId (FR-06). */
+  sessionType?: 'INITIAL_BLURTING' | 'SPACED_REVIEW';
+  spacedScheduleId?: string | null;
 };
 
 export type EndFocusData = {
@@ -62,6 +65,8 @@ export interface SessionsRepository {
    * lalu buat sesi baru bila tidak ada lagi yang aktif. Dua permintaan paralel diserialkan oleh kunci itu.
    */
   createIfNoActive(data: CreateSessionData, isStale: IsStale): Promise<CreateSessionResult>;
+  /** Jumlah sesi latihan ulang milik user untuk satu jadwal, semua status. */
+  countReviewSessions(userId: string, spacedScheduleId: string): Promise<number>;
   findOwned(userId: string, sessionId: string): Promise<SessionRecord | null>;
   findActive(userId: string): Promise<SessionRecord | null>;
   /** Hanya mengubah sesi yang masih berstatus `from`; mengembalikan sesi terbaru, atau null bila bukan miliknya. */
@@ -137,7 +142,16 @@ export class PrismaSessionsRepository implements SessionsRepository {
         }
 
         const row = await tx.studySession.create({
-          data: { ...data, sessionType: 'INITIAL_BLURTING', status: 'FOCUS_ACTIVE' },
+          data: {
+            userId: data.userId,
+            materialId: data.materialId,
+            classId: data.classId,
+            plannedDurationSec: data.plannedDurationSec,
+            startedAt: data.startedAt,
+            sessionType: data.sessionType ?? 'INITIAL_BLURTING',
+            spacedScheduleId: data.spacedScheduleId ?? null,
+            status: 'FOCUS_ACTIVE',
+          },
           select: sessionSelect,
         });
         return { created: (await toRecord(tx, data.userId, row))! };
@@ -149,6 +163,12 @@ export class PrismaSessionsRepository implements SessionsRepository {
       if (!active) throw err;
       return { activeSessionId: active.id };
     }
+  }
+
+  countReviewSessions(userId: string, spacedScheduleId: string): Promise<number> {
+    return withUserContext(this.prisma, userId, (tx) =>
+      tx.studySession.count({ where: { userId, spacedScheduleId, sessionType: 'SPACED_REVIEW' } }),
+    );
   }
 
   findOwned(userId: string, sessionId: string): Promise<SessionRecord | null> {

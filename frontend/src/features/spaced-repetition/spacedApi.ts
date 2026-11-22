@@ -1,4 +1,5 @@
-import { apiRequest } from '@/core/apiClient';
+import { ApiError, apiRequest } from '@/core/apiClient';
+import type { ServerSession } from '@/features/studio/sessionsApi';
 
 // Kontrak dari backend/src/features/spaced-repetition/spaced.schema.ts (PRD FR-06).
 export type ScheduleBlindSpot = { concept: string; importanceLevel: string | null; explanation: string | null };
@@ -19,6 +20,9 @@ export type DueResponse = { due: ScheduleItem[]; upcoming: ScheduleItem[] };
 
 export const spacedApi = {
   due: (signal?: AbortSignal) => apiRequest<DueResponse>('/spaced/due', { signal }),
+  /** Mulai latihan ulang yang dinilai AI: sesi 5 menit, tidak memotong jatah cek harian. */
+  start: (id: string) =>
+    apiRequest<{ session: ServerSession }>(`/spaced/${encodeURIComponent(id)}/start`, { method: 'POST', body: {} }).then((r) => r.session),
   complete: (id: string) =>
     apiRequest<{ schedule: ScheduleItem }>(`/spaced/${encodeURIComponent(id)}/complete`, { method: 'POST', body: {} }).then(
       (r) => r.schedule,
@@ -38,6 +42,18 @@ export function overdueLabel(iso: string, now = new Date()): string {
   if (days <= 0) return 'hari ini';
   if (days === 1) return 'sejak kemarin';
   return `sejak ${days} hari lalu`;
+}
+
+/** Pesan untuk gagal memulai latihan ulang. */
+export function startReviewErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.code === 'ACTIVE_SESSION_EXISTS') return 'Masih ada sesi belajar yang berjalan. Selesaikan atau batalkan dulu di menu Belajar.';
+    if (err.code === 'REVIEW_LIMIT_REACHED')
+      return 'Latihan ini sudah dicoba 3 kali. Cocokkan sendiri dengan penjelasannya, lalu tandai selesai.';
+    if (err.status === 404) return 'Materinya sudah tidak bisa dibuka, jadi latihan ini tidak bisa dicek. Cocokkan sendiri saja.';
+    if (err.status === 409) return 'Latihan ini sudah selesai atau belum jatuh tempo. Muat ulang halaman.';
+  }
+  return 'Latihan belum bisa dimulai. Periksa koneksimu lalu coba lagi.';
 }
 
 export const IMPORTANCE_LABEL: Record<string, string> = { HIGH: 'Penting', MEDIUM: 'Sedang', LOW: 'Ringan' };

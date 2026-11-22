@@ -6,6 +6,20 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: latihan ulang H+3/H+7 dinilai AI, menyentuh areamu (branch `feat/aldi-graded-review`)
+
+Langkah B3 di `SISA-ALDI.md`. Mohon direview; kalau ada yang ingin diubah, tulis di `UNTUK-ALDI.md`.
+
+- **Migrasi** `20261122000500_spaced_review_session`: kolom `study_sessions.spaced_schedule_id` (FK ke `spaced_schedules`, `ON DELETE SET NULL`), `CHECK` hanya sesi `SPACED_REVIEW` yang boleh mengisinya, index `idx_sessions_spaced_schedule`.
+- **`study-sessions`:** `CreateSessionData` menerima `sessionType` dan `spacedScheduleId` (default tetap `INITIAL_BLURTING`). Method baru `countReviewSessions` di repository dan `SessionsService.startReview` (fokus 5 menit `REVIEW_FOCUS_SEC`, `preset: null`, paling banyak 3 sesi per jadwal `MAX_REVIEW_SESSIONS_PER_SCHEDULE`, error `REVIEW_LIMIT_REACHED`). Endpoint-nya ada di modul Aldi: `POST /spaced/:id/start`.
+- **`essay-scans`:**
+  - `SessionForScan` membawa `sessionType` dan `spacedScheduleId` (`lockSession` ikut membacanya).
+  - `upload` dan `retry`: sesi `SPACED_REVIEW` tidak memotong kuota (`quota_charged_at` null, tidak ada refund saat gagal). Cek ulang latihan ulang mencatat waktu antre di `audit_started_at`, dan `isStalled` untuk `PENDING` kini membaca `quotaChargedAt ?? auditStartedAt ?? createdAt`.
+  - `audit.service`: `focusRubric` membatasi rubrik ke konsep target jadwal (nama konsep, tanpa beda huruf besar); kalau tidak ada yang cocok, rubrik lengkap dipakai dan ada peringatan log. Saat DONE, jadwalnya ditandai selesai lewat `completeSchedule` dan tidak ada jadwal H+3/H+7 baru.
+  - `ScansUnitOfWork` punya dua method baru: `loadScheduleTargets`, `completeSchedule`.
+- **Tes di areamu:** `fakeScansRepository.ts` dan `sessions.service.test.ts` menyesuaikan kontrak baru; tes baru di `audit.service.test.ts` (rubrik terfokus, jadwal selesai, gagal tanpa refund), `scans.service.test.ts` (unggah dan cek ulang tanpa kuota), dan `sessions.service.test.ts` (`startReview`). Integration baru `tests/integration/spacedReview.test.ts`.
+- **Frontend:** `StudioPage` menampilkan konsep target saat fokus latihan ulang dan mengganti "Ulangi" dengan "Batalkan latihan"; `CalibratePage` tidak menahan unggah latihan ulang saat jatah habis.
+
 ## 22 Nov 2026: riwayat hasil cek dan tren kalibrasi Pro (branch `feat/aldi-results-history`)
 
 - Modul baru milik Aldi `backend/src/features/history/`: `GET /history?cursor=&limit=` (foto milik sendiri, terbaru dulu, cursor milik orang lain dijawab halaman kosong) dan `GET /history/calibration` (khusus Pro, 403 `PRO_REQUIRED` untuk Free dan Pro kedaluwarsa). Hanya membaca `essay_submissions` dan `study_sessions`; tidak ada migrasi dan tidak ada perubahan di `essay-scans`.

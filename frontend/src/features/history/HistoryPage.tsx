@@ -169,7 +169,7 @@ function HistoryRow({ item }: { item: HistoryItem }) {
   return (
     <Link
       to={`/belajar/riwayat/${item.submissionId}`}
-      state={{ materialTitle: item.materialTitle }}
+      state={{ materialTitle: item.materialTitle, sessionType: item.sessionType }}
       className="flex min-h-11 items-center gap-4 px-5 py-4 transition-colors hover:bg-wash focus-visible:bg-wash"
     >
       <div className="flex min-w-0 flex-1 flex-col gap-1">

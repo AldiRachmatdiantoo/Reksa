@@ -187,7 +187,10 @@ export function ResultPage() {
           </div>
         }
       >
-        <p>{auditFailureText(scan.errorCode)} Jatah cek hari ini sudah dikembalikan.</p>
+        <p>
+          {auditFailureText(scan.errorCode)}{' '}
+          {session?.sessionType === 'SPACED_REVIEW' ? 'Latihan ulang tidak memotong jatah cek.' : 'Jatah cek hari ini sudah dikembalikan.'}
+        </p>
         {scan.retriesLeft > 0 ? (
           <p className="mt-2">Foto yang sama bisa dicek ulang tanpa memotret lagi.</p>
         ) : (
@@ -233,15 +236,27 @@ export function ResultPage() {
     );
   }
 
-  return <AuditResult scan={scan} materialTitle={session?.materialTitle ?? ''} onStartOver={leave} />;
+  return (
+    <AuditResult
+      scan={scan}
+      materialTitle={session?.materialTitle ?? ''}
+      review={session?.sessionType === 'SPACED_REVIEW'}
+      onStartOver={leave}
+    />
+  );
 }
 
-type AuditResultProps =
-  | { scan: Scan; materialTitle: string; from?: 'session'; onStartOver: () => Promise<void> }
+type AuditResultProps = {
+  scan: Scan;
+  materialTitle: string;
+  /** Hasil latihan ulang H+3/H+7: tidak membuat jadwal baru. */ review?: boolean;
+} & (
+  | { from?: 'session'; onStartOver: () => Promise<void> }
   /** Dibuka dari Riwayat: tanpa penanda langkah, tombol bawah kembali ke daftar riwayat. */
-  | { scan: Scan; materialTitle: string; from: 'history'; onStartOver?: undefined };
+  | { from: 'history'; onStartOver?: undefined }
+);
 
-export function AuditResult({ scan, materialTitle, from = 'session', onStartOver }: AuditResultProps) {
+export function AuditResult({ scan, materialTitle, review = false, from = 'session', onStartOver }: AuditResultProps) {
   const auth = useAuth();
   const { state: speech, toggle: toggleSpeech } = useSpeech();
   const audit = scan.result!;
@@ -423,7 +438,15 @@ export function AuditResult({ scan, materialTitle, from = 'session', onStartOver
           </div>
 
           <aside className="flex flex-col gap-6 lg:sticky lg:top-24">
-            {audit.blindSpots.length > 0 ? (
+            {review ? (
+              <section className="flex items-start gap-3 rounded-lg border border-line-soft bg-card p-5 sm:p-6">
+                <Icon name="task_alt" className="text-teal" />
+                <p className="text-body-md text-ink">
+                  Latihan ulang ini sudah tercatat selesai dan tidak membuat jadwal baru.{' '}
+                  {audit.blindSpots.length > 0 && 'Konsep yang masih terlewat bisa kamu baca lagi di materinya.'}
+                </p>
+              </section>
+            ) : audit.blindSpots.length > 0 ? (
               <section
                 aria-labelledby="schedule-title"
                 className="flex flex-col gap-4 rounded-lg border border-line-soft bg-card p-5 sm:p-6"

@@ -1,7 +1,12 @@
 import { ZodError } from 'zod';
 import { AiProviderError } from '../../common/ai/ai.errors.js';
 import type { IAiService } from '../../common/ai/ai.provider.interface.js';
-import { AiEssayAuditOutputSchema, AiRubricOutputSchema, type AiEssayAuditOutput } from '../../common/ai/ai.schema.js';
+import {
+  AiEssayAuditOutputSchema,
+  AiRubricOutputSchema,
+  type AiEssayAuditOutput,
+  type AiRubricOutput,
+} from '../../common/ai/ai.schema.js';
 import type { IStorageService } from '../../config/storage.js';
 import { computeLedgerHash } from './ledgerHash.js';
 import { planRefund } from './quota.policy.js';
@@ -40,6 +45,32 @@ class AiTimeoutError extends Error {
     super('Panggilan AI melewati batas waktu');
     this.name = 'AiTimeoutError';
   }
+}
+
+/**
+ * Rubrik latihan ulang (FR-06): hanya konsep yang terlewat di audit asal. Nama konsep dicocokkan tanpa
+ * membedakan huruf besar dan spasi di tepi. Bila tidak ada yang cocok (rubrik materi sudah berubah),
+ * rubrik lengkap dipakai supaya latihan tetap bisa dinilai.
+ */
+export function focusRubric(rubric: AiRubricOutput, targets: unknown): { rubric: AiRubricOutput; focused: boolean } {
+  const names = new Set<string>();
+  if (Array.isArray(targets)) {
+    for (const t of targets) {
+      const concept = typeof t === 'string' ? t : t && typeof t === 'object' ? (t as { concept?: unknown }).concept : null;
+      if (typeof concept === 'string' && concept.trim()) names.add(concept.trim().toLowerCase());
+    }
+  }
+  const keyConcepts = rubric.keyConcepts.filter((c) => names.has(c.concept.trim().toLowerCase()));
+  if (keyConcepts.length === 0) return { rubric, focused: false };
+  const ids = new Set(keyConcepts.map((c) => c.id));
+  return {
+    rubric: {
+      ...rubric,
+      keyConcepts,
+      causalRelations: rubric.causalRelations.filter((r) => ids.has(r.fromConceptId) && ids.has(r.toConceptId)),
+    },
+    focused: true,
+  };
 }
 
 type AiCallResult = { ok: true; audit: AiEssayAuditOutput } | { ok: false; code: AuditErrorCode };
@@ -91,20 +122,29 @@ export class AuditService {
       const session = await uow.lockSession(submission.sessionId);
       if (!session) return null;
       const rubric = await uow.loadRubric(session.materialId);
+      const targets = session.spacedScheduleId ? await uow.loadScheduleTargets(session.spacedScheduleId) : null;
       const ok = await uow.updateSubmission(submission.id, ['PENDING'], {
         auditStatus: 'PROCESSING',
         auditAttempts: submission.auditAttempts + 1,
         auditStartedAt: startedAt,
         auditErrorCode: null,
       });
-      return ok ? { submission, session, rubric } : null;
+      return ok ? { submission, session, rubric, targets } : null;
     });
     // Sudah diproses worker lain, dibatalkan, atau bukan milik user ini.
     if (!claimed) return 'SKIPPED';
 
     const { submission, session } = claimed;
-    const rubric = AiRubricOutputSchema.safeParse(claimed.rubric);
-    if (!rubric.success) return this.failed(job, 'MATERIAL_UNAVAILABLE');
+    const parsed = AiRubricOutputSchema.safeParse(claimed.rubric);
+    if (!parsed.success) return this.failed(job, 'MATERIAL_UNAVAILABLE');
+    let rubric = parsed.data;
+    if (session.spacedScheduleId) {
+      const focus = focusRubric(rubric, claimed.targets);
+      if (!focus.focused) {
+        this.deps.onWarning?.('Konsep latihan ulang tidak ada di rubrik, rubrik lengkap dipakai', { submissionId: job.submissionId });
+      }
+      rubric = focus.rubric;
+    }
 
     let image: Buffer;
     try {
@@ -114,7 +154,7 @@ export class AuditService {
       return this.failed(job, 'STORAGE_UNAVAILABLE');
     }
 
-    const result = await this.callAi(() => this.deps.ai.evaluateHandwritingEssay(image, 'image/webp', rubric.data));
+    const result = await this.callAi(() => this.deps.ai.evaluateHandwritingEssay(image, 'image/webp', rubric));
     if (!result.ok) return this.failed(job, result.code);
 
     const audit = result.audit;
@@ -148,7 +188,10 @@ export class AuditService {
       // Audit ini sempat dinyatakan tertahan (AUDIT_STALLED) saat dibaca; hasil yang terlambat dibuang.
       if (!stored) return false;
       await uow.updateSessionStatus(session.id, ['AWAITING_SCAN'], 'COMPLETED', auditedAt);
-      if (audit.blindSpots.length > 0) {
+      if (session.spacedScheduleId) {
+        // Latihan ulang selesai dinilai: jadwalnya ditutup, dan tidak membuat jadwal baru (FR-06).
+        await uow.completeSchedule(session.spacedScheduleId);
+      } else if (audit.blindSpots.length > 0) {
         await uow.insertSpacedSchedules(
           SPACED_INTERVALS.map((intervalDay) => ({
             originSubmissionId: submission.id,

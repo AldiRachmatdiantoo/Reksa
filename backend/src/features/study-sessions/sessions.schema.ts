@@ -9,6 +9,11 @@ export const POMODORO_PRESETS = {
 
 export const PomodoroPresetSchema = z.enum(['CLASSIC_25_5', 'DEEP_45_10', 'FOCUS_SPRINT_15_3']);
 
+/** Latihan ulang H+3/H+7 (FR-06): fokus 5 menit, ditentukan server. */
+export const REVIEW_FOCUS_SEC = 5 * 60;
+/** Paling banyak 3 sesi latihan ulang per jadwal (termasuk yang dibatalkan atau kedaluwarsa), karena tanpa kuota. */
+export const MAX_REVIEW_SESSIONS_PER_SCHEDULE = 3;
+
 /** POST /sessions */
 export const StartSessionSchema = z
   .object({

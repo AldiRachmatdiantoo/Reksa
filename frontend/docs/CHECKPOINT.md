@@ -1,5 +1,16 @@
 # Checkpoint Frontend REKSA
 
+## #24 · 2026-11-22 · Latihan ulang dinilai AI
+
+Branch: `feat/aldi-graded-review`.
+
+- `ReviewPage`: kartu jatuh tempo menampilkan konsep target, tombol utama "Mulai latihan 5 menit" (`spacedApi.start` lalu `beginReview` di `studySession`, pindah ke `/belajar`), dan "Cocokkan sendiri tanpa foto" untuk cara lama. Pesan gagal dari `startReviewErrorMessage`.
+- `studySession`: `sessionType` dan `reviewConcepts` di cache, aksi baru `beginReview`.
+- `StudioPage`: saat fokus latihan ulang, panel menampilkan konsep target; tombol "Batalkan latihan" kembali ke menu Ulang.
+- `CalibratePage`: latihan ulang tidak ditahan saat jatah habis, dengan keterangan bahwa latihan ulang tidak memotong jatah.
+- `AuditResult` menerima `review`: kotak jadwal diganti keterangan bahwa latihan ini sudah tercatat selesai.
+- Tes: `tests/unit/spacedApi.test.ts`.
+
 ## #23 · 2026-11-22 · Riwayat hasil cek dan tren kalibrasi Pro
 
 Branch: `feat/aldi-results-history`.

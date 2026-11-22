@@ -147,7 +147,7 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     '/me': me,
     '/materials': createMaterialsRouter({ service: materialsService, signer, redis: deps.redis }),
     '/spaced': createSpacedRouter({
-      service: new SpacedService({ repo: new PrismaSpacedRepository(deps.prisma) }),
+      service: new SpacedService({ repo: new PrismaSpacedRepository(deps.prisma), sessions: sessionsService }),
       signer,
       redis: deps.redis,
     }),

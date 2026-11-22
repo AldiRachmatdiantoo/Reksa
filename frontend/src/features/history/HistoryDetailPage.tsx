@@ -14,7 +14,8 @@ import { LoadingBlock, StateBlock } from '@/shared/ui/StateBlock';
 export function HistoryDetailPage() {
   const { submissionId = '' } = useParams();
   const location = useLocation();
-  const materialTitle = (location.state as { materialTitle?: string | null } | null)?.materialTitle ?? '';
+  const state = location.state as { materialTitle?: string | null; sessionType?: string } | null;
+  const materialTitle = state?.materialTitle ?? '';
   const { scan, error, slow, restart } = useScanPolling(submissionId);
 
   useEffect(() => {
@@ -54,7 +55,7 @@ export function HistoryDetailPage() {
   }
 
   if (scan?.auditStatus === 'DONE' && scan.result) {
-    return <AuditResult scan={scan} materialTitle={materialTitle ?? ''} from="history" />;
+    return <AuditResult scan={scan} materialTitle={materialTitle} review={state?.sessionType === 'SPACED_REVIEW'} from="history" />;
   }
 
   if (!scan && !error) return shell(<LoadingBlock label="Memuat hasil cek..." />);

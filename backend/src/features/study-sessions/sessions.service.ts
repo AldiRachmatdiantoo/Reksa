@@ -4,7 +4,9 @@ import type { SessionRecord, SessionsRepository } from './sessions.repository.js
 import {
   FOCUS_GRACE_SEC,
   FOCUS_OVERTIME_CAP_SEC,
+  MAX_REVIEW_SESSIONS_PER_SCHEDULE,
   POMODORO_PRESETS,
+  REVIEW_FOCUS_SEC,
   SCAN_UPLOAD_WINDOW_SEC,
   SHORT_FOCUS_RATIO,
   type PomodoroPreset,
@@ -36,6 +38,12 @@ export class ActiveSessionExistsError extends AppError {
 export class SessionExpiredError extends AppError {
   constructor() {
     super(409, 'SESSION_EXPIRED', 'Sesi ini sudah kedaluwarsa. Mulai sesi baru untuk melanjutkan.');
+  }
+}
+
+export class ReviewLimitReachedError extends AppError {
+  constructor() {
+    super(409, 'REVIEW_LIMIT_REACHED', 'Latihan ulang ini sudah dicoba 3 kali. Cocokkan sendiri dengan penjelasannya.');
   }
 }
 
@@ -100,6 +108,34 @@ export class SessionsService {
         classId: input.classId ?? null,
         plannedDurationSec: POMODORO_PRESETS[input.preset].focusSec,
         startedAt: now,
+      },
+      (existing) => isStale(existing, now),
+    );
+    if ('activeSessionId' in result) throw new ActiveSessionExistsError(result.activeSessionId);
+    return toView(result.created);
+  }
+
+  /**
+   * Sesi SPACED_REVIEW 5 menit untuk satu jadwal H+3/H+7 (FR-06). Pemanggil (spaced.service) sudah
+   * memastikan jadwal milik user, jatuh tempo, dan belum selesai. Foto sesi ini tidak memotong kuota.
+   */
+  async startReview(userId: string, input: { spacedScheduleId: string; materialId: string }): Promise<SessionView> {
+    if (!(await this.deps.repo.isMaterialAccessible(userId, input.materialId))) {
+      throw new NotFoundError(MATERIAL_NOT_FOUND);
+    }
+    if ((await this.deps.repo.countReviewSessions(userId, input.spacedScheduleId)) >= MAX_REVIEW_SESSIONS_PER_SCHEDULE) {
+      throw new ReviewLimitReachedError();
+    }
+    const now = this.now();
+    const result = await this.deps.repo.createIfNoActive(
+      {
+        userId,
+        materialId: input.materialId,
+        classId: null,
+        plannedDurationSec: REVIEW_FOCUS_SEC,
+        startedAt: now,
+        sessionType: 'SPACED_REVIEW',
+        spacedScheduleId: input.spacedScheduleId,
       },
       (existing) => isStale(existing, now),
     );

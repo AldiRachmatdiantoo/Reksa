@@ -221,13 +221,17 @@ model StudySession {
   focusEndedAt       DateTime?        @map("focus_ended_at") @db.Timestamptz(6)
   startedAt          DateTime         @default(now()) @map("started_at") @db.Timestamptz(6)
   completedAt        DateTime?        @map("completed_at") @db.Timestamptz(6)
+  // Sesi SPACED_REVIEW: jadwal H+3/H+7 yang sedang dilatih (migrasi spaced_review_session).
+  spacedScheduleId   String?          @map("spaced_schedule_id") @db.Uuid
 
-  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  material   StudyMaterial    @relation(fields: [materialId], references: [id], onDelete: Restrict)
-  class      Class?           @relation(fields: [classId], references: [id], onDelete: SetNull)
-  submission EssaySubmission?
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  material       StudyMaterial    @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  class          Class?           @relation(fields: [classId], references: [id], onDelete: SetNull)
+  spacedSchedule SpacedSchedule?  @relation(fields: [spacedScheduleId], references: [id], onDelete: SetNull)
+  submission     EssaySubmission?
 
   @@index([userId, startedAt(sort: Desc)], map: "idx_sessions_user_started")
+  @@index([spacedScheduleId], map: "idx_sessions_spaced_schedule")
   @@map("study_sessions")
 }
 
@@ -276,6 +280,7 @@ model SpacedSchedule {
   user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   originSubmission EssaySubmission @relation(fields: [originSubmissionId], references: [id], onDelete: Cascade)
   material         StudyMaterial   @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  reviewSessions   StudySession[]
 
   // Satu submission hanya boleh punya satu jadwal H+3 dan satu H+7.
   @@unique([originSubmissionId, intervalDay], map: "idx_spaced_origin_interval")

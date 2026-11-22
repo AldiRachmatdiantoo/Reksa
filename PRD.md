@@ -130,6 +130,7 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
 * **Acceptance Criteria:**
   * Jika ditemukan minimal 1 *blind spot* pada sesi utama, sistem otomatis membuat dua entri jadwal pada tabel `spaced_schedules` untuk **H+3** dan **H+7**.
   * Sesi ulang berdurasi 3–5 menit dan rubriknya difokuskan secara eksklusif pada konsep *blind spots* yang gagal dijawab sebelumnya.
+  * **Dibangun (22 Nov 2026):** `POST /api/v1/spaced/:id/start` membuat sesi `SPACED_REVIEW` 5 menit; audit memakai rubrik yang hanya berisi konsep target dan menandai jadwal selesai saat `DONE`. Paling banyak 3 sesi per jadwal.
   * **Diputuskan (22 Nov 2026):** sesi ulang tidak memotong kuota scan harian (FR-11). Jumlahnya sudah terbatas: paling banyak dua per sesi utama yang selesai diaudit, dan sesi utama dibatasi kuota.
 
 ### 4.2 Portal Pendidik & Institusi — *Academic Governance Dashboard* (MVP)

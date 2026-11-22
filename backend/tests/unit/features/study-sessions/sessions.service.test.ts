@@ -35,17 +35,25 @@ class FakeSessionsRepository implements SessionsRepository {
     return this.memberships.has(`${userId}:${classId}`);
   }
 
+  reviewCounts = new Map<string, number>();
+
+  async countReviewSessions(userId: string, scheduleId: string) {
+    return this.reviewCounts.get(`${userId}:${scheduleId}`) ?? 0;
+  }
+
   async createIfNoActive(data: CreateSessionData, isStale: IsStale): Promise<CreateSessionResult> {
     for (const s of this.sessions.values()) {
       if (s.userId !== data.userId || !['FOCUS_ACTIVE', 'AWAITING_SCAN'].includes(s.status)) continue;
       if (!isStale({ ...s })) return { activeSessionId: s.id };
       s.status = 'EXPIRED';
     }
+    const { sessionType = 'INITIAL_BLURTING', spacedScheduleId: _schedule, ...rest } = data;
+    void _schedule;
     const created: SessionRecord = {
       id: randomUUID(),
-      ...data,
+      ...rest,
       materialTitle: 'Homeostasis',
-      sessionType: 'INITIAL_BLURTING',
+      sessionType,
       actualDurationSec: null,
       predictedJolScore: null,
       status: 'FOCUS_ACTIVE',
@@ -333,5 +341,33 @@ describe('races with another request', () => {
     const view = await service.get(USER, s.id);
     expect(view.id).toBe(s.id);
     expect(view.status).toBe('FOCUS_ACTIVE');
+  });
+});
+
+describe('startReview (FR-06)', () => {
+  const SCHEDULE = randomUUID();
+
+  it('creates a 5-minute SPACED_REVIEW session without a preset', async () => {
+    const view = await service.startReview(USER, { spacedScheduleId: SCHEDULE, materialId: MATERIAL });
+    expect(view).toMatchObject({ sessionType: 'SPACED_REVIEW', plannedDurationSec: 300, preset: null, status: 'FOCUS_ACTIVE', classId: null });
+  });
+
+  it('answers 404 for a material the student can no longer read', async () => {
+    await expect(service.startReview(USER, { spacedScheduleId: SCHEDULE, materialId: randomUUID() })).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it('stops after 3 review sessions for the same schedule', async () => {
+    repo.reviewCounts.set(`${USER}:${SCHEDULE}`, 3);
+    await expect(service.startReview(USER, { spacedScheduleId: SCHEDULE, materialId: MATERIAL })).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'REVIEW_LIMIT_REACHED',
+    });
+  });
+
+  it('refuses while another session is still active', async () => {
+    await service.start(USER, { materialId: MATERIAL, preset: 'CLASSIC_25_5' });
+    await expect(service.startReview(USER, { spacedScheduleId: SCHEDULE, materialId: MATERIAL })).rejects.toMatchObject({
+      code: 'ACTIVE_SESSION_EXISTS',
+    });
   });
 });

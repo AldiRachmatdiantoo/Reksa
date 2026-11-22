@@ -19,6 +19,8 @@ export class FakeScansRepository implements ScansRepository {
   submissions = new Map<string, ScanRecord>();
   rubrics = new Map<string, unknown>();
   schedules: NewSpacedSchedule[] = [];
+  /** Jadwal latihan ulang: id → konsep target dan status selesai. */
+  reviewSchedules = new Map<string, { targets: unknown; completed: boolean }>();
 
   constructor(readonly userId: string) {}
 
@@ -32,6 +34,8 @@ export class FakeScansRepository implements ScansRepository {
       focusEndedAt: new Date('2026-11-21T02:25:00Z'),
       actualDurationSec: 1500,
       validity: 'VALID',
+      sessionType: 'INITIAL_BLURTING',
+      spacedScheduleId: null,
       ...partial,
     };
     this.sessions.set(session.id, session);
@@ -70,6 +74,7 @@ export class FakeScansRepository implements ScansRepository {
       sessions: structuredClone(this.sessions),
       submissions: structuredClone(this.submissions),
       schedules: structuredClone(this.schedules),
+      reviewSchedules: structuredClone(this.reviewSchedules),
     };
     try {
       return await fn(this.uow(userId));
@@ -118,6 +123,11 @@ export class FakeScansRepository implements ScansRepository {
             this.schedules.push(r);
           }
         }
+      },
+      loadScheduleTargets: async (id) => (owned ? (this.reviewSchedules.get(id)?.targets ?? null) : null),
+      completeSchedule: async (id) => {
+        const s = this.reviewSchedules.get(id);
+        if (owned && s) s.completed = true;
       },
     };
   }
