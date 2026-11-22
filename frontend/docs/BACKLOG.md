@@ -16,6 +16,7 @@ Urutan kasar sesuai ketergantungan ke backend. Tandai `✅` saat selesai dan cat
 - [x] **Kode aktivasi Pro** (FR-11): status paket dan form kode di halaman Akun (checkpoint #11).
 - [x] **Bukti belajar** (`governance` FR-07): ledger + signed URL + `/cek-bukti` (checkpoint #13).
 - [x] **PDF bukti belajar** (FR-12, Pro): halaman Akun dan halaman Hasil (checkpoint #14).
+- [x] **Peta bagian sulit** (FR-08): Portal Guru (checkpoint #15).
 - [ ] **Peta blind spot kelas** (FR-08).
 
 ## Bisa dikerjakan sekarang

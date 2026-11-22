@@ -5,7 +5,7 @@ import type { GovernanceRepository, LedgerRow } from './governance.repository.js
 import type { LedgerEntry, LedgerPage, LedgerVerification } from './governance.schema.js';
 
 export type GovernanceServiceDeps = {
-  repo: GovernanceRepository;
+  repo: Pick<GovernanceRepository, 'isClassOwner' | 'listLedger' | 'lookupHash'>;
   storage: Pick<IStorageService, 'getSignedUrl'>;
   onWarning?: (message: string, meta?: Record<string, unknown>) => void;
 };

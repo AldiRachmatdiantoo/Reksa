@@ -15,6 +15,9 @@ import { PrismaClassesRepository } from './features/classes/classes.repository.j
 import { createClassesRouter } from './features/classes/classes.routes.js';
 import { ClassesService } from './features/classes/classes.service.js';
 import { UnpdfTextExtractor, type PdfTextExtractor } from './common/utils/pdfText.js';
+import { MockAiProvider } from './common/ai/mockAi.provider.js';
+import { CohortService } from './features/governance/cohort.service.js';
+import { RedisCohortCache } from './features/governance/cohortCache.js';
 import { PrismaGovernanceRepository } from './features/governance/governance.repository.js';
 import { createGovernanceRouter, createLedgerRouter } from './features/governance/governance.routes.js';
 import { GovernanceService } from './features/governance/governance.service.js';
@@ -108,8 +111,16 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     onWarning: (message, data) => deps.logger.warn(data, message),
   });
 
+  const governanceRepo = new PrismaGovernanceRepository(deps.prisma);
+  const cohortService = new CohortService({
+    repo: governanceRepo,
+    ai: deps.ai,
+    cache: new RedisCohortCache(deps.redis, (err, op) => deps.logger.warn({ err, op }, 'Cohort cache unavailable')),
+    aiIsSample: deps.ai instanceof MockAiProvider,
+    onWarning: (message, data) => deps.logger.warn(data, message),
+  });
   const governanceService = new GovernanceService({
-    repo: new PrismaGovernanceRepository(deps.prisma),
+    repo: governanceRepo,
     storage: deps.storage,
     onWarning: (message, data) => deps.logger.warn(data, message),
   });
@@ -137,7 +148,7 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     // Dipasang setelah '/me' (auth). Router '/me' tidak punya GET /quota, jadi permintaan diteruskan ke sini.
     '/me/quota': createQuotaRouter({ service: quotaService, signer }),
     '/scans': createScansRouter({ service: scansService, signer, redis: deps.redis }),
-    '/governance': createGovernanceRouter({ service: governanceService, signer, redis: deps.redis }),
+    '/governance': createGovernanceRouter({ service: governanceService, cohort: cohortService, signer, redis: deps.redis }),
     '/ledger': createLedgerRouter({
       service: governanceService,
       exports: new LedgerExportService({

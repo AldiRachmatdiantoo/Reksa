@@ -35,11 +35,44 @@ export const governanceApi = {
     if (cursor) params.set('cursor', cursor);
     return apiRequest<LedgerPage>(`/governance/classes/${encodeURIComponent(classId)}/ledger?${params}`, { signal });
   },
+  /** FR-08: materi yang sudah punya hasil cek di kelas ini. */
+  cohortMaterials: (classId: string, signal?: AbortSignal) =>
+    apiRequest<{ materials: CohortMaterial[] }>(`/governance/classes/${encodeURIComponent(classId)}/blind-spots`, { signal }).then(
+      (r) => r.materials,
+    ),
+  cohortBlindSpots: (classId: string, materialId: string, signal?: AbortSignal) =>
+    apiRequest<CohortBlindSpots>(
+      `/governance/classes/${encodeURIComponent(classId)}/blind-spots/${encodeURIComponent(materialId)}`,
+      { signal },
+    ),
   verify: (hash: string) => apiRequest<LedgerVerification>(`/ledger/verify/${encodeURIComponent(hash)}`),
   /** FR-12, khusus Pro. Tautan berlaku 5 menit, file dihapus setelah 24 jam. */
   exportPdf: (body: { submissionIds: string[] } | { from: string; to: string }) =>
     apiRequest<{ export: LedgerPdfExport }>('/ledger/exports', { method: 'POST', body }).then((r) => r.export),
 };
+
+// Kontrak FR-08 dari governance.schema.ts (CohortMaterial, CohortBlindSpots).
+export type ImportanceLevel = 'HIGH' | 'MEDIUM' | 'LOW';
+export type CohortMaterial = { materialId: string; title: string | null; studentCount: number; lastAuditedAt: string };
+export type CohortConcept = { concept: string; studentCount: number; percent: number; importanceLevel: ImportanceLevel | null };
+export type CohortBlindSpots = {
+  material: { id: string; title: string | null };
+  studentCount: number;
+  concepts: CohortConcept[];
+  recommendationStatus: 'READY' | 'NOT_ENOUGH_DATA' | 'UNAVAILABLE';
+  recommendation: {
+    /** true selama backend memakai AI tiruan: isinya contoh tetap, bukan hasil membaca kelas ini. */
+    sample: boolean;
+    clusters: { label: string; memberConcepts: string[]; severity: ImportanceLevel; remediationSuggestion: string }[];
+    curriculumRecommendation: string;
+  } | null;
+  minStudentsForRecommendation: number;
+};
+
+/** "2 dari 3 siswa (67%)" */
+export function conceptShareLabel(c: Pick<CohortConcept, 'studentCount' | 'percent'>, total: number): string {
+  return `${c.studentCount} dari ${total} siswa (${c.percent}%)`;
+}
 
 export type LedgerPdfExport = { url: string; expiresAt: string; count: number };
 

@@ -14,12 +14,6 @@ export const LedgerQuerySchema = z
   })
   .strict();
 
-/** GET /governance/classes/:classId/blind-spots */
-export const BlindSpotsQuerySchema = z
-  .object({
-    materialId: z.uuid().optional(),
-  })
-  .strict();
 
 /** GET /ledger/verify/:hash: hash SHA-256 heksadesimal huruf kecil. */
 export const LedgerHashParamsSchema = z
@@ -45,7 +39,6 @@ export const LedgerExportSchema = z
 export type LedgerExportBody = z.infer<typeof LedgerExportSchema>;
 
 export type LedgerQuery = z.infer<typeof LedgerQuerySchema>;
-export type BlindSpotsQuery = z.infer<typeof BlindSpotsQuerySchema>;
 
 export type LedgerEntry = {
   submissionId: string;
@@ -76,3 +69,43 @@ export type LedgerPage = { entries: LedgerEntry[]; nextCursor: string | null };
 
 /** Jawaban publik: tanpa nama, skor, atau foto. */
 export type LedgerVerification = { valid: true; sessionDate: string } | { valid: false };
+
+/** GET /governance/classes/:classId/blind-spots/:materialId */
+export const ClassMaterialParamsSchema = z.object({ classId: z.uuid(), materialId: z.uuid() }).strict();
+
+export type ImportanceLevel = 'HIGH' | 'MEDIUM' | 'LOW';
+
+/** Materi yang sudah punya hasil cek di kelas ini (FR-08). */
+export type CohortMaterial = {
+  materialId: string;
+  /** null jika materi tidak terbaca pengajar (materi pribadi siswa). */
+  title: string | null;
+  studentCount: number;
+  lastAuditedAt: string;
+};
+
+export type CohortConcept = {
+  concept: string;
+  /** Siswa yang hasil cek terakhirnya melewatkan konsep ini. */
+  studentCount: number;
+  /** studentCount / jumlah siswa yang sudah dicek, dibulatkan. */
+  percent: number;
+  /** Tingkat terpenting yang pernah diberikan AI untuk konsep ini; null untuk data lama tanpa tingkat. */
+  importanceLevel: ImportanceLevel | null;
+};
+
+export type CohortRecommendation = {
+  /** true selama AI_PROVIDER_MODE=mock: isinya contoh tetap, bukan hasil membaca data kelas. */
+  sample: boolean;
+  clusters: { label: string; memberConcepts: string[]; severity: ImportanceLevel; remediationSuggestion: string }[];
+  curriculumRecommendation: string;
+};
+
+export type CohortBlindSpots = {
+  material: { id: string; title: string | null };
+  studentCount: number;
+  concepts: CohortConcept[];
+  recommendationStatus: 'READY' | 'NOT_ENOUGH_DATA' | 'UNAVAILABLE';
+  recommendation: CohortRecommendation | null;
+  minStudentsForRecommendation: number;
+};
