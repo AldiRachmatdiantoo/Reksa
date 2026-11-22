@@ -79,16 +79,24 @@ describe('register consent (FR-13)', () => {
     expect(await ctx.owner.user.count()).toBe(0);
   });
 
-  it('requires the guardian statement for a possible minor', async () => {
-    const year = new Date().getUTCFullYear() - 15;
-    const without = await register('anak@reksa.id', { birthYear: year });
-    expect(without.res.status).toBe(400);
-    expect(without.res.body.error.code).toBe('GUARDIAN_CONSENT_REQUIRED');
+  // Ketentuan Gemini API: tidak boleh dipakai di aplikasi untuk pengguna di bawah 18 tahun.
+  it('rejects anyone under 18 and asks those born exactly 18 years ago to confirm their age', async () => {
+    const year = new Date().getUTCFullYear();
+    const minor = await register('anak@reksa.id', { birthYear: year - 15 });
+    expect(minor.res.status).toBe(400);
+    expect(minor.res.body.error.code).toBe('AGE_RESTRICTED');
+    // Pernyataan lama dari alur izin wali tidak diterima lagi (skema strict).
+    expect((await register('anak@reksa.id', { birthYear: year - 15, guardianConsent: true })).res.status).toBe(400);
+    expect(await ctx.owner.user.count()).toBe(0);
 
-    const withConsent = await register('anak@reksa.id', { birthYear: year, guardianConsent: true });
-    expect(withConsent.res.status).toBe(201);
-    const row = await ctx.owner.user.findUniqueOrThrow({ where: { id: withConsent.userId } });
-    expect(row.guardianConsent).toBe(true);
+    const unconfirmed = await register('pas18@reksa.id', { birthYear: year - 18 });
+    expect(unconfirmed.res.status).toBe(400);
+    expect(unconfirmed.res.body.error.code).toBe('ADULT_CONFIRMATION_REQUIRED');
+
+    const confirmed = await register('pas18@reksa.id', { birthYear: year - 18, adultConfirmed: true });
+    expect(confirmed.res.status).toBe(201);
+    const row = await ctx.owner.user.findUniqueOrThrow({ where: { id: confirmed.userId } });
+    expect(row).toMatchObject({ birthYear: year - 18, guardianConsent: false });
   });
 
   it('asks for re-consent when the stored version is older, and POST /me/consent clears it', async () => {

@@ -121,7 +121,7 @@ const registerInput = {
   role: 'STUDENT' as const,
   birthYear: 2000,
   acceptTerms: true as const,
-  guardianConsent: false,
+  adultConfirmed: false,
 };
 
 describe('AuthService', () => {
@@ -195,26 +195,34 @@ describe('AuthService', () => {
       });
     });
 
-    it('requires a guardian statement from anyone who may be under 18', async () => {
-      // 2026 - 2008 - 1 = 17: bisa jadi masih 17 tahun.
-      const minor = { ...registerInput, birthYear: 2008 };
-      await expect(service.register(minor)).rejects.toMatchObject({ statusCode: 400, code: 'GUARDIAN_CONSENT_REQUIRED' });
+    // Ketentuan Gemini API: tidak boleh dipakai di aplikasi untuk pengguna di bawah 18 tahun.
+    it('rejects anyone who is surely under 18, before hashing the password', async () => {
+      const hash = vi.spyOn(fakeHasher, 'hash');
+      // 2026 - 2009 = 17: paling tua 17 tahun.
+      for (const birthYear of [2009, 2015, 2026]) {
+        await expect(service.register({ ...registerInput, birthYear, adultConfirmed: true })).rejects.toMatchObject({
+          statusCode: 400,
+          code: 'AGE_RESTRICTED',
+        });
+      }
       expect(repo.users).toHaveLength(0);
-      const withConsent = await service.register({ ...minor, guardianConsent: true });
-      expect(repo.users[0]?.guardianConsent).toBe(true);
-      expect(withConsent.user.consentRequired).toBe(false);
+      expect(hash).not.toHaveBeenCalled();
     });
 
-    it('does not ask an adult for a guardian statement and never stores one', async () => {
-      // 2026 - 2007 - 1 = 18.
-      await service.register({ ...registerInput, birthYear: 2007, guardianConsent: true });
+    it('asks someone born exactly 18 years ago to confirm they are 18', async () => {
+      // 2026 - 2008 = 18, tapi bisa juga masih 17 kalau ulang tahunnya belum lewat.
+      const borderline = { ...registerInput, birthYear: 2008 };
+      await expect(service.register(borderline)).rejects.toMatchObject({ statusCode: 400, code: 'ADULT_CONFIRMATION_REQUIRED' });
+      expect(repo.users).toHaveLength(0);
+      const done = await service.register({ ...borderline, adultConfirmed: true });
+      expect(done.user.consentRequired).toBe(false);
+      expect(repo.users[0]).toMatchObject({ birthYear: 2008, guardianConsent: false });
+    });
+
+    it('does not ask older users for a confirmation', async () => {
+      // 2026 - 2007 - 1 = 18: pasti sudah 18.
+      await service.register({ ...registerInput, birthYear: 2007 });
       expect(repo.users[0]?.guardianConsent).toBe(false);
-    });
-
-    it('rejects a birth year younger than 6', async () => {
-      await expect(service.register({ ...registerInput, birthYear: 2021, guardianConsent: true })).rejects.toBeInstanceOf(BadRequestError);
-      await service.register({ ...registerInput, birthYear: 2020, guardianConsent: true });
-      expect(repo.users).toHaveLength(1);
     });
   });
 
@@ -223,7 +231,7 @@ describe('AuthService', () => {
       const { user } = await service.register(registerInput);
       repo.users[0]!.termsVersion = '2020-01-01';
       expect((await service.getCurrentUser(user.id)).consentRequired).toBe(true);
-      const updated = await service.recordConsent(user.id, { acceptTerms: true, guardianConsent: false });
+      const updated = await service.recordConsent(user.id, { acceptTerms: true, adultConfirmed: false });
       expect(updated.consentRequired).toBe(false);
       expect(repo.users[0]?.termsVersion).toBe(TERMS_VERSION);
     });
@@ -231,24 +239,36 @@ describe('AuthService', () => {
     it('asks legacy accounts without a birth year to provide one', async () => {
       const { user } = await service.register(registerInput);
       Object.assign(repo.users[0]!, { birthYear: null, termsVersion: null, privacyVersion: null });
-      await expect(service.recordConsent(user.id, { acceptTerms: true, guardianConsent: false })).rejects.toBeInstanceOf(
+      await expect(service.recordConsent(user.id, { acceptTerms: true, adultConfirmed: false })).rejects.toBeInstanceOf(
         BadRequestError,
       );
-      await expect(
-        service.recordConsent(user.id, { acceptTerms: true, birthYear: 2010, guardianConsent: false }),
-      ).rejects.toMatchObject({ code: 'GUARDIAN_CONSENT_REQUIRED' });
-      await service.recordConsent(user.id, { acceptTerms: true, birthYear: 2010, guardianConsent: true });
-      expect(repo.users[0]).toMatchObject({ birthYear: 2010, guardianConsent: true });
+      await expect(service.recordConsent(user.id, { acceptTerms: true, birthYear: 2010, adultConfirmed: true })).rejects.toMatchObject({
+        code: 'AGE_RESTRICTED',
+      });
+      await expect(service.recordConsent(user.id, { acceptTerms: true, birthYear: 2008, adultConfirmed: false })).rejects.toMatchObject({
+        code: 'ADULT_CONFIRMATION_REQUIRED',
+      });
+      await service.recordConsent(user.id, { acceptTerms: true, birthYear: 2008, adultConfirmed: true });
+      expect(repo.users[0]).toMatchObject({ birthYear: 2008, guardianConsent: false });
     });
 
     it('keeps the stored birth year even if another one is sent', async () => {
       const { user } = await service.register(registerInput);
-      await service.recordConsent(user.id, { acceptTerms: true, birthYear: 2015, guardianConsent: true });
+      await service.recordConsent(user.id, { acceptTerms: true, birthYear: 2015, adultConfirmed: true });
       expect(repo.users[0]?.birthYear).toBe(2000);
     });
 
+    it('does not let an account whose stored birth year is under 18 re-consent', async () => {
+      const { user } = await service.register(registerInput);
+      Object.assign(repo.users[0]!, { birthYear: 2010, termsVersion: '2020-01-01' });
+      await expect(service.recordConsent(user.id, { acceptTerms: true, adultConfirmed: true })).rejects.toMatchObject({
+        code: 'AGE_RESTRICTED',
+      });
+      expect(repo.users[0]?.termsVersion).toBe('2020-01-01');
+    });
+
     it('rejects an unknown user', async () => {
-      await expect(service.recordConsent(randomUUID(), { acceptTerms: true, guardianConsent: false })).rejects.toBeInstanceOf(
+      await expect(service.recordConsent(randomUUID(), { acceptTerms: true, adultConfirmed: false })).rejects.toBeInstanceOf(
         UnauthorizedError,
       );
     });

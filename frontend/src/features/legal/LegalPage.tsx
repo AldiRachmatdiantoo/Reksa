@@ -108,10 +108,15 @@ function PrivacyBody() {
 
       <Section title="Penyedia AI pihak ketiga">
         <p>
-          Untuk menilai catatan, teks materi dan foto catatanmu dikirim ke penyedia AI (Google Gemini). Kami memilih paket dan ketentuan
-          penyedia yang tidak memakai data itu untuk melatih model. Selama uji coba, sebagian penilaian masih memakai contoh jawaban buatan,
-          bukan AI sungguhan.
+          Untuk menyusun konsep kunci dari materi dan menilai catatanmu, teks materi dan foto catatanmu dikirim ke Google Gemini. Nama,
+          email, dan tahun lahirmu tidak ikut dikirim. Saran untuk guru dibuat dari daftar konsep yang terlewat, tanpa nama siswa.
         </p>
+        <p>
+          Selama masa lomba, REKSA memakai Gemini versi gratis. Di versi ini Google boleh memakai data yang dikirim untuk mengembangkan
+          produk dan model AI-nya, dan petugas peninjau Google bisa membacanya tanpa keterangan akun pengirimnya. Karena itu, jangan tulis
+          nama, NIS, atau data pribadi lain di catatan, dan jangan unggah materi yang rahasia.
+        </p>
+        <p>Kalau REKSA sedang berjalan tanpa Gemini (mode uji coba), penilaian memakai contoh jawaban buatan, bukan AI sungguhan.</p>
       </Section>
 
       <Section title="Berapa lama disimpan">
@@ -122,10 +127,11 @@ function PrivacyBody() {
         </List>
       </Section>
 
-      <Section title="Pengguna di bawah 18 tahun">
+      <Section title="Batas usia">
         <p>
-          Kalau umurmu di bawah 18 tahun, kamu perlu izin orang tua atau wali sebelum mendaftar. Saat ini izin itu berupa pernyataan yang
-          kamu centang sendiri. Orang tua atau wali boleh meminta datamu diunduh atau dihapus lewat akunmu.
+          REKSA saat ini hanya untuk usia 18 tahun ke atas. Penyedia AI yang kami pakai (Google Gemini) tidak mengizinkan layanannya dipakai
+          di aplikasi untuk pengguna di bawah 18 tahun. Tahun lahir dipakai untuk memeriksa batas ini, dan yang lahir tepat 18 tahun lalu
+          diminta menyatakan sudah berumur 18 tahun.
         </p>
       </Section>
 
@@ -161,7 +167,7 @@ function TermsBody() {
         <List>
           <li>Satu akun untuk satu orang. Jaga kata sandimu dan jangan bagikan ke orang lain.</li>
           <li>Isi data dengan benar, termasuk tahun lahir.</li>
-          <li>Kalau umurmu di bawah 18 tahun, pastikan orang tua atau wali sudah mengizinkan.</li>
+          <li>REKSA hanya untuk usia 18 tahun ke atas. Jangan mendaftar kalau umurmu belum 18 tahun.</li>
         </List>
       </Section>
 

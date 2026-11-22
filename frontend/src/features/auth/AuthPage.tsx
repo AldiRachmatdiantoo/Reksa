@@ -11,14 +11,14 @@ import { TextField } from '@/shared/ui/TextField';
 import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 import { useAuth } from './AuthProvider';
 import { homePathFor, PASSWORD_RULES } from './authApi';
-import { isPossiblyMinor } from '@/features/legal/policyVersions';
-import { GUARDIAN_MESSAGE, validateConsent } from './consent';
+import { needsAdultConfirmation } from '@/features/legal/policyVersions';
+import { ADULT_MESSAGE, AGE_RESTRICTED_MESSAGE, validateConsent } from './consent';
 import { ConsentFields } from './ConsentFields';
 import { PasswordRules } from './PasswordRules';
 
 type Mode = 'masuk' | 'daftar';
 type SignupRole = 'STUDENT' | 'EDUCATOR';
-type FieldErrors = Partial<Record<'fullName' | 'email' | 'password' | 'birthYear' | 'acceptTerms' | 'guardianConsent', string>>;
+type FieldErrors = Partial<Record<'fullName' | 'email' | 'password' | 'birthYear' | 'acceptTerms' | 'adultConfirmed', string>>;
 
 const ROLE_OPTIONS: { value: SignupRole; label: string; icon: string; note: string }[] = [
   { value: 'STUDENT', label: 'Pelajar', icon: 'edit_note', note: 'Latihan menulis dan cek catatan' },
@@ -48,7 +48,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
   const [showPassword, setShowPassword] = useState(false);
   const [birthYear, setBirthYear] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [guardianConsent, setGuardianConsent] = useState(false);
+  const [adultConfirmed, setAdultConfirmed] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -68,11 +68,11 @@ export function AuthPage({ mode }: { mode: Mode }) {
   const validate = (): FieldErrors => {
     const errors: FieldErrors = {};
     if (isRegister && !fullName.trim()) errors.fullName = 'Tulis nama lengkapmu.';
-    if (!/^\S+@\S+\.\S+$/.test(email.trim())) errors.email = 'Tulis email yang valid, mis. nama@sekolah.sch.id.';
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) errors.email = 'Tulis email yang valid, mis. nama@email.com.';
     if (!password) errors.password = 'Tulis kata sandimu.';
     else if (isRegister && !PASSWORD_RULES.every((r) => r.test(password)))
       errors.password = 'Kata sandi belum memenuhi semua syarat di bawah.';
-    if (isRegister) Object.assign(errors, validateConsent({ birthYear, acceptTerms, guardianConsent, needsBirthYear: true }));
+    if (isRegister) Object.assign(errors, validateConsent({ birthYear, acceptTerms, adultConfirmed, needsBirthYear: true }));
     return errors;
   };
 
@@ -93,7 +93,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
             role,
             birthYear: Number(birthYear),
             acceptTerms: true,
-            guardianConsent: isPossiblyMinor(Number(birthYear)) && guardianConsent,
+            adultConfirmed: needsAdultConfirmation(Number(birthYear)) && adultConfirmed,
           })
         : await auth.login({ email: email.trim(), password });
       navigate(from ?? homePathFor(user.role), { replace: true });
@@ -106,8 +106,12 @@ export function AuthPage({ mode }: { mode: Mode }) {
         }
         setFieldErrors(mapped);
       }
-      if (err instanceof ApiError && err.code === 'GUARDIAN_CONSENT_REQUIRED') {
-        setFieldErrors({ guardianConsent: GUARDIAN_MESSAGE });
+      if (err instanceof ApiError && err.code === 'ADULT_CONFIRMATION_REQUIRED') {
+        setFieldErrors({ adultConfirmed: ADULT_MESSAGE });
+        return;
+      }
+      if (err instanceof ApiError && err.code === 'AGE_RESTRICTED') {
+        setFieldErrors({ birthYear: AGE_RESTRICTED_MESSAGE });
         return;
       }
       setFormError(messageFor(err, mode));
@@ -165,7 +169,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
               </h1>
               <p className="text-body-lg text-ink-muted text-pretty">
                 {isRegister
-                  ? 'Gratis. Kamu cuma butuh kertas, pulpen, dan kamera HP.'
+                  ? 'Gratis, untuk usia 18 tahun ke atas. Kamu cuma butuh kertas, pulpen, dan kamera HP.'
                   : 'Masuk untuk lanjut latihan menulis dan cek pemahamanmu.'}
               </p>
             </motion.div>
@@ -283,8 +287,8 @@ export function AuthPage({ mode }: { mode: Mode }) {
                 onBirthYear={setBirthYear}
                 acceptTerms={acceptTerms}
                 onAcceptTerms={setAcceptTerms}
-                guardianConsent={guardianConsent}
-                onGuardianConsent={setGuardianConsent}
+                adultConfirmed={adultConfirmed}
+                onAdultConfirmed={setAdultConfirmed}
                 errors={fieldErrors}
               />
             )}

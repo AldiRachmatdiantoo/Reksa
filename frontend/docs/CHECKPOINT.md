@@ -1,5 +1,21 @@
 # Checkpoint Frontend REKSA
 
+## #22 · 2026-11-22 · Batas usia 18+
+
+Branch: `feat/aldi-gemini-text`.
+
+- `policyVersions.ts`: `MIN_USER_AGE = 18`, `maxBirthYear()`, `needsAdultConfirmation()`. `isPossiblyMinor` dan `MIN_AGE` dihapus.
+- `consent.ts` + `ConsentFields`: tahun lahir setelah `tahun ini - 18` ditolak ("REKSA saat ini hanya untuk usia 18 tahun ke atas."); untuk tahun batas muncul centang "Aku sudah berumur 18 tahun." (`adultConfirmed`). Centang izin wali dihapus. `AuthPage` dan `ConsentGate` memetakan `AGE_RESTRICTED` dan `ADULT_CONFIRMATION_REQUIRED` dari backend ke kolomnya.
+- Teks: subjudul halaman daftar, FAQ "Siapa yang bisa memakai REKSA?" dan footer di beranda, bagian "Batas usia" di Kebijakan Privasi, satu butir di Syarat Layanan.
+- Tes: `tests/unit/consent.test.ts` (baru), `tests/e2e/account-privacy.spec.ts`.
+
+## #21 · 2026-11-22 · Teks privasi untuk Gemini versi gratis, pesan saat AI sibuk
+
+Branch: `feat/aldi-gemini-text`. (#20 ada di branch `feat/aldi-photo-privacy-tip`.)
+
+- `LegalPage` (bagian "Penyedia AI pihak ketiga"), `CookieNotice`, dan catatan di langkah foto `CalibratePage`: materi dan foto dikirim ke Google Gemini; selama lomba dipakai versi gratis, jadi Google boleh memakai data itu dan petugas peninjau bisa membacanya. Janji lama ("tidak memakai data untuk melatih model", "tidak dibagikan ke pihak lain") dihapus.
+- `uploadErrorMessage`: error `AI_UNAVAILABLE` (503 dari backend saat rubrik gagal dibuat) menampilkan pesan backend apa adanya. Tes di `materialsApi.test.ts`.
+
 ## #19 · 2026-11-22 · Catatan kualitas: code splitting, token URL, formatter, CSP
 
 Branch: `fix/aldi-qa-bugs`.

@@ -26,8 +26,8 @@ export const RegisterSchema = z
     // FR-13: wajib setuju Syarat Layanan + Kebijakan Privasi versi terbaru dan mengisi tahun lahir.
     birthYear: BirthYearSchema,
     acceptTerms: z.literal(true, { error: 'Kamu perlu menyetujui Syarat Layanan dan Kebijakan Privasi' }),
-    // Wajib true bila pengguna mungkin di bawah 18 tahun (dicek service).
-    guardianConsent: z.boolean().default(false),
+    // Wajib true bila lahir tepat 18 tahun lalu (umurnya bisa 17 atau 18; dicek service).
+    adultConfirmed: z.boolean().default(false),
   })
   .strict();
 
@@ -61,7 +61,7 @@ export const ConsentSchema = z
   .object({
     acceptTerms: z.literal(true, { error: 'Kamu perlu menyetujui Syarat Layanan dan Kebijakan Privasi' }),
     birthYear: BirthYearSchema.optional(),
-    guardianConsent: z.boolean().default(false),
+    adultConfirmed: z.boolean().default(false),
   })
   .strict();
 

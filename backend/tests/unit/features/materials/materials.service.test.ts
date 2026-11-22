@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AiProviderError } from '../../../../src/common/ai/ai.errors.js';
 import { MockAiProvider } from '../../../../src/common/ai/mockAi.provider.js';
 import type { AiRubricOutput } from '../../../../src/common/ai/ai.schema.js';
 import {
   ConflictError,
   NotFoundError,
+  ServiceUnavailableError,
   UnprocessableEntityError,
   UnsupportedMediaTypeError,
 } from '../../../../src/common/errors/AppError.js';
@@ -16,6 +18,8 @@ import type {
   MaterialsRepository,
 } from '../../../../src/features/materials/materials.repository.js';
 import {
+  AI_BUSY_MESSAGE,
+  AI_DOWN_MESSAGE,
   MaterialsService,
   normalizeMaterialText,
   sha256Hex,
@@ -151,11 +155,47 @@ describe('MaterialsService', () => {
       expect(material.classId).toBe(classId);
     });
 
-    it('re-validates the AI output and refuses an invalid rubric', async () => {
+    it('re-validates the AI output and refuses a rubric that is invalid twice in a row', async () => {
       vi.mocked(ai.extractRubric).mockResolvedValueOnce({ materialTitle: '' } as AiRubricOutput);
-      await expect(service.createFromText(user, textInput)).rejects.toThrow();
+      vi.mocked(ai.extractRubric).mockResolvedValueOnce({ materialTitle: '' } as AiRubricOutput);
+      await expect(service.createFromText(user, textInput)).rejects.toMatchObject({
+        statusCode: 503,
+        code: 'AI_UNAVAILABLE',
+        message: AI_BUSY_MESSAGE,
+      });
+      expect(ai.extractRubric).toHaveBeenCalledTimes(2);
       expect(repo.rows).toHaveLength(0);
       expect(cache.map.size).toBe(0);
+    });
+
+    it('retries once when the AI answer is malformed, then saves the material', async () => {
+      vi.mocked(ai.extractRubric).mockRejectedValueOnce(new AiProviderError('INVALID_OUTPUT', 'bukan JSON'));
+      const { material } = await service.createFromText(user, textInput);
+      expect(ai.extractRubric).toHaveBeenCalledTimes(2);
+      expect(material.rubric.keyConcepts.length).toBeGreaterThan(0);
+    });
+
+    // Kuota per menit habis (429), server Gemini sibuk, atau batas waktu: pengguna sedang menunggu, jadi tidak
+    // dicoba ulang di server. Detail error masuk log, bukan ke respons.
+    it('answers 503 with a friendly message on a temporary AI failure, without retrying or caching', async () => {
+      const onWarning = vi.fn();
+      service = new MaterialsService({ repo, ai, cache, storage: store.storage, pdf, onWarning });
+      vi.mocked(ai.extractRubric).mockRejectedValueOnce(new AiProviderError('TRANSIENT', 'Gemini menjawab HTTP 429'));
+
+      const err = await service.createFromText(user, textInput).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(ServiceUnavailableError);
+      expect(err).toMatchObject({ code: 'AI_UNAVAILABLE', message: AI_BUSY_MESSAGE });
+      expect((err as Error).message).not.toContain('429');
+      expect(ai.extractRubric).toHaveBeenCalledOnce();
+      expect(onWarning).toHaveBeenCalledWith('Rubrik gagal dibuat AI', expect.objectContaining({ kind: 'TRANSIENT', attempt: 1 }));
+      expect(repo.rows).toHaveLength(0);
+      expect(cache.map.size).toBe(0);
+    });
+
+    it('tells the user the feature is down on a configuration error (bad key or model)', async () => {
+      vi.mocked(ai.extractRubric).mockRejectedValueOnce(new AiProviderError('FATAL', 'Gemini menjawab HTTP 403'));
+      await expect(service.createFromText(user, textInput)).rejects.toMatchObject({ statusCode: 503, message: AI_DOWN_MESSAGE });
+      expect(ai.extractRubric).toHaveBeenCalledOnce();
     });
   });
 
@@ -165,6 +205,13 @@ describe('MaterialsService', () => {
       const buffer = buildPdf([SAMPLE_PDF_TEXT]);
       return { buffer, size: buffer.length };
     };
+
+    it('does not store the PDF when the rubric cannot be made', async () => {
+      vi.mocked(ai.extractRubric).mockRejectedValueOnce(new AiProviderError('TRANSIENT', 'timeout'));
+      await expect(service.createFromPdf(user, fields, realPdf())).rejects.toBeInstanceOf(ServiceUnavailableError);
+      expect(store.storage.putObject).not.toHaveBeenCalled();
+      expect(repo.rows).toHaveLength(0);
+    });
 
     it('stores the PDF under a server-built key and saves the material', async () => {
       const { material } = await service.createFromPdf(user, fields, realPdf());

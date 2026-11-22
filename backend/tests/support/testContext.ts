@@ -27,6 +27,8 @@ export type TestContext = {
   storage: S3StorageService;
   /** Email yang "terkirim" (verifikasi, reset password). */
   emails: MemoryEmailService;
+  /** Provider AI yang dipakai app; bisa di-spy untuk mensimulasikan AI gagal. */
+  ai: MockAiProvider;
   reset(): Promise<void>;
   close(): Promise<void>;
 };
@@ -39,6 +41,7 @@ export function createTestContext(): TestContext {
   const storageConfig = inject('storage');
   const storage = new S3StorageService({ ...storageConfig, region: 'us-east-1', forcePathStyle: true });
   const emails = new MemoryEmailService();
+  const ai = new MockAiProvider({ latencyMs: 0 });
 
   const routes = buildRoutes({
     env: TEST_ENV,
@@ -47,7 +50,7 @@ export function createTestContext(): TestContext {
     redis,
     storage,
     email: emails,
-    ai: new MockAiProvider({ latencyMs: 0 }),
+    ai,
   });
   const app = createApp({ env: TEST_ENV, logger, routes });
 
@@ -58,6 +61,7 @@ export function createTestContext(): TestContext {
     redis,
     storage,
     emails,
+    ai,
     async reset() {
       emails.clear();
       await owner.$executeRaw`TRUNCATE TABLE users, institutions RESTART IDENTITY CASCADE`;
