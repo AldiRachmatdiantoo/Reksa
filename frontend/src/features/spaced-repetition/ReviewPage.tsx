@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ApiError } from '@/core/apiClient';
 import { useLoad } from '@/shared/hooks/useLoad';
 import { pageTransition, Stagger, StaggerItem } from '@/shared/motion';
@@ -7,7 +8,8 @@ import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button, ButtonLink } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { LoadingBlock, StateBlock } from '@/shared/ui/StateBlock';
-import { formatReviewDay, IMPORTANCE_LABEL, overdueLabel, spacedApi, type ScheduleItem } from './spacedApi';
+import { useStudySession } from '@/features/studio/studySession';
+import { formatReviewDay, IMPORTANCE_LABEL, overdueLabel, spacedApi, startReviewErrorMessage, type ScheduleItem } from './spacedApi';
 
 /** Latihan ulang H+3/H+7 untuk konsep yang terlewat (FR-06). */
 export function ReviewPage() {
@@ -24,7 +26,8 @@ export function ReviewPage() {
         <div className="flex flex-col gap-3">
           <h1 className="font-display text-headline-lg-mobile text-ink sm:text-headline-lg">Latihan ulang</h1>
           <p className="max-w-prose text-body-lg text-ink-muted text-pretty">
-            Konsep yang terlewat saat dicek muncul lagi di sini 3 dan 7 hari kemudian. Tulis ulang dari ingatan, cukup 3 sampai 5 menit.
+            Konsep yang terlewat saat dicek muncul lagi di sini 3 dan 7 hari kemudian. Tulis ulang dari ingatan selama 5 menit, lalu foto
+            catatanmu untuk dicek. Latihan ulang tidak memotong jatah cek harian.
           </p>
         </div>
 
@@ -101,6 +104,10 @@ function ReviewLists({ due, upcoming, onChanged }: { due: ScheduleItem[]; upcomi
 }
 
 function DueCard({ item, onCompleted }: { item: ScheduleItem; onCompleted: () => void }) {
+  const navigate = useNavigate();
+  const { beginReview } = useStudySession();
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState('');
   const [open, setOpen] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -120,6 +127,22 @@ function DueCard({ item, onCompleted }: { item: ScheduleItem; onCompleted: () =>
     }
   };
 
+  const startGraded = async () => {
+    setStarting(true);
+    setStartError('');
+    try {
+      const session = await spacedApi.start(item.id);
+      beginReview(
+        session,
+        item.blindSpots.map((b) => b.concept),
+      );
+      navigate('/belajar');
+    } catch (err) {
+      setStarting(false);
+      setStartError(startReviewErrorMessage(err));
+    }
+  };
+
   return (
     <article className="flex flex-col gap-4 rounded-lg border border-line-soft bg-card p-5 sm:p-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -129,12 +152,33 @@ function DueCard({ item, onCompleted }: { item: ScheduleItem; onCompleted: () =>
             <span className="font-mono text-teal tabular-nums">H+{item.intervalDay}</span> · jatuh tempo {overdueLabel(item.nextReviewAt)}
           </p>
         </div>
-        {!open && (
-          <Button variant="primary" onClick={() => setOpen(true)} aria-expanded={open} aria-controls={panelId}>
-            Mulai latihan
-          </Button>
-        )}
       </header>
+
+      <ul className="flex flex-wrap gap-2" aria-label="Konsep yang dilatih">
+        {item.blindSpots.map((spot, i) => (
+          <li key={i} className="rounded-md bg-wash px-3 py-1.5 text-body-md text-ink">
+            {spot.concept}
+          </li>
+        ))}
+      </ul>
+
+      {startError && (
+        <p role="alert" className="rounded-md bg-danger-wash px-4 py-3 text-body-md text-on-danger-wash">
+          {startError}
+        </p>
+      )}
+
+      {!open && (
+        <div className="flex flex-wrap gap-3">
+          <Button variant="primary" disabled={starting} onClick={() => void startGraded()}>
+            <Icon name="play_arrow" fill />
+            {starting ? 'Menyiapkan...' : 'Mulai latihan 5 menit'}
+          </Button>
+          <Button variant="ghost" onClick={() => setOpen(true)} aria-expanded={open} aria-controls={panelId}>
+            Cocokkan sendiri tanpa foto
+          </Button>
+        </div>
+      )}
 
       {open && (
         <div id={panelId} className="flex flex-col gap-4">
@@ -156,9 +200,7 @@ function DueCard({ item, onCompleted }: { item: ScheduleItem; onCompleted: () =>
               </li>
             ))}
           </ul>
-          <p className="text-body-sm text-ink-muted">
-            Latihan ulang belum dicek otomatis. Foto dan penilaiannya menyusul; untuk sekarang kamu yang mencocokkan.
-          </p>
+          <p className="text-body-sm text-ink-muted">Cara ini tidak dicek AI dan tidak masuk riwayat.</p>
           {error && (
             <p role="alert" className="rounded-md bg-danger-wash px-4 py-3 text-body-md text-on-danger-wash">
               {error}

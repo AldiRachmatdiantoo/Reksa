@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, B1 riwayat dan B2 tren kalibrasi Pro (Aldi, branch `feat/aldi-results-history`)
+**Checkpoint terakhir:** 22 November 2026, B3 latihan ulang dinilai AI (Aldi, branch `feat/aldi-graded-review`)
 
 ---
 
@@ -16,6 +16,14 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #33 · B3 latihan ulang H+3/H+7 dinilai AI · branch `feat/aldi-graded-review`
+
+- **Alur:** kartu jadwal di menu Ulang → `POST /api/v1/spaced/:id/start` (201 `{session}`, 404 jadwal orang lain, 409 belum jatuh tempo, sudah selesai, masih ada sesi aktif, atau `REVIEW_LIMIT_REACHED`) → sesi `SPACED_REVIEW` 5 menit dengan daftar konsep target → tebak nilai → foto langsung atau lewat QR → audit Stage 2 dengan rubrik yang hanya berisi konsep target → jadwal ditandai selesai saat `DONE`.
+- **Tanpa kuota:** unggah dan cek ulang latihan ulang tidak memotong jatah harian (keputusan 22 Nov 2026). Batasnya: paling banyak 3 sesi per jadwal, rate limit 20 kali per jam untuk memulai.
+- **Migrasi** `20261122000500_spaced_review_session` (kolom `study_sessions.spaced_schedule_id`). Perubahan di `study-sessions` dan `essay-scans` dicatat di `UNTUK-ADLI.md`.
+- Cara lama (cocokkan sendiri lalu "Tandai selesai") tetap ada sebagai pilihan kedua.
+- Halaman hasil dan riwayat menandai latihan ulang: tidak ada janji jadwal H+3/H+7 baru, dan pesan gagal tidak menyebut jatah dikembalikan.
 
 ### #32 · B1 riwayat hasil cek dan B2 tren kalibrasi Pro · branch `feat/aldi-results-history`
 
@@ -452,8 +460,8 @@ Branch ini dibuat **di atas** `feat/adli-essay-scans` (PR belum di-merge), jadi 
 
 Urutan kerja lengkap, gerbang uji, dan checkpoint ada di [SISA-ALDI.md](SISA-ALDI.md). Langkah terdekat:
 
-1. B3: latihan ulang yang dinilai AI (tanpa memotong kuota)
-2. CP-1: Gerbang Lengkap
+1. CP-1: Gerbang Lengkap
+2. Fase C: AI asli (C1 Stage 2 siap dipakai, C2 Aldi membuat API key)
 3. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
 
 ## Catatan teknis yang perlu diingat

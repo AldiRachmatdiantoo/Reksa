@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { AiProviderError } from '../../../../src/common/ai/ai.errors.js';
 import type { IAiService } from '../../../../src/common/ai/ai.provider.interface.js';
 import { MOCK_ESSAY_AUDIT, MOCK_ESSAY_AUDIT_HIGH, MOCK_RUBRIC } from '../../../../src/common/ai/mockAi.fixtures.js';
-import { AuditService, classifyAiError } from '../../../../src/features/essay-scans/audit.service.js';
+import { AuditService, classifyAiError, focusRubric } from '../../../../src/features/essay-scans/audit.service.js';
 import { computeLedgerHash } from '../../../../src/features/essay-scans/ledgerHash.js';
 import { FakeScansRepository } from './fakeScansRepository.js';
 
@@ -202,5 +202,56 @@ describe('classifyAiError', () => {
     expect(classifyAiError(new AiProviderError('INVALID_OUTPUT', 'x'))).toBe('INVALID_OUTPUT');
     expect(classifyAiError(new z.ZodError([]))).toBe('INVALID_OUTPUT');
     expect(classifyAiError(new Error('socket hang up'))).toBe('TRANSIENT');
+  });
+});
+
+describe('focusRubric (FR-06)', () => {
+  it('keeps only the missed concepts, case-insensitively, and the relations between them', () => {
+    const { rubric, focused } = focusRubric(MOCK_RUBRIC, [{ concept: ' umpan balik negatif ' }, 'Reseptor', { concept: 'Tidak ada' }]);
+    expect(focused).toBe(true);
+    expect(rubric.keyConcepts.map((c) => c.id).sort()).toEqual(['reseptor', 'umpan-balik-negatif']);
+    const ids = new Set(rubric.keyConcepts.map((c) => c.id));
+    expect(rubric.causalRelations.every((r) => ids.has(r.fromConceptId) && ids.has(r.toConceptId))).toBe(true);
+    expect(rubric.materialTitle).toBe(MOCK_RUBRIC.materialTitle);
+  });
+
+  it('falls back to the full rubric when nothing matches or the targets are malformed', () => {
+    expect(focusRubric(MOCK_RUBRIC, [{ concept: 'Fotosintesis' }])).toEqual({ rubric: MOCK_RUBRIC, focused: false });
+    expect(focusRubric(MOCK_RUBRIC, null)).toEqual({ rubric: MOCK_RUBRIC, focused: false });
+  });
+});
+
+describe('AuditService.run: spaced review (FR-06)', () => {
+  function pendingReview() {
+    const scheduleId = randomUUID();
+    repo.reviewSchedules.set(scheduleId, { targets: [{ concept: 'Umpan balik negatif' }], completed: false });
+    const session = repo.addSession({ sessionType: 'SPACED_REVIEW', spacedScheduleId: scheduleId });
+    repo.rubrics.set(session.materialId, MOCK_RUBRIC);
+    const submission = repo.addSubmission(session.id, { quotaChargedAt: null });
+    return { scheduleId, session, submission, job: { submissionId: submission.id, userId: USER } };
+  }
+
+  it('grades against the missed concepts only, completes the schedule and creates no new schedules', async () => {
+    const { scheduleId, session, job } = pendingReview();
+
+    await expect(service().run(job)).resolves.toBe('DONE');
+
+    const rubricSent = ai.evaluateHandwritingEssay.mock.calls[0]![2];
+    expect(rubricSent.keyConcepts.map((c) => c.concept)).toEqual(['Umpan balik negatif']);
+    expect(repo.reviewSchedules.get(scheduleId)!.completed).toBe(true);
+    expect(repo.sessions.get(session.id)!.status).toBe('COMPLETED');
+    expect(repo.schedules).toEqual([]);
+  });
+
+  it('leaves the schedule open when the audit fails, and refunds nothing', async () => {
+    const { scheduleId, submission, job } = pendingReview();
+    repo.quota = { tier: 'FREE', dailyScanCount: 2, lastScanResetAt: new Date('2026-11-21T03:00:00Z') };
+    ai.evaluateHandwritingEssay.mockRejectedValue(new AiProviderError('FATAL', 'kunci salah'));
+
+    await expect(service().run(job)).resolves.toBe('FAILED');
+
+    expect(repo.submissions.get(submission.id)!.auditStatus).toBe('FAILED');
+    expect(repo.reviewSchedules.get(scheduleId)!.completed).toBe(false);
+    expect(repo.quota.dailyScanCount).toBe(2);
   });
 });

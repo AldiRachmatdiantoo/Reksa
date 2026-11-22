@@ -12,6 +12,11 @@ export class SpacedController {
     res.json(await this.service.listDue(getAuth(res).userId, query.limit));
   };
 
+  start = async (_req: Request, res: Response): Promise<void> => {
+    const { params } = getValidated(res, { params: ScheduleIdParamsSchema });
+    res.status(201).json({ session: await this.service.startReview(getAuth(res).userId, params.id) });
+  };
+
   complete = async (_req: Request, res: Response): Promise<void> => {
     const { params } = getValidated(res, { params: ScheduleIdParamsSchema });
     res.json({ schedule: await this.service.complete(getAuth(res).userId, params.id) });

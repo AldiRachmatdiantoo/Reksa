@@ -36,6 +36,10 @@ export type StudySession = {
   /** Id hasil cek setelah foto terkirim. */
   submissionId: string | null;
   photo: { name: string; sizeBytes: number } | null;
+  /** SPACED_REVIEW = latihan ulang H+3/H+7 (FR-06): 5 menit, tanpa memotong jatah cek. Opsional untuk cache lama. */
+  sessionType?: 'INITIAL_BLURTING' | 'SPACED_REVIEW';
+  /** Konsep yang dilatih ulang, disalin dari kartu jadwal (hanya tampilan). */
+  reviewConcepts?: string[];
 };
 
 const STORAGE_KEY = 'reksa-study-session';
@@ -74,6 +78,8 @@ export function fromServer(s: ServerSession, previous?: StudySession | null): St
     scanDeadlineAt: s.scanDeadlineAt,
     submissionId: s.submissionId,
     photo: previous?.serverId === s.id ? previous.photo : null,
+    sessionType: s.sessionType,
+    reviewConcepts: previous?.serverId === s.id ? previous.reviewConcepts : undefined,
   };
 }
 
@@ -119,6 +125,8 @@ type Ctx = {
   start: () => Promise<void>;
   /** Lanjutkan sesi yang sudah ada di server (mis. dari perangkat lain). */
   resume: (sessionId: string) => Promise<void>;
+  /** Pakai sesi latihan ulang yang baru dibuat server (POST /spaced/:id/start). */
+  beginReview: (s: ServerSession, concepts: string[]) => void;
   /** Batalkan sesi aktif lain lalu mulai sesi baru. */
   replaceActive: (sessionId: string) => Promise<void>;
   setPreset: (minutes: number) => void;
@@ -225,6 +233,10 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     resume: async (sessionId) => {
       resetPhoto();
       setSession(fromServer(await sessionsApi.get(sessionId)));
+    },
+    beginReview: (s, concepts) => {
+      resetPhoto();
+      setSession({ ...fromServer(s), reviewConcepts: concepts });
     },
     replaceActive: async (sessionId) => {
       await sessionsApi.cancel(sessionId);

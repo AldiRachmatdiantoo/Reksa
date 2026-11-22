@@ -88,9 +88,13 @@ export class ScansService {
     if (session.status === 'EXPIRED') throw new SessionExpiredError();
     if (session.status !== 'AWAITING_SCAN') throw new InvalidSessionStateError('Simpan tebakan nilai dulu sebelum mengunggah foto.');
     if (session.hasSubmission) throw new InvalidSessionStateError('Foto untuk sesi ini sudah diunggah.');
+    // Latihan ulang H+3/H+7 tidak memotong kuota (FR-06, keputusan 22 Nov 2026).
+    const freeOfQuota = session.sessionType === 'SPACED_REVIEW';
     // Cek cepat tanpa kunci supaya kuota habis ditolak sebelum foto diproses; cek pasti ada di transaksi.
-    const quota = await this.deps.quota.get(userId);
-    if (quota.remaining === 0) throw new QuotaExceededError(quota);
+    if (!freeOfQuota) {
+      const quota = await this.deps.quota.get(userId);
+      if (quota.remaining === 0) throw new QuotaExceededError(quota);
+    }
 
     const image = await this.deps.images.process(input.image);
     const key = buildObjectKey('scans', userId, image.ext);
@@ -111,6 +115,15 @@ export class ScansService {
         }
         const state = await uow.lockQuota();
         if (!state) throw new NotFoundError();
+        if (locked.sessionType === 'SPACED_REVIEW') {
+          const submission = await uow.insertSubmission({
+            sessionId,
+            imageStorageKey: key,
+            predictedJolScore: locked.predictedJolScore,
+            quotaChargedAt: null,
+          });
+          return { submission, quota: quotaView(state, now) };
+        }
         const plan = planConsume(state, now);
         if (!plan.ok) throw new QuotaExceededError(quotaView(state, now));
         const submission = await uow.insertSubmission({
@@ -166,15 +179,18 @@ export class ScansService {
       }
       const state = await uow.lockQuota();
       if (!state) throw new NotFoundError();
-      const plan = planConsume(state, now);
-      if (!plan.ok) throw new QuotaExceededError(quotaView(state, now));
+      const free = session.sessionType === 'SPACED_REVIEW';
+      const plan = free ? null : planConsume(state, now);
+      if (plan && !plan.ok) throw new QuotaExceededError(quotaView(state, now));
       const requeued = await uow.updateSubmission(submissionId, ['FAILED'], {
         auditStatus: 'PENDING',
         auditErrorCode: null,
-        auditStartedAt: null,
-        quotaChargedAt: now,
+        // Latihan ulang tanpa kuota: waktu masuk antrean dicatat di auditStartedAt (lihat isStalled).
+        auditStartedAt: free ? now : null,
+        quotaChargedAt: free ? null : now,
       });
       if (!requeued) throw new InvalidScanStateError('Status hasil cek berubah. Muat ulang halaman lalu coba lagi.');
+      if (!plan) return quotaView(state, now);
       await uow.writeQuota(plan.next);
       return quotaView({ ...state, ...plan.next }, now);
     });
@@ -191,7 +207,8 @@ export class ScansService {
   private isStalled(s: ScanRecord): boolean {
     const now = this.now().getTime();
     if (s.auditStatus === 'PENDING') {
-      const queuedAt = (s.quotaChargedAt ?? s.createdAt).getTime();
+      // Waktu masuk antrean: saat kuota dipotong, atau saat cek ulang latihan ulang (tanpa kuota), atau saat unggah.
+      const queuedAt = (s.quotaChargedAt ?? s.auditStartedAt ?? s.createdAt).getTime();
       return now - queuedAt >= STALE_PENDING_MS;
     }
     if (s.auditStatus === 'PROCESSING') {

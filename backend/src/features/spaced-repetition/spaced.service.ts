@@ -1,4 +1,6 @@
 import { ConflictError, NotFoundError } from '../../common/errors/AppError.js';
+import type { SessionView } from '../study-sessions/sessions.schema.js';
+import type { SessionsService } from '../study-sessions/sessions.service.js';
 import type { ScheduleRow, SpacedRepository } from './spaced.repository.js';
 import type { ScheduleBlindSpot, ScheduleItem } from './spaced.schema.js';
 
@@ -6,6 +8,8 @@ const UPCOMING_LIMIT = 10;
 
 export type SpacedServiceDeps = {
   repo: SpacedRepository;
+  /** Membuat sesi SPACED_REVIEW (study-sessions). */
+  sessions: Pick<SessionsService, 'startReview'>;
   now?: () => Date;
 };
 
@@ -24,6 +28,15 @@ export class SpacedService {
       this.deps.repo.listUpcoming(userId, now, UPCOMING_LIMIT),
     ]);
     return { due: due.map(toItem), upcoming: upcoming.map(toItem) };
+  }
+
+  /** Mulai latihan ulang yang dinilai AI (FR-06): sesi 5 menit, rubrik hanya konsep yang terlewat, tanpa kuota. */
+  async startReview(userId: string, id: string): Promise<SessionView> {
+    const row = await this.deps.repo.findOwned(userId, id);
+    if (!row) throw new NotFoundError('Jadwal latihan ulang tidak ditemukan');
+    if (row.isCompleted) throw new ConflictError('Latihan ulang ini sudah selesai');
+    if (row.nextReviewAt > this.now()) throw new ConflictError('Latihan ulang ini belum jatuh tempo');
+    return this.deps.sessions.startReview(userId, { spacedScheduleId: row.id, materialId: row.materialId });
   }
 
   /** Tandai satu latihan ulang selesai. Mengulang pada jadwal yang sudah selesai tidak mengubah apa pun. */

@@ -35,13 +35,17 @@ export type SessionForScan = {
   focusEndedAt: Date | null;
   actualDurationSec: number | null;
   validity: 'VALID' | 'SHORT_FOCUS' | null;
+  sessionType: 'INITIAL_BLURTING' | 'SPACED_REVIEW';
+  /** Jadwal H+3/H+7 yang dilatih; hanya untuk sesi SPACED_REVIEW. */
+  spacedScheduleId: string | null;
 };
 
 export type NewSubmission = {
   sessionId: string;
   imageStorageKey: string;
   predictedJolScore: number;
-  quotaChargedAt: Date;
+  /** null untuk latihan ulang: tidak memotong kuota (FR-06). */
+  quotaChargedAt: Date | null;
 };
 
 export type SubmissionUpdate = Partial<{
@@ -100,6 +104,10 @@ export interface ScansUnitOfWork {
   loadRubric(materialId: string): Promise<unknown>;
   /** Idempoten (UNIQUE origin_submission_id + interval_day). */
   insertSpacedSchedules(rows: NewSpacedSchedule[]): Promise<void>;
+  /** Konsep yang terlewat pada jadwal milik user (target latihan ulang), atau null bila jadwal tidak ada. */
+  loadScheduleTargets(scheduleId: string): Promise<unknown>;
+  /** Menandai jadwal milik user selesai. Idempoten. */
+  completeSchedule(scheduleId: string): Promise<void>;
 }
 
 export interface ScansRepository {
@@ -136,6 +144,8 @@ type SessionRow = {
   focus_ended_at: Date | null;
   actual_duration_sec: number | null;
   validity: SessionForScan['validity'];
+  session_type: SessionForScan['sessionType'];
+  spaced_schedule_id: string | null;
 };
 
 function toJson(value: unknown): Prisma.InputJsonValue {
@@ -158,7 +168,8 @@ class PrismaScansUnitOfWork implements ScansUnitOfWork {
 
   async lockSession(sessionId: string): Promise<SessionForScan | null> {
     const rows = await this.tx.$queryRaw<SessionRow[]>`
-      SELECT id, material_id, status, predicted_jol_score, started_at, focus_ended_at, actual_duration_sec, validity
+      SELECT id, material_id, status, predicted_jol_score, started_at, focus_ended_at, actual_duration_sec, validity,
+             session_type, spaced_schedule_id
       FROM study_sessions
       WHERE id = ${sessionId}::uuid AND user_id = ${this.userId}::uuid
       FOR UPDATE`;
@@ -173,6 +184,8 @@ class PrismaScansUnitOfWork implements ScansUnitOfWork {
           focusEndedAt: r.focus_ended_at,
           actualDurationSec: r.actual_duration_sec,
           validity: r.validity,
+          sessionType: r.session_type,
+          spacedScheduleId: r.spaced_schedule_id,
         }
       : null;
   }
@@ -252,6 +265,21 @@ class PrismaScansUnitOfWork implements ScansUnitOfWork {
         nextReviewAt: r.nextReviewAt,
       })),
       skipDuplicates: true,
+    });
+  }
+
+  async loadScheduleTargets(scheduleId: string): Promise<unknown> {
+    const row = await this.tx.spacedSchedule.findFirst({
+      where: { id: scheduleId, userId: this.userId },
+      select: { targetBlindSpotsJson: true },
+    });
+    return row?.targetBlindSpotsJson ?? null;
+  }
+
+  async completeSchedule(scheduleId: string): Promise<void> {
+    await this.tx.spacedSchedule.updateMany({
+      where: { id: scheduleId, userId: this.userId, isCompleted: false },
+      data: { isCompleted: true },
     });
   }
 }

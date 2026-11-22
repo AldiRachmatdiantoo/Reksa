@@ -27,6 +27,7 @@ function sessionView(id: string, partial: Partial<SessionView> = {}): SessionVie
   const s = repo.sessions.get(id);
   return {
     id,
+    sessionType: s?.sessionType ?? 'INITIAL_BLURTING',
     status: s?.status === 'AWAITING_JOL' ? 'AWAITING_SCAN' : (s?.status ?? 'AWAITING_SCAN'),
     hasSubmission: [...repo.submissions.values()].some((x) => x.sessionId === id),
     ...partial,
@@ -235,5 +236,43 @@ describe('retry', () => {
     repo.quota = { tier: 'FREE', dailyScanCount: 3, lastScanResetAt: NOW };
     await expect(service.retry(USER, sub.id)).rejects.toMatchObject({ code: 'QUOTA_EXCEEDED' });
     expect(repo.submissions.get(sub.id)!.auditStatus).toBe('FAILED');
+  });
+});
+
+describe('spaced review uploads (FR-06, no quota)', () => {
+  function reviewSession() {
+    return repo.addSession({ sessionType: 'SPACED_REVIEW', spacedScheduleId: randomUUID() });
+  }
+
+  it('accepts the photo even when the daily quota is used up, and charges nothing', async () => {
+    repo.quota = { tier: 'FREE', dailyScanCount: 3, lastScanResetAt: NOW };
+    const session = reviewSession();
+
+    const result = await service.upload({ actorUserId: USER, sessionId: session.id, image: Buffer.from('raw') });
+
+    expect(result).toMatchObject({ auditStatus: 'PENDING', quota: { used: 3, remaining: 0 } });
+    expect(repo.submissions.get(result.submissionId)).toMatchObject({ quotaChargedAt: null, auditStatus: 'PENDING' });
+    expect(repo.quota.dailyScanCount).toBe(3);
+    expect(queued).toHaveLength(1);
+  });
+
+  it('retries a failed review audit without charging, and does not mark it stalled right away', async () => {
+    repo.quota = { tier: 'FREE', dailyScanCount: 3, lastScanResetAt: NOW };
+    const session = reviewSession();
+    const sub = repo.addSubmission(session.id, {
+      auditStatus: 'FAILED',
+      auditAttempts: 1,
+      auditErrorCode: 'AI_UNAVAILABLE',
+      quotaChargedAt: null,
+      createdAt: new Date(NOW.getTime() - 60 * MIN),
+    });
+
+    const result = await service.retry(USER, sub.id);
+
+    expect(result.quota).toMatchObject({ used: 3 });
+    expect(repo.submissions.get(sub.id)).toMatchObject({ auditStatus: 'PENDING', quotaChargedAt: null, auditStartedAt: NOW });
+    expect(repo.quota.dailyScanCount).toBe(3);
+    const view = await service.get(USER, sub.id);
+    expect(view.auditStatus).toBe('PENDING');
   });
 });

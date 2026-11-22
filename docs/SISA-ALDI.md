@@ -54,7 +54,7 @@ Daftar ini urut: kerjakan dari atas. Centang `[x]` saat PR-nya sudah masuk `main
   - Selisih tebakan nilai dan skor AI per sesi beserta rata-ratanya, dihitung di server.
   - Grafik di halaman Riwayat. Pengguna Free melihat keterangan bahwa fitur ini khusus Pro.
   - Tes untuk Free, Pro aktif, dan Pro kedaluwarsa.
-- [ ] **B3. Latihan ulang H+3/H+7 yang dinilai AI** (FR-06):
+- [x] **B3. Latihan ulang H+3/H+7 yang dinilai AI** (FR-06), `feat/aldi-graded-review`:
   - Dari kartu jadwal, mulai sesi `SPACED_REVIEW` 3 sampai 5 menit dengan rubrik yang hanya berisi konsep yang terlewat.
   - Tebak nilai, foto (langsung dari HP atau lewat QR), dicek Stage 2. Jadwal ditandai selesai saat hasilnya `DONE`.
   - **Diputuskan (22 November 2026):** latihan ulang tidak memotong kuota foto harian. Jumlahnya sudah terbatas: paling banyak 2 latihan per sesi utama yang selesai dicek, dan sesi utama sendiri dibatasi kuota.

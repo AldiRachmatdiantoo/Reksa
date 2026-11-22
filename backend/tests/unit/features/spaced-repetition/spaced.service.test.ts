@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { ScheduleRow, SpacedRepository } from '../../../../src/features/spaced-repetition/spaced.repository.js';
 import { parseBlindSpots, SpacedService } from '../../../../src/features/spaced-repetition/spaced.service.js';
+import type { SessionView } from '../../../../src/features/study-sessions/sessions.schema.js';
 
 const USER = '11111111-1111-4111-8111-111111111111';
 const OTHER = '22222222-2222-4222-8222-222222222222';
@@ -51,17 +52,31 @@ class FakeRepo implements SpacedRepository {
   }
 }
 
+const sessions = {
+  calls: [] as { userId: string; input: { spacedScheduleId: string; materialId: string } }[],
+  async startReview(userId: string, input: { spacedScheduleId: string; materialId: string }) {
+    this.calls.push({ userId, input });
+    return { id: 'review-session', sessionType: 'SPACED_REVIEW' } as unknown as SessionView;
+  },
+};
+
 describe('SpacedService', () => {
   let repo: FakeRepo;
   let service: SpacedService;
 
   beforeEach(() => {
     repo = new FakeRepo();
-    service = new SpacedService({ repo, now: () => NOW });
+    sessions.calls = [];
+    service = new SpacedService({ repo, sessions, now: () => NOW });
   });
 
   it('splits due and upcoming reviews, oldest due first, and maps blind spots', async () => {
-    repo.rows = [row('later', USER, -1000), row('oldest', USER, -2 * DAY), row('next', USER, DAY), row('done', USER, -DAY, { isCompleted: true })];
+    repo.rows = [
+      row('later', USER, -1000),
+      row('oldest', USER, -2 * DAY),
+      row('next', USER, DAY),
+      row('done', USER, -DAY, { isCompleted: true }),
+    ];
     const result = await service.listDue(USER, 20);
     expect(result.due.map((s) => s.id)).toEqual(['oldest', 'later']);
     expect(result.upcoming.map((s) => s.id)).toEqual(['next']);
@@ -127,5 +142,36 @@ describe('parseBlindSpots', () => {
     ]);
     expect(parseBlindSpots({ concept: 'x' })).toEqual([]);
     expect(parseBlindSpots(null)).toEqual([]);
+  });
+});
+
+describe('SpacedService.startReview', () => {
+  let repo: FakeRepo;
+  let service: SpacedService;
+
+  beforeEach(() => {
+    repo = new FakeRepo();
+    sessions.calls = [];
+    service = new SpacedService({ repo, sessions, now: () => NOW });
+  });
+
+  it('starts a review session for a due schedule with its material', async () => {
+    repo.rows = [row('due', USER, -1000)];
+    const view = await service.startReview(USER, 'due');
+    expect(view.id).toBe('review-session');
+    expect(sessions.calls).toEqual([{ userId: USER, input: { spacedScheduleId: 'due', materialId: 'm1' } }]);
+  });
+
+  it("answers 404 for another student's schedule", async () => {
+    repo.rows = [row('theirs', OTHER, -1000)];
+    await expect(service.startReview(USER, 'theirs')).rejects.toMatchObject({ statusCode: 404 });
+    expect(sessions.calls).toEqual([]);
+  });
+
+  it('refuses completed and not-yet-due schedules', async () => {
+    repo.rows = [row('done', USER, -1000, { isCompleted: true }), row('later', USER, DAY)];
+    await expect(service.startReview(USER, 'done')).rejects.toMatchObject({ statusCode: 409 });
+    await expect(service.startReview(USER, 'later')).rejects.toMatchObject({ statusCode: 409 });
+    expect(sessions.calls).toEqual([]);
   });
 });
