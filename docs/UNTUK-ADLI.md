@@ -6,6 +6,11 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: FR-12 ekspor PDF bukti belajar (branch `feat/aldi-ledger-pdf`)
+
+- `POST /ledger/exports` membaca kolom audit di `submissions` (`accurate_concepts_json`, `blind_spots_json`, `image_storage_key`) dan foto webp hasil `imageProcessor`. Kalau bentuk JSON audit atau format foto berubah, kabari saya supaya `ledgerExport.service.ts` ikut disesuaikan. Data yang tidak dikenal dilewati, tidak menggagalkan PDF.
+- Helper tes baru `backend/tests/support/ledgerSeed.ts` (`createLedgerSeeds`) membuat submission DONE dengan `ledger_hash` asli. Silakan dipakai kalau butuh data serupa.
+
 ## 22 Nov 2026: FR-07 ledger guru + perbaikan `classId` di studio (branch `feat/aldi-ledger`)
 
 - Frontend studio sebelumnya tidak mengirim `classId` ke `POST /sessions`, jadi tidak ada sesi yang terikat kelas. Sekarang `selectMaterial` menyimpan `classId` materi dan `sessionsApi.start` mengirimkannya (file `studySession.tsx`, `sessionsApi.ts`, `StudioPage.tsx`). Backend `study-sessions`-mu tidak diubah.

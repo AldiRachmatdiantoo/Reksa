@@ -1,5 +1,12 @@
 # Checkpoint Frontend REKSA
 
+## #14 · 2026-11-22 · PDF bukti belajar (FR-12)
+
+Branch: `feat/aldi-ledger-pdf`.
+
+- `features/governance/LedgerPdfExport.tsx`: `LedgerPdfSection` (halaman Akun, siswa, rentang tanggal default 30 hari terakhir) dan `LedgerPdfButton` (halaman Hasil, satu pengumpulan). Keduanya hanya aktif untuk Pro efektif; unduhan langsung dimulai karena signed URL berlaku 5 menit.
+- `isEffectivePro` di `authApi.ts`, sama dengan `effectiveTier` backend. Unit test `isEffectivePro.test.ts`; E2E `account-privacy.spec.ts` memeriksa akun gratis hanya melihat keterangan Pro.
+
 ## #13 · 2026-11-22 · Bukti belajar untuk guru (FR-07)
 
 Branch: `feat/aldi-ledger`.

@@ -15,6 +15,7 @@ Urutan kasar sesuai ketergantungan ke backend. Tandai `✅` saat selesai dan cat
 - [x] **Privasi** (FR-13): persetujuan saat daftar, `/privasi`, `/syarat`, persetujuan ulang, unduh data, hapus akun (checkpoint #11).
 - [x] **Kode aktivasi Pro** (FR-11): status paket dan form kode di halaman Akun (checkpoint #11).
 - [x] **Bukti belajar** (`governance` FR-07): ledger + signed URL + `/cek-bukti` (checkpoint #13).
+- [x] **PDF bukti belajar** (FR-12, Pro): halaman Akun dan halaman Hasil (checkpoint #14).
 - [ ] **Peta blind spot kelas** (FR-08).
 
 ## Bisa dikerjakan sekarang

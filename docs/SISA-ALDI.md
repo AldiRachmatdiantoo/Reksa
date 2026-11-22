@@ -39,7 +39,7 @@ Centang `[x]` saat selesai dan catat di `docs/CHECKPOINT.md`.
 
 - [x] **FR-06 Jadwal ulang** (`spaced-repetition`): daftar jatuh tempo, tandai selesai, halaman Ulang (branch `feat/aldi-spaced-review`). Sisa: sesi `SPACED_REVIEW` dengan foto dan penilaian (butuh `study-sessions` Adli)
 - [x] **FR-07 Proof of Understanding Ledger** (`governance`): ledger guru, Signed URL, `GET /ledger/verify/:hash`, halaman `/cek-bukti` (branch `feat/aldi-ledger`)
-- [ ] **FR-12 Ekspor PDF Proof of Understanding** (Pro), memakai data ledger
+- [x] **FR-12 Ekspor PDF Proof of Understanding** (Pro): `POST /ledger/exports`, PDF `pdf-lib` dengan kode bukti + tautan cek di tiap halaman (branch `feat/aldi-ledger-pdf`)
 - [ ] **FR-08 Peta blind spot kelas** + **Gemini Stage 3 (`clusterCohortBlindSpots`)**
 - [ ] **Sambungkan frontend studio ke backend Adli:** sesi belajar, unggah foto, hasil audit asli (ganti `SAMPLE_AUDIT`), QR bridge laptop ke HP
 
