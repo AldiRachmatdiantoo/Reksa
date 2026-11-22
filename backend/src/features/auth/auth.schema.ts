@@ -1,10 +1,6 @@
 import { z } from 'zod';
 
-export const EmailSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .pipe(z.email().max(254));
+export const EmailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
 
 // Batas atas 128 mencegah DoS lewat password super panjang ke Argon2id.
 export const StrongPasswordSchema = z
@@ -58,9 +54,7 @@ export const ResetPasswordSchema = z.object({ token: EmailTokenSchema, newPasswo
 export const UpdateProfileSchema = z.object({ fullName: FullNameSchema }).strict();
 
 /** PATCH /me/password */
-export const ChangePasswordSchema = z
-  .object({ currentPassword: z.string().min(1).max(128), newPassword: StrongPasswordSchema })
-  .strict();
+export const ChangePasswordSchema = z.object({ currentPassword: z.string().min(1).max(128), newPassword: StrongPasswordSchema }).strict();
 
 /** POST /me/consent: setuju ulang saat versi dokumen naik. Akun lama tanpa tahun lahir wajib mengisinya. */
 export const ConsentSchema = z

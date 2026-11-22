@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ApiError } from '@/core/apiClient';
 
-export type LoadState<T> =
-  | { status: 'loading' }
-  | { status: 'ready'; data: T }
-  | { status: 'error'; error: ApiError | Error };
+export type LoadState<T> = { status: 'loading' } | { status: 'ready'; data: T } | { status: 'error'; error: ApiError | Error };
 
 /** Memuat data saat `deps` berubah; request lama dibatalkan. `reload()` memuat ulang. */
 export function useLoad<T>(load: (signal: AbortSignal) => Promise<T>, deps: unknown[]) {

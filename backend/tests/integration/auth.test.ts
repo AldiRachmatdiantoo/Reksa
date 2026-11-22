@@ -64,21 +64,15 @@ describe('POST /auth/register', () => {
 describe('POST /auth/login', () => {
   it('logs in with valid credentials', async () => {
     await register();
-    const res = await request(ctx.app)
-      .post('/api/v1/auth/login')
-      .send({ email: student.email, password: student.password });
+    const res = await request(ctx.app).post('/api/v1/auth/login').send({ email: student.email, password: student.password });
     expect(res.status).toBe(200);
     expect(parseSetCookies(res.headers['set-cookie'])[ACCESS_COOKIE]).toBeDefined();
   });
 
   it('returns the same 401 for a wrong password and an unknown email', async () => {
     await register();
-    const wrong = await request(ctx.app)
-      .post('/api/v1/auth/login')
-      .send({ email: student.email, password: 'SalahBanget123' });
-    const unknown = await request(ctx.app)
-      .post('/api/v1/auth/login')
-      .send({ email: 'tidak.ada@reksa.id', password: 'SalahBanget123' });
+    const wrong = await request(ctx.app).post('/api/v1/auth/login').send({ email: student.email, password: 'SalahBanget123' });
+    const unknown = await request(ctx.app).post('/api/v1/auth/login').send({ email: 'tidak.ada@reksa.id', password: 'SalahBanget123' });
 
     expect(wrong.status).toBe(401);
     expect(unknown.status).toBe(401);

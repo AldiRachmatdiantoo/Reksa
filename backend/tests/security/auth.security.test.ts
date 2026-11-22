@@ -3,14 +3,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { ACCESS_COOKIE, REFRESH_COOKIE, SESSION_HINT_COOKIE } from '../../src/common/utils/authCookies.js';
 import { REFRESH_ROTATION_GRACE_MS } from '../../src/features/auth/auth.service.js';
-import {
-  CONSENT,
-  cookieHeader,
-  createTestContext,
-  parseSetCookies,
-  TEST_ENV,
-  VALID_PASSWORD,
-} from '../support/testContext.js';
+import { CONSENT, cookieHeader, createTestContext, parseSetCookies, TEST_ENV, VALID_PASSWORD } from '../support/testContext.js';
 
 const ctx = createTestContext();
 
@@ -167,9 +160,9 @@ describe('Forged access tokens', () => {
   it('rejects alg=none', async () => {
     const { userId } = await registerStudent();
     const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
-    const payload = Buffer.from(
-      JSON.stringify({ sub: userId, role: 'INSTITUTION_ADMIN', iss: 'reksa-api', aud: 'reksa-web' }),
-    ).toString('base64url');
+    const payload = Buffer.from(JSON.stringify({ sub: userId, role: 'INSTITUTION_ADMIN', iss: 'reksa-api', aud: 'reksa-web' })).toString(
+      'base64url',
+    );
     expect((await meWith(`${header}.${payload}.`)).status).toBe(401);
   });
 
@@ -233,9 +226,7 @@ describe('Input validation: SQLi payloads and unknown fields (Zod .strict())', (
     const withTier = await request(ctx.app)
       .post('/api/v1/auth/register')
       .send({ ...student, tier: 'PRO' });
-    const withExtra = await request(ctx.app)
-      .post('/api/v1/auth/login')
-      .send({ email: student.email, password: 'x', isAdmin: true });
+    const withExtra = await request(ctx.app).post('/api/v1/auth/login').send({ email: student.email, password: 'x', isAdmin: true });
 
     expect([asAdmin.status, withTier.status, withExtra.status]).toEqual([400, 400, 400]);
     expect(await ctx.owner.user.count()).toBe(0);
@@ -304,7 +295,10 @@ describe('Rate limiting (Redis sliding window)', () => {
   it('still caps one IP at 100 login attempts per minute across accounts', async () => {
     // Body tanpa password ditolak validasi (400) sesudah limiter, jadi tidak menjalankan Argon2.
     const attempt = (i: number) =>
-      request(ctx.app).post('/api/v1/auth/login').set('X-Forwarded-For', '198.51.100.21').send({ email: `akun${i}@reksa.id` });
+      request(ctx.app)
+        .post('/api/v1/auth/login')
+        .set('X-Forwarded-For', '198.51.100.21')
+        .send({ email: `akun${i}@reksa.id` });
     for (let i = 0; i < 100; i++) expect((await attempt(i)).status).toBe(400);
     expect((await attempt(100)).status).toBe(429);
   });

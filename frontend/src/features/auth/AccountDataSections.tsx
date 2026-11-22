@@ -63,8 +63,8 @@ export function PlanSection({ user, onChanged }: { user: AuthUser; onChanged: (u
         </p>
         {!permanentPro && (
           <p className="text-body-md text-ink-muted">
-            Pro membuka batas foto harian. Kode aktivasi kamu dapat dari sekolah atau tim REKSA. Kalau Pro masih aktif,
-            kode baru menambah masa aktifnya.
+            Pro membuka batas foto harian. Kode aktivasi kamu dapat dari sekolah atau tim REKSA. Kalau Pro masih aktif, kode baru menambah
+            masa aktifnya.
           </p>
         )}
       </div>
@@ -123,11 +123,7 @@ export function DataSection({ user, onDeleted }: { user: AuthUser; onDeleted: ()
   );
 }
 
-type ExportState =
-  | { kind: 'idle' }
-  | { kind: 'working' }
-  | { kind: 'ready'; url: string }
-  | { kind: 'error'; message: string };
+type ExportState = { kind: 'idle' } | { kind: 'working' } | { kind: 'ready'; url: string } | { kind: 'error'; message: string };
 
 function ExportBlock() {
   const [state, setState] = useState<ExportState>({ kind: 'idle' });
@@ -160,8 +156,8 @@ function ExportBlock() {
     <div className="flex flex-col gap-3">
       <h3 className="text-title-md text-ink">Unduh data saya</h3>
       <p className="text-body-md text-ink-muted">
-        Satu file zip berisi data akun, materi, sesi belajar, hasil penilaian, dan foto catatanmu. Bisa dibuat sekali
-        sehari. Filenya dihapus dari server 24 jam setelah dibuat.
+        Satu file zip berisi data akun, materi, sesi belajar, hasil penilaian, dan foto catatanmu. Bisa dibuat sekali sehari. Filenya
+        dihapus dari server 24 jam setelah dibuat.
       </p>
       <Button variant="outline" onClick={() => void onExport()} disabled={state.kind === 'working'} className="self-start">
         <Icon name="download" />

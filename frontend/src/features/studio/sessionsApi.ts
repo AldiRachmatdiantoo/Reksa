@@ -47,16 +47,12 @@ export const sessionsApi = {
       method: 'POST',
       body: { materialId, preset: PRESET_BY_MINUTES[minutes] ?? 'CLASSIC_25_5', ...(classId ? { classId } : {}) },
     }).then((r) => r.session),
-  active: (signal?: AbortSignal) =>
-    apiRequest<{ session: ServerSession | null }>('/sessions/active', { signal }).then((r) => r.session),
+  active: (signal?: AbortSignal) => apiRequest<{ session: ServerSession | null }>('/sessions/active', { signal }).then((r) => r.session),
   get: (id: string, signal?: AbortSignal) => apiRequest<{ session: ServerSession }>(path(id), { signal }).then((r) => r.session),
   submitJol: (id: string, predictedJolScore: number) =>
-    apiRequest<{ session: ServerSession }>(`${path(id)}/jol`, { method: 'PATCH', body: { predictedJolScore } }).then(
-      (r) => r.session,
-    ),
+    apiRequest<{ session: ServerSession }>(`${path(id)}/jol`, { method: 'PATCH', body: { predictedJolScore } }).then((r) => r.session),
   cancel: (id: string) => apiRequest<{ session: ServerSession }>(`${path(id)}/cancel`, { method: 'POST' }).then((r) => r.session),
-  issueQr: (id: string) =>
-    apiRequest<{ qrToken: string; expiresInSec: number }>(`${path(id)}/qr-bridge`, { method: 'POST' }),
+  issueQr: (id: string) => apiRequest<{ qrToken: string; expiresInSec: number }>(`${path(id)}/qr-bridge`, { method: 'POST' }),
   /** URL stream SSE untuk layar laptop (EventSource, cookie ikut otomatis karena origin sama). */
   qrEventsUrl: (id: string) => `/api/v1${path(id)}/qr-bridge/events`,
 };

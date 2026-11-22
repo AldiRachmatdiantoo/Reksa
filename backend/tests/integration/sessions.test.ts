@@ -11,7 +11,9 @@ afterAll(() => ctx.close());
 const MIN = 60_000;
 
 async function register(email: string, role: 'STUDENT' | 'EDUCATOR' = 'STUDENT', verify = false) {
-  const res = await request(ctx.app).post('/api/v1/auth/register').send({ ...CONSENT, email, password: VALID_PASSWORD, fullName: 'Uji', role });
+  const res = await request(ctx.app)
+    .post('/api/v1/auth/register')
+    .send({ ...CONSENT, email, password: VALID_PASSWORD, fullName: 'Uji', role });
   expect(res.status).toBe(201);
   const cookie = cookieHeader({ [ACCESS_COOKIE]: parseSetCookies(res.headers['set-cookie'])[ACCESS_COOKIE]?.value ?? '' });
   if (verify) {
@@ -141,9 +143,7 @@ describe('POST /sessions', () => {
     const siswa = await register('siswa@reksa.id');
     const materialId = await createMaterial(siswa.cookie);
 
-    const results = await Promise.all(
-      Array.from({ length: 5 }, () => start(siswa.cookie, { materialId, preset: 'CLASSIC_25_5' })),
-    );
+    const results = await Promise.all(Array.from({ length: 5 }, () => start(siswa.cookie, { materialId, preset: 'CLASSIC_25_5' })));
 
     const created = results.filter((r) => r.status === 201);
     const conflicts = results.filter((r) => r.status === 409);
@@ -303,7 +303,9 @@ describe('anti-IDOR', () => {
 
   it('rejects SQL-looking ids with 400', async () => {
     const siswa = await register('siswa@reksa.id');
-    const res = await request(ctx.app).get(`/api/v1/sessions/${encodeURIComponent("' OR 1=1 --")}`).set('Cookie', siswa.cookie);
+    const res = await request(ctx.app)
+      .get(`/api/v1/sessions/${encodeURIComponent("' OR 1=1 --")}`)
+      .set('Cookie', siswa.cookie);
     expect(res.status).toBe(400);
   });
 });

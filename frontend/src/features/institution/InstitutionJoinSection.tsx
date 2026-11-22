@@ -49,8 +49,8 @@ export function InstitutionJoinSection() {
           Institusi
         </h2>
         <p className="text-body-md text-ink-muted">
-          Kalau sekolah atau kampusmu memakai REKSA, admin bisa memberimu kode undangan. Kelas yang kamu buat setelah
-          bergabung tercatat di institusi. Admin hanya melihat angka gabungan, bukan data siswa satu per satu.
+          Kalau sekolah atau kampusmu memakai REKSA, admin bisa memberimu kode undangan. Kelas yang kamu buat setelah bergabung tercatat di
+          institusi. Admin hanya melihat angka gabungan, bukan data siswa satu per satu.
         </p>
       </div>
       {mine.state.status === 'loading' && <p className="text-body-md text-ink-muted">Memuat...</p>}

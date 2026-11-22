@@ -74,7 +74,9 @@ describe('email verification', () => {
 
   it('resend answers 409 when already verified', async () => {
     const { access } = await register();
-    await request(ctx.app).post('/api/v1/auth/verify-email').send({ token: ctx.emails.tokenFor(EMAIL, 'verifikasi-email') });
+    await request(ctx.app)
+      .post('/api/v1/auth/verify-email')
+      .send({ token: ctx.emails.tokenFor(EMAIL, 'verifikasi-email') });
     expect((await request(ctx.app).post('/api/v1/auth/verify-email/resend').set('Cookie', access)).status).toBe(409);
   });
 });

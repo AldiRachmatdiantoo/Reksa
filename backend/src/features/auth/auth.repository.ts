@@ -137,12 +137,7 @@ export class PrismaAuthRepository implements AuthRepository {
     await this.db.user.updateMany({ where: { id: userId, emailVerifiedAt: null }, data: { emailVerifiedAt: at } });
   }
 
-  async createRefreshToken(data: {
-    userId: string;
-    tokenHash: string;
-    familyId: string;
-    expiresAt: Date;
-  }): Promise<void> {
+  async createRefreshToken(data: { userId: string; tokenHash: string; familyId: string; expiresAt: Date }): Promise<void> {
     await this.db.refreshToken.create({ data });
   }
 

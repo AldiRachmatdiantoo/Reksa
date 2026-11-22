@@ -24,11 +24,19 @@ export function SegmentedTabs<T extends string>({ label, options, value, onChang
   const onKeyDown = (e: KeyboardEvent, index: number) => {
     const last = options.length - 1;
     const next =
-      e.key === 'ArrowRight' ? (index === last ? 0 : index + 1)
-      : e.key === 'ArrowLeft' ? (index === 0 ? last : index - 1)
-      : e.key === 'Home' ? 0
-      : e.key === 'End' ? last
-      : null;
+      e.key === 'ArrowRight'
+        ? index === last
+          ? 0
+          : index + 1
+        : e.key === 'ArrowLeft'
+          ? index === 0
+            ? last
+            : index - 1
+          : e.key === 'Home'
+            ? 0
+            : e.key === 'End'
+              ? last
+              : null;
     if (next === null) return;
     e.preventDefault();
     onChange(options[next].value);

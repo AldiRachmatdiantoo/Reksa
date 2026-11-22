@@ -3,10 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=22"
-  },
   "scripts": {
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
     "dev": "tsx watch --env-file=.env src/server.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
@@ -56,6 +55,7 @@
     "@types/nodemailer": "^8.0.2",
     "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^4.1.12",
+    "oxfmt": "^0.76.0",
     "prisma": "^7.10.1",
     "supertest": "^7.3.2",
     "testcontainers": "^12.2.2",
@@ -65,5 +65,8 @@
   },
   "overrides": {
     "effect": "^3.22.5"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -14,7 +14,6 @@ export const LedgerQuerySchema = z
   })
   .strict();
 
-
 /** GET /ledger/verify/:hash: hash SHA-256 heksadesimal huruf kecil. */
 export const LedgerHashParamsSchema = z
   .object({ hash: z.string().regex(/^[0-9a-f]{64}$/, 'Hash harus 64 karakter heksadesimal') })

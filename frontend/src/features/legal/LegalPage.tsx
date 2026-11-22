@@ -38,8 +38,8 @@ export function LegalPage({ doc }: { doc: Doc }) {
           </p>
         </header>
         <p className="rounded-md bg-wash px-4 py-3 text-body-md text-ink">
-          REKSA masih tahap uji coba. Dokumen ini ditulis oleh tim pengembang dan belum ditinjau ahli hukum. Kami akan
-          memperbaruinya sebelum REKSA dibuka untuk umum, dan kamu akan diminta menyetujui versi barunya saat masuk.
+          REKSA masih tahap uji coba. Dokumen ini ditulis oleh tim pengembang dan belum ditinjau ahli hukum. Kami akan memperbaruinya
+          sebelum REKSA dibuka untuk umum, dan kamu akan diminta menyetujui versi barunya saat masuk.
         </p>
         <div className="flex flex-col gap-8 text-body-lg text-ink">{doc === 'privasi' ? <PrivacyBody /> : <TermsBody />}</div>
         <nav aria-label="Dokumen lain" className="border-t border-line-soft pt-6 text-body-md">
@@ -98,7 +98,9 @@ function PrivacyBody() {
       <Section title="Siapa yang bisa melihat">
         <List>
           <li>Kamu sendiri bisa melihat semua datamu.</li>
-          <li>Guru hanya melihat data belajar untuk kelas yang kamu ikuti. Kalau kamu keluar dari kelas, guru tidak bisa melihatnya lagi.</li>
+          <li>
+            Guru hanya melihat data belajar untuk kelas yang kamu ikuti. Kalau kamu keluar dari kelas, guru tidak bisa melihatnya lagi.
+          </li>
           <li>Admin sekolah atau institusi hanya melihat angka ringkasan, bukan data per siswa.</li>
           <li>Tim pengembang bisa mengakses basis data untuk perbaikan teknis, dan tidak membuka isi catatanmu tanpa alasan itu.</li>
         </List>
@@ -106,9 +108,9 @@ function PrivacyBody() {
 
       <Section title="Penyedia AI pihak ketiga">
         <p>
-          Untuk menilai catatan, teks materi dan foto catatanmu dikirim ke penyedia AI (Google Gemini). Kami memilih paket
-          dan ketentuan penyedia yang tidak memakai data itu untuk melatih model. Selama uji coba, sebagian penilaian
-          masih memakai contoh jawaban buatan, bukan AI sungguhan.
+          Untuk menilai catatan, teks materi dan foto catatanmu dikirim ke penyedia AI (Google Gemini). Kami memilih paket dan ketentuan
+          penyedia yang tidak memakai data itu untuk melatih model. Selama uji coba, sebagian penilaian masih memakai contoh jawaban buatan,
+          bukan AI sungguhan.
         </p>
       </Section>
 
@@ -122,9 +124,8 @@ function PrivacyBody() {
 
       <Section title="Pengguna di bawah 18 tahun">
         <p>
-          Kalau umurmu di bawah 18 tahun, kamu perlu izin orang tua atau wali sebelum mendaftar. Saat ini izin itu
-          berupa pernyataan yang kamu centang sendiri. Orang tua atau wali boleh meminta datamu diunduh atau dihapus
-          lewat akunmu.
+          Kalau umurmu di bawah 18 tahun, kamu perlu izin orang tua atau wali sebelum mendaftar. Saat ini izin itu berupa pernyataan yang
+          kamu centang sendiri. Orang tua atau wali boleh meminta datamu diunduh atau dihapus lewat akunmu.
         </p>
       </Section>
 
@@ -138,8 +139,8 @@ function PrivacyBody() {
 
       <Section title="Kontak">
         <p>
-          Alamat kontak resmi akan dicantumkan di sini sebelum REKSA dibuka untuk umum. Selama uji coba, sampaikan
-          pertanyaan lewat guru atau sekolah yang mengajakmu memakai REKSA.
+          Alamat kontak resmi akan dicantumkan di sini sebelum REKSA dibuka untuk umum. Selama uji coba, sampaikan pertanyaan lewat guru
+          atau sekolah yang mengajakmu memakai REKSA.
         </p>
       </Section>
     </>
@@ -151,8 +152,8 @@ function TermsBody() {
     <>
       <Section title="Tentang REKSA">
         <p>
-          REKSA membantu kamu belajar dengan menulis ulang materi dari ingatan di kertas, lalu memeriksa bagian yang
-          terlewat. Hasil penilaian dibuat mesin dan bisa salah. Pakai sebagai bahan belajar, bukan nilai resmi.
+          REKSA membantu kamu belajar dengan menulis ulang materi dari ingatan di kertas, lalu memeriksa bagian yang terlewat. Hasil
+          penilaian dibuat mesin dan bisa salah. Pakai sebagai bahan belajar, bukan nilai resmi.
         </p>
       </Section>
 
@@ -174,29 +175,27 @@ function TermsBody() {
 
       <Section title="Paket Gratis dan Pro">
         <p>
-          Paket Gratis punya batas foto per hari. Paket Pro membuka batas itu selama masa aktif kode aktivasi yang kamu
-          pakai. Setelah masa aktif habis, akun kembali ke paket Gratis dan datamu tetap utuh.
+          Paket Gratis punya batas foto per hari. Paket Pro membuka batas itu selama masa aktif kode aktivasi yang kamu pakai. Setelah masa
+          aktif habis, akun kembali ke paket Gratis dan datamu tetap utuh.
         </p>
       </Section>
 
       <Section title="Materi dan catatanmu">
         <p>
-          Materi dan foto catatan tetap milikmu. Kamu mengizinkan REKSA menyimpan dan memprosesnya hanya untuk
-          menjalankan fitur yang kamu pakai, seperti dijelaskan di Kebijakan Privasi.
+          Materi dan foto catatan tetap milikmu. Kamu mengizinkan REKSA menyimpan dan memprosesnya hanya untuk menjalankan fitur yang kamu
+          pakai, seperti dijelaskan di Kebijakan Privasi.
         </p>
       </Section>
 
       <Section title="Uji coba">
         <p>
-          REKSA masih dalam uji coba. Fitur bisa berubah, dan layanan bisa terhenti sementara. Kami tidak menjamin
-          REKSA selalu bebas gangguan.
+          REKSA masih dalam uji coba. Fitur bisa berubah, dan layanan bisa terhenti sementara. Kami tidak menjamin REKSA selalu bebas
+          gangguan.
         </p>
       </Section>
 
       <Section title="Menghentikan akun">
-        <p>
-          Kamu bisa menghapus akun kapan saja dari halaman Akun. Kami bisa menonaktifkan akun yang melanggar syarat ini.
-        </p>
+        <p>Kamu bisa menghapus akun kapan saja dari halaman Akun. Kami bisa menonaktifkan akun yang melanggar syarat ini.</p>
       </Section>
     </>
   );

@@ -31,10 +31,7 @@ describe('app skeleton', () => {
   });
 
   it('returns 400 without a stack trace for malformed JSON', async () => {
-    const res = await request(app)
-      .post('/api/v1/health')
-      .set('Content-Type', 'application/json')
-      .send('{"broken":');
+    const res = await request(app).post('/api/v1/health').set('Content-Type', 'application/json').send('{"broken":');
     expect(res.status).toBe(400);
     expect(JSON.stringify(res.body)).not.toMatch(/at .*\.js/);
   });

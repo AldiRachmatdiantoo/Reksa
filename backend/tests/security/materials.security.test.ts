@@ -139,10 +139,7 @@ describe('materials: rate limit', () => {
         .send({ title: `Materi ${i}`, content: `Isi materi nomor ${i} tentang homeostasis.` });
       expect(ok.status).toBe(201);
     }
-    const blocked = await request(ctx.app)
-      .post('/api/v1/materials')
-      .set('Cookie', cookie)
-      .send({ title: 'Ke-21', content: 'Satu lagi.' });
+    const blocked = await request(ctx.app).post('/api/v1/materials').set('Cookie', cookie).send({ title: 'Ke-21', content: 'Satu lagi.' });
     expect(blocked.status).toBe(429);
     expect(Number(blocked.headers['retry-after'])).toBeGreaterThan(0);
 

@@ -111,8 +111,7 @@ describe('GET /spaced/due (FR-06)', () => {
 });
 
 describe('POST /spaced/:id/complete (FR-06)', () => {
-  const complete = (cookie: string, id: string) =>
-    request(ctx.app).post(`/api/v1/spaced/${id}/complete`).set('Cookie', cookie).send({});
+  const complete = (cookie: string, id: string) => request(ctx.app).post(`/api/v1/spaced/${id}/complete`).set('Cookie', cookie).send({});
 
   it('marks a due review completed, idempotently, and drops it from the due list', async () => {
     const { cookie, userId } = await register('selesai@reksa.id');

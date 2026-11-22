@@ -154,9 +154,12 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     }
   }, [session]);
 
-  useEffect(() => () => {
-    if (photoUrl) URL.revokeObjectURL(photoUrl);
-  }, [photoUrl]);
+  useEffect(
+    () => () => {
+      if (photoUrl) URL.revokeObjectURL(photoUrl);
+    },
+    [photoUrl],
+  );
 
   const adopt = useCallback((s: ServerSession) => setSession((prev) => fromServer(s, prev)), []);
 

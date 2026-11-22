@@ -2,7 +2,13 @@ import type { Request, Response } from 'express';
 import { getAuth } from '../../common/middlewares/auth.middleware.js';
 import { getValidated } from '../../common/middlewares/validate.middleware.js';
 import type { CohortService } from './cohort.service.js';
-import { ClassIdParamsSchema, ClassMaterialParamsSchema, LedgerExportSchema, LedgerHashParamsSchema, LedgerQuerySchema } from './governance.schema.js';
+import {
+  ClassIdParamsSchema,
+  ClassMaterialParamsSchema,
+  LedgerExportSchema,
+  LedgerHashParamsSchema,
+  LedgerQuerySchema,
+} from './governance.schema.js';
 import type { GovernanceService } from './governance.service.js';
 import type { LedgerExportService } from './ledgerExport.service.js';
 

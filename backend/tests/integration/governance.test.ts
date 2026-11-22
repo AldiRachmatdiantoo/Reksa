@@ -151,7 +151,10 @@ describe('GET /ledger/verify/:hash (FR-07)', () => {
     expect((await request(ctx.app).get('/api/v1/ledger/verify/ABC')).status).toBe(400);
     expect((await request(ctx.app).get(`/api/v1/ledger/verify/${'A'.repeat(64)}`)).status).toBe(400);
 
-    const hit = () => request(ctx.app).get(`/api/v1/ledger/verify/${'b'.repeat(64)}`).set('X-Forwarded-For', '203.0.113.50');
+    const hit = () =>
+      request(ctx.app)
+        .get(`/api/v1/ledger/verify/${'b'.repeat(64)}`)
+        .set('X-Forwarded-For', '203.0.113.50');
     for (let i = 0; i < 30; i++) expect((await hit()).status).toBe(200);
     expect((await hit()).status).toBe(429);
   });

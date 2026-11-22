@@ -7,9 +7,12 @@ export function useSpeech() {
   const supported = typeof window !== 'undefined' && 'speechSynthesis' in window;
   const [state, setState] = useState<SpeechState>(supported ? 'idle' : 'unsupported');
 
-  useEffect(() => () => {
-    if (supported) window.speechSynthesis.cancel();
-  }, [supported]);
+  useEffect(
+    () => () => {
+      if (supported) window.speechSynthesis.cancel();
+    },
+    [supported],
+  );
 
   const toggle = useCallback(
     (text: string) => {

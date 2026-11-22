@@ -1,13 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, apiRequest } from '../../src/core/apiClient';
 import { uploadLinkFor } from '../../src/features/scanner/QrBridgePanel';
-import {
-  auditFailureText,
-  photoProblem,
-  quotaText,
-  scansApi,
-  uploadErrorMessage,
-} from '../../src/features/scanner/scansApi';
+import { auditFailureText, photoProblem, quotaText, scansApi, uploadErrorMessage } from '../../src/features/scanner/scansApi';
 import {
   activeSessionIdOf,
   PRESET_BY_MINUTES,

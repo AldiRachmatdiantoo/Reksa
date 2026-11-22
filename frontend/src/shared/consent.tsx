@@ -53,9 +53,7 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
   const reopen = useCallback(() => setReopened(true), []);
 
   return (
-    <ConsentContext.Provider value={{ consent, noticeOpen: consent == null || reopened, save, reopen }}>
-      {children}
-    </ConsentContext.Provider>
+    <ConsentContext.Provider value={{ consent, noticeOpen: consent == null || reopened, save, reopen }}>{children}</ConsentContext.Provider>
   );
 }
 

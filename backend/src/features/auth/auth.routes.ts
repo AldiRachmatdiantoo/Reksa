@@ -44,7 +44,10 @@ const byEmail = (req: Request) => {
 const byIpAndEmail = (req: Request) => `${req.ip ?? 'unknown'}:${byEmail(req)}`;
 
 /** Satu refresh token (di-hash, nilai cookie tidak tersimpan di nama kunci Redis). */
-const byRefreshToken = (req: Request) => createHash('sha256').update(readRefreshCookie(req) ?? '').digest('hex');
+const byRefreshToken = (req: Request) =>
+  createHash('sha256')
+    .update(readRefreshCookie(req) ?? '')
+    .digest('hex');
 const withoutRefreshCookie = (req: Request) => readRefreshCookie(req) === undefined;
 
 /**

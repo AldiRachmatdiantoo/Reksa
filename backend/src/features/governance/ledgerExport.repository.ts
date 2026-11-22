@@ -54,7 +54,14 @@ export class PrismaLedgerExportRepository implements LedgerExportRepository {
           blindSpotsJson: true,
           ledgerHash: true,
           session: {
-            select: { materialId: true, startedAt: true, focusEndedAt: true, plannedDurationSec: true, actualDurationSec: true, validity: true },
+            select: {
+              materialId: true,
+              startedAt: true,
+              focusEndedAt: true,
+              plannedDurationSec: true,
+              actualDurationSec: true,
+              validity: true,
+            },
           },
         },
       });

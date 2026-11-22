@@ -35,7 +35,10 @@ export function StateBlock({ icon, title, children, action, tone = 'neutral' }: 
 export function LoadingBlock({ label }: { label: string }) {
   return (
     <div role="status" className="flex min-h-[50dvh] flex-col items-center justify-center gap-3 text-ink-muted">
-      <span className="size-8 animate-spin rounded-full border-[3px] border-line-soft border-t-teal motion-reduce:animate-none" aria-hidden="true" />
+      <span
+        className="size-8 animate-spin rounded-full border-[3px] border-line-soft border-t-teal motion-reduce:animate-none"
+        aria-hidden="true"
+      />
       <span className="text-body-md">{label}</span>
     </div>
   );

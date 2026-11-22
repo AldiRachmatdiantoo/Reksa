@@ -63,8 +63,8 @@ export function CookieNotice() {
             </div>
 
             <p className="text-body-sm text-ink-muted text-pretty">
-              REKSA memakai cookie penting supaya kamu tetap masuk dan sesi belajarmu tersimpan. Tidak ada cookie iklan atau pelacak,
-              dan foto catatanmu tidak dibagikan ke pihak lain.
+              REKSA memakai cookie penting supaya kamu tetap masuk dan sesi belajarmu tersimpan. Tidak ada cookie iklan atau pelacak, dan
+              foto catatanmu tidak dibagikan ke pihak lain.
             </p>
 
             <AnimatePresence initial={false}>

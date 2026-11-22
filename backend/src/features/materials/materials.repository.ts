@@ -59,11 +59,7 @@ function toRecord({ class: cls, ...row }: MaterialRow): MaterialRecord {
 /** Filter yang sama dengan policy RLS materials_owner_all + materials_class_read. */
 function accessibleBy(userId: string): Prisma.StudyMaterialWhereInput {
   return {
-    OR: [
-      { uploaderId: userId },
-      { class: { educatorId: userId } },
-      { class: { members: { some: { studentId: userId } } } },
-    ],
+    OR: [{ uploaderId: userId }, { class: { educatorId: userId } }, { class: { members: { some: { studentId: userId } } } }],
   };
 }
 

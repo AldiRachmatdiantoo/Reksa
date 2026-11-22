@@ -19,7 +19,8 @@ async function register(email: string, role: 'STUDENT' | 'EDUCATOR' = 'STUDENT')
 }
 
 const spot = (concept: string, importanceLevel = 'HIGH') => ({ concept, importanceLevel, explanation: `${concept} belum dijelaskan` });
-const list = (cookie: string, classId: string) => request(ctx.app).get(`/api/v1/governance/classes/${classId}/blind-spots`).set('Cookie', cookie);
+const list = (cookie: string, classId: string) =>
+  request(ctx.app).get(`/api/v1/governance/classes/${classId}/blind-spots`).set('Cookie', cookie);
 const map = (cookie: string, classId: string, materialId: string) =>
   request(ctx.app).get(`/api/v1/governance/classes/${classId}/blind-spots/${materialId}`).set('Cookie', cookie);
 
@@ -39,7 +40,13 @@ async function classWithAudits() {
     blindSpots: [spot('Umpan balik negatif'), spot('Efektor', 'LOW')],
   });
   const materialId = first.materialId;
-  await seedSubmission({ userId: students[1]!.userId, classId: cls.id, materialOwner: teacher.userId, materialId, blindSpots: [spot('umpan balik negatif', 'MEDIUM')] });
+  await seedSubmission({
+    userId: students[1]!.userId,
+    classId: cls.id,
+    materialOwner: teacher.userId,
+    materialId,
+    blindSpots: [spot('umpan balik negatif', 'MEDIUM')],
+  });
   await seedSubmission({ userId: students[2]!.userId, classId: cls.id, materialOwner: teacher.userId, materialId, blindSpots: [] });
   return { teacher, students, cls, materialId };
 }

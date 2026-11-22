@@ -94,8 +94,8 @@ export function LedgerPdfSection({ isPro }: { isPro: boolean }) {
           PDF bukti belajar
         </h2>
         <p className="text-body-md text-ink-muted">
-          Untuk dilampirkan ke tugas atau portofolio. Isinya waktu sesi, lama fokus, tebakan nilai vs skor, konsep yang
-          tepat dan terlewat, foto catatan, dan kode bukti. Penerima bisa mengecek keasliannya di{' '}
+          Untuk dilampirkan ke tugas atau portofolio. Isinya waktu sesi, lama fokus, tebakan nilai vs skor, konsep yang tepat dan terlewat,
+          foto catatan, dan kode bukti. Penerima bisa mengecek keasliannya di{' '}
           <Link to="/cek-bukti" className="text-teal underline underline-offset-2">
             halaman cek bukti
           </Link>
@@ -112,7 +112,9 @@ export function LedgerPdfSection({ isPro }: { isPro: boolean }) {
           </Button>
         </form>
       ) : (
-        <p className="rounded-md bg-wash px-4 py-3 text-body-md text-ink">Fitur ini khusus paket Pro. Pakai kode aktivasi di bagian Paket.</p>
+        <p className="rounded-md bg-wash px-4 py-3 text-body-md text-ink">
+          Fitur ini khusus paket Pro. Pakai kode aktivasi di bagian Paket.
+        </p>
       )}
       {error && (
         <p role="alert" className="rounded-md bg-danger-wash px-4 py-3 text-body-md text-on-danger-wash">

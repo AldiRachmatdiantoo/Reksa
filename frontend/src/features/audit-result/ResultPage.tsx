@@ -121,7 +121,11 @@ export function ResultPage() {
       <StateBlock
         icon="fact_check"
         title="Belum ada catatan yang dicek"
-        action={<ButtonLink to="/belajar" variant="accent">Mulai sesi belajar</ButtonLink>}
+        action={
+          <ButtonLink to="/belajar" variant="accent">
+            Mulai sesi belajar
+          </ButtonLink>
+        }
       >
         Hasil muncul setelah kamu selesai waktu fokus, menyimpan tebakan nilai, dan mengirim foto catatan.
       </StateBlock>,
@@ -214,7 +218,10 @@ export function ResultPage() {
               : 'Pemeriksa membaca tulisan, panah, dan coretanmu. Biasanya selesai dalam beberapa detik.'}
         </span>
         {!slow && (
-          <span className="mx-auto mt-4 block size-8 animate-spin rounded-full border-[3px] border-line-soft border-t-teal motion-reduce:animate-none" aria-hidden="true" />
+          <span
+            className="mx-auto mt-4 block size-8 animate-spin rounded-full border-[3px] border-line-soft border-t-teal motion-reduce:animate-none"
+            aria-hidden="true"
+          />
         )}
       </StateBlock>,
     );
@@ -248,10 +255,7 @@ function AuditResult({ scan, materialTitle, onStartOver }: { scan: Scan; materia
   return (
     <>
       <AppHeader subtitle="Hasil Cek Catatan" />
-      <motion.main
-        {...pageTransition}
-        className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8"
-      >
+      <motion.main {...pageTransition} className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
         <StepIndicator current={3} />
 
         <motion.section
@@ -259,7 +263,8 @@ function AuditResult({ scan, materialTitle, onStartOver }: { scan: Scan; materia
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.1, ease: EASE_OUT }}
           aria-labelledby="calibration-title"
-          className="grid gap-6 rounded-lg bg-teal p-6 text-on-teal sm:p-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] dark:border dark:border-line dark:bg-teal-wash dark:text-ink">
+          className="grid gap-6 rounded-lg bg-teal p-6 text-on-teal sm:p-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] dark:border dark:border-line dark:bg-teal-wash dark:text-ink"
+        >
           <div className="flex flex-col gap-3">
             <h1 id="calibration-title" className="font-display text-headline-lg-mobile sm:text-headline-lg text-balance">
               {message.title}
@@ -287,7 +292,10 @@ function AuditResult({ scan, materialTitle, onStartOver }: { scan: Scan; materia
               { label: 'Tebakanmu', value: guess, big: false },
               { label: 'Selisih', value: diff, big: false },
             ].map((item) => (
-              <div key={item.label} className={`flex flex-col gap-1 rounded-md p-4 ${item.big ? 'bg-card text-ink' : 'bg-on-teal/10 dark:bg-card/60'}`}>
+              <div
+                key={item.label}
+                className={`flex flex-col gap-1 rounded-md p-4 ${item.big ? 'bg-card text-ink' : 'bg-on-teal/10 dark:bg-card/60'}`}
+              >
                 <dt className="text-label-md opacity-90">{item.label}</dt>
                 <dd className={`font-mono leading-none tabular-nums ${item.big ? 'text-[44px] text-teal' : 'text-[32px]'}`}>
                   <NumberFlow value={revealed ? item.value : 0} suffix="%" />
@@ -323,46 +331,46 @@ function AuditResult({ scan, materialTitle, onStartOver }: { scan: Scan; materia
             </section>
 
             {audit.blindSpots.length > 0 && (
-            <section aria-labelledby="blindspots-title" className="flex flex-col gap-3">
-              <h2 id="blindspots-title" className="font-headline text-headline-md text-ink">
-                Yang masih terlewat ({audit.blindSpots.length})
-              </h2>
-              <Stagger as="ul" className="flex flex-col gap-3">
-                {audit.blindSpots.map((spot) => (
-                  <StaggerItem as="li" key={spot.concept} className="flex flex-col gap-2 rounded-md border border-line-soft bg-card p-5">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="font-title text-title-md text-ink">{spot.concept}</h3>
-                      <span className={`rounded-full px-2.5 py-0.5 text-label-md ${IMPORTANCE[spot.importanceLevel].className}`}>
-                        {IMPORTANCE[spot.importanceLevel].label}
-                      </span>
-                    </div>
-                    <p className="text-body-md text-ink-muted text-pretty">{spot.explanation}</p>
-                  </StaggerItem>
-                ))}
-              </Stagger>
-            </section>
+              <section aria-labelledby="blindspots-title" className="flex flex-col gap-3">
+                <h2 id="blindspots-title" className="font-headline text-headline-md text-ink">
+                  Yang masih terlewat ({audit.blindSpots.length})
+                </h2>
+                <Stagger as="ul" className="flex flex-col gap-3">
+                  {audit.blindSpots.map((spot) => (
+                    <StaggerItem as="li" key={spot.concept} className="flex flex-col gap-2 rounded-md border border-line-soft bg-card p-5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="font-title text-title-md text-ink">{spot.concept}</h3>
+                        <span className={`rounded-full px-2.5 py-0.5 text-label-md ${IMPORTANCE[spot.importanceLevel].className}`}>
+                          {IMPORTANCE[spot.importanceLevel].label}
+                        </span>
+                      </div>
+                      <p className="text-body-md text-ink-muted text-pretty">{spot.explanation}</p>
+                    </StaggerItem>
+                  ))}
+                </Stagger>
+              </section>
             )}
 
             {audit.accurateConcepts.length > 0 && (
-            <section aria-labelledby="accurate-title" className="flex flex-col gap-3">
-              <h2 id="accurate-title" className="font-headline text-headline-md text-ink">
-                Yang sudah tepat
-              </h2>
-              <Stagger as="ul" className="flex flex-col gap-3">
-                {audit.accurateConcepts.map((c) => (
-                  <StaggerItem as="li" key={c.concept} className="flex flex-col gap-2 rounded-md border border-line-soft bg-card p-5">
-                    <h3 className="flex items-center gap-2 font-title text-title-md text-ink">
-                      <Icon name="check_circle" fill className="text-teal" />
-                      {c.concept}
-                    </h3>
-                    <blockquote className="ruled-sheet rounded-sm border border-line-soft py-1 pr-4 pl-12 text-body-md leading-7 text-ink">
-                      <span className="sr-only">Di catatanmu: </span>
-                      {c.evidenceFromHandwriting}
-                    </blockquote>
-                  </StaggerItem>
-                ))}
-              </Stagger>
-            </section>
+              <section aria-labelledby="accurate-title" className="flex flex-col gap-3">
+                <h2 id="accurate-title" className="font-headline text-headline-md text-ink">
+                  Yang sudah tepat
+                </h2>
+                <Stagger as="ul" className="flex flex-col gap-3">
+                  {audit.accurateConcepts.map((c) => (
+                    <StaggerItem as="li" key={c.concept} className="flex flex-col gap-2 rounded-md border border-line-soft bg-card p-5">
+                      <h3 className="flex items-center gap-2 font-title text-title-md text-ink">
+                        <Icon name="check_circle" fill className="text-teal" />
+                        {c.concept}
+                      </h3>
+                      <blockquote className="ruled-sheet rounded-sm border border-line-soft py-1 pr-4 pl-12 text-body-md leading-7 text-ink">
+                        <span className="sr-only">Di catatanmu: </span>
+                        {c.evidenceFromHandwriting}
+                      </blockquote>
+                    </StaggerItem>
+                  ))}
+                </Stagger>
+              </section>
             )}
 
             {audit.logicCorrections.length > 0 && (
@@ -372,7 +380,11 @@ function AuditResult({ scan, materialTitle, onStartOver }: { scan: Scan; materia
                 </h2>
                 <Stagger as="ul" className="flex flex-col gap-3">
                   {audit.logicCorrections.map((c) => (
-                    <StaggerItem as="li" key={c.studentStatement} className="grid gap-3 rounded-md border border-line-soft bg-card p-5 sm:grid-cols-2">
+                    <StaggerItem
+                      as="li"
+                      key={c.studentStatement}
+                      className="grid gap-3 rounded-md border border-line-soft bg-card p-5 sm:grid-cols-2"
+                    >
                       <div className="flex flex-col gap-1">
                         <span className="text-label-md text-ink-muted">Kamu menulis</span>
                         <p className="text-body-md text-ink line-through decoration-danger/60">{c.studentStatement}</p>
@@ -390,7 +402,10 @@ function AuditResult({ scan, materialTitle, onStartOver }: { scan: Scan; materia
 
           <aside className="flex flex-col gap-6 lg:sticky lg:top-24">
             {audit.blindSpots.length > 0 ? (
-              <section aria-labelledby="schedule-title" className="flex flex-col gap-4 rounded-lg border border-line-soft bg-card p-5 sm:p-6">
+              <section
+                aria-labelledby="schedule-title"
+                className="flex flex-col gap-4 rounded-lg border border-line-soft bg-card p-5 sm:p-6"
+              >
                 <h2 id="schedule-title" className="flex items-center gap-2 font-title text-title-lg text-ink">
                   <Icon name="event_repeat" className="text-teal" />
                   Rencana latihan ulang

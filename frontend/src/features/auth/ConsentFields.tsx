@@ -51,12 +51,7 @@ export function ConsentFields({
         />
       )}
       {showGuardian && (
-        <Checkbox
-          id="guardianConsent"
-          checked={guardianConsent}
-          onChange={onGuardianConsent}
-          error={errors.guardianConsent}
-        >
+        <Checkbox id="guardianConsent" checked={guardianConsent} onChange={onGuardianConsent} error={errors.guardianConsent}>
           Umurku di bawah 18 tahun dan orang tua atau waliku sudah mengizinkan aku memakai REKSA.
         </Checkbox>
       )}

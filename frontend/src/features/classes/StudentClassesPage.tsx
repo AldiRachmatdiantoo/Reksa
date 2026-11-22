@@ -210,8 +210,8 @@ export function StudentClassesPage() {
         onCancel={() => setToLeave(null)}
         onConfirm={confirmLeave}
       >
-        Materi <strong className="text-ink">{toLeave?.name}</strong> tidak akan terlihat lagi. Catatan dan sesi belajarmu tetap
-        tersimpan, tapi gurumu tidak bisa melihatnya lagi. Untuk masuk lagi, minta kode kelas ke guru.
+        Materi <strong className="text-ink">{toLeave?.name}</strong> tidak akan terlihat lagi. Catatan dan sesi belajarmu tetap tersimpan,
+        tapi gurumu tidak bisa melihatnya lagi. Untuk masuk lagi, minta kode kelas ke guru.
       </ConfirmDialog>
     </>
   );

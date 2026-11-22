@@ -76,10 +76,7 @@ export default async function setup(project: TestProject) {
   if (alter.exitCode !== 0) throw new Error(`Gagal menyiapkan app_service_user: ${alter.output}`);
 
   project.provide('ownerDatabaseUrl', ownerUrl);
-  project.provide(
-    'databaseUrl',
-    `postgresql://app_service_user:${APP_DB_PASSWORD}@${postgres.getHost()}:${postgres.getPort()}/reksa`,
-  );
+  project.provide('databaseUrl', `postgresql://app_service_user:${APP_DB_PASSWORD}@${postgres.getHost()}:${postgres.getPort()}/reksa`);
   project.provide('redisUrl', redis.getConnectionUrl());
   project.provide('storage', {
     endpoint: s3Endpoint,

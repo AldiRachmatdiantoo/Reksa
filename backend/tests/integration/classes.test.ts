@@ -9,7 +9,9 @@ beforeEach(() => ctx.reset());
 afterAll(() => ctx.close());
 
 async function login(email: string, role: 'STUDENT' | 'EDUCATOR', fullName = 'Pengguna Uji') {
-  const res = await request(ctx.app).post('/api/v1/auth/register').send({ ...CONSENT, email, password: VALID_PASSWORD, fullName, role });
+  const res = await request(ctx.app)
+    .post('/api/v1/auth/register')
+    .send({ ...CONSENT, email, password: VALID_PASSWORD, fullName, role });
   const cookie = cookieHeader({ [ACCESS_COOKIE]: parseSetCookies(res.headers['set-cookie'])[ACCESS_COOKIE]?.value ?? '' });
   // Siswa wajib terverifikasi untuk bergabung ke kelas (FR-14): pakai tautan dari email, seperti user asli.
   const verified = await request(ctx.app)
@@ -61,7 +63,10 @@ describe('POST /classes', () => {
   it('rejects a self-chosen code (strict schema) and names over 100 characters', async () => {
     const guru = await login('guru@reksa.id', 'EDUCATOR');
     const forged = await request(ctx.app).post('/api/v1/classes').set('Cookie', guru.cookie).send({ name: 'A', classCode: 'AAAAAAAA' });
-    const long = await request(ctx.app).post('/api/v1/classes').set('Cookie', guru.cookie).send({ name: 'a'.repeat(101) });
+    const long = await request(ctx.app)
+      .post('/api/v1/classes')
+      .set('Cookie', guru.cookie)
+      .send({ name: 'a'.repeat(101) });
     expect(forged.status).toBe(400);
     expect(long.status).toBe(400);
   });
@@ -180,9 +185,7 @@ describe('class materials (FR-09)', () => {
     await request(ctx.app).post('/api/v1/classes/join').set('Cookie', siswa.cookie).send({ classCode: cls.classCode });
 
     const list = await request(ctx.app).get('/api/v1/materials').set('Cookie', siswa.cookie);
-    expect(list.body.materials).toEqual([
-      expect.objectContaining({ id, isOwner: false, className: 'Biologi XI', classId: cls.id }),
-    ]);
+    expect(list.body.materials).toEqual([expect.objectContaining({ id, isOwner: false, className: 'Biologi XI', classId: cls.id })]);
     const detail = await request(ctx.app).get(`/api/v1/materials/${id}`).set('Cookie', siswa.cookie);
     expect(detail.status).toBe(200);
     expect(detail.body.material.rubric.keyConcepts.length).toBeGreaterThan(0);

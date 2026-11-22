@@ -140,7 +140,10 @@ describe('FR-10 overview and aggregates', () => {
       ids.push(user.id);
     }
     const cls = await createClass(teacher.userId, ids);
-    await ctx.owner.class.update({ where: { id: cls.id }, data: { institutionId: (await ctx.owner.user.findUniqueOrThrow({ where: { id: teacher.userId } })).institutionId } });
+    await ctx.owner.class.update({
+      where: { id: cls.id },
+      data: { institutionId: (await ctx.owner.user.findUniqueOrThrow({ where: { id: teacher.userId } })).institutionId },
+    });
     let materialId: string | undefined;
     for (const [i, userId] of ids.entries()) {
       const seeded = await seedSubmission({
@@ -167,12 +170,31 @@ describe('FR-10 overview and aggregates', () => {
     expect(res.body.institution).toEqual({ id: admin.institutionId, name: 'SMA Uji' });
     expect(res.body.educators.map((e: { classCount: number }) => e.classCount)).toEqual([1, 1]);
     const byId = new Map(res.body.classes.map((c: { id: string }) => [c.id, c]));
-    expect(byId.get(big.cls.id)).toMatchObject({ memberCount: 6, auditedStudents: 6, completedSessions: 6, avgScore: 65, suppressed: false });
-    expect(byId.get(small.cls.id)).toMatchObject({ memberCount: 3, auditedStudents: null, completedSessions: null, avgScore: null, suppressed: true });
+    expect(byId.get(big.cls.id)).toMatchObject({
+      memberCount: 6,
+      auditedStudents: 6,
+      completedSessions: 6,
+      avgScore: 65,
+      suppressed: false,
+    });
+    expect(byId.get(small.cls.id)).toMatchObject({
+      memberCount: 3,
+      auditedStudents: null,
+      completedSessions: null,
+      avgScore: null,
+      suppressed: true,
+    });
 
     const concepts = await api(admin.cookie).get('/institution/concepts');
     expect(concepts.body.concepts).toEqual([
-      { materialId: big.materialId, materialTitle: 'Homeostasis', concept: 'Umpan balik negatif', studentsMissing: 3, studentsAudited: 6, percent: 50 },
+      {
+        materialId: big.materialId,
+        materialTitle: 'Homeostasis',
+        concept: 'Umpan balik negatif',
+        studentsMissing: 3,
+        studentsAudited: 6,
+        percent: 50,
+      },
     ]);
     // Admin tidak pernah melihat nama siswa, skor individu, foto, atau hash.
     const raw = JSON.stringify([res.body, concepts.body]);

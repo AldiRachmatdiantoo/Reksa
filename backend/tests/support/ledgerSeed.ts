@@ -67,7 +67,9 @@ export function createLedgerSeeds(ctx: TestContext) {
     });
     const key = buildObjectKey('scans', opts.userId, 'webp');
     const body = opts.realPhoto
-      ? await sharp({ create: { width: 300, height: 400, channels: 3, background: { r: 240, g: 236, b: 220 } } }).webp().toBuffer()
+      ? await sharp({ create: { width: 300, height: 400, channels: 3, background: { r: 240, g: 236, b: 220 } } })
+          .webp()
+          .toBuffer()
       : Buffer.from('foto');
     await ctx.storage.putObject({ key, body, contentType: 'image/webp' });
     const createdAt = new Date(Date.now() - ago - 5 * 60_000);

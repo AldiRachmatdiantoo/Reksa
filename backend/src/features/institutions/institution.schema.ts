@@ -17,9 +17,7 @@ export const EducatorIdParamsSchema = z.object({ educatorId: z.uuid() }).strict(
 export const EmptyBodySchema = z.object({}).strict().default({});
 
 /** POST /me/institution: pengajar bergabung dengan kode dari admin. Spasi di tepi dibuang. */
-export const JoinInstitutionSchema = z
-  .object({ code: z.string().trim().regex(INVITE_CODE_RE, 'Kode undangan tidak valid') })
-  .strict();
+export const JoinInstitutionSchema = z.object({ code: z.string().trim().regex(INVITE_CODE_RE, 'Kode undangan tidak valid') }).strict();
 
 export type JoinInstitutionBody = z.infer<typeof JoinInstitutionSchema>;
 

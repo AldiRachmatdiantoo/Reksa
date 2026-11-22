@@ -1,13 +1,7 @@
 import type { Request, Response } from 'express';
 import { getAuth } from '../../common/middlewares/auth.middleware.js';
 import { getValidated } from '../../common/middlewares/validate.middleware.js';
-import {
-  ClassIdParamsSchema,
-  ClassMemberParamsSchema,
-  CreateClassSchema,
-  JoinClassSchema,
-  RenameClassSchema,
-} from './classes.schema.js';
+import { ClassIdParamsSchema, ClassMemberParamsSchema, CreateClassSchema, JoinClassSchema, RenameClassSchema } from './classes.schema.js';
 import type { ClassesService } from './classes.service.js';
 
 export class ClassesController {

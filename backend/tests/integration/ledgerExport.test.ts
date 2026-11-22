@@ -23,7 +23,11 @@ async function register(email: string, { pro = true, role = 'STUDENT' as 'STUDEN
   return { userId, cookie: cookieHeader({ [ACCESS_COOKIE]: cookies[ACCESS_COOKIE]?.value ?? '' }) };
 }
 
-const exportPdf = (cookie: string, body: unknown) => request(ctx.app).post('/api/v1/ledger/exports').set('Cookie', cookie).send(body as object);
+const exportPdf = (cookie: string, body: unknown) =>
+  request(ctx.app)
+    .post('/api/v1/ledger/exports')
+    .set('Cookie', cookie)
+    .send(body as object);
 
 async function pdfFromExport(userId: string) {
   const row = await ctx.owner.dataExport.findFirstOrThrow({ where: { userId, kind: 'LEDGER_PDF' } });

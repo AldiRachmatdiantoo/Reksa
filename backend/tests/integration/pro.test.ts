@@ -17,7 +17,9 @@ async function register(email: string, verify = true) {
     .send({ ...CONSENT, email, password: VALID_PASSWORD, fullName: 'Pengguna Uji' });
   const cookie = cookieHeader({ [ACCESS_COOKIE]: parseSetCookies(res.headers['set-cookie'])[ACCESS_COOKIE]?.value ?? '' });
   if (verify) {
-    await request(ctx.app).post('/api/v1/auth/verify-email').send({ token: ctx.emails.tokenFor(email, 'verifikasi-email') });
+    await request(ctx.app)
+      .post('/api/v1/auth/verify-email')
+      .send({ token: ctx.emails.tokenFor(email, 'verifikasi-email') });
   }
   return { cookie, userId: res.body.user.id as string };
 }
@@ -35,8 +37,7 @@ async function createCode(opts: { durationDays?: number; maxRedemptions?: number
   return code;
 }
 
-const activate = (cookie: string, code: string) =>
-  request(ctx.app).post('/api/v1/me/activate-pro').set('Cookie', cookie).send({ code });
+const activate = (cookie: string, code: string) => request(ctx.app).post('/api/v1/me/activate-pro').set('Cookie', cookie).send({ code });
 
 describe('POST /me/activate-pro (FR-11)', () => {
   it('turns the account Pro for the code duration and lifts the scan quota', async () => {

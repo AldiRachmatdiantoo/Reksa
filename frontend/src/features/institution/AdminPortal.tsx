@@ -47,9 +47,9 @@ export function AdminPortal() {
   return (
     <div className="flex flex-col gap-8">
       <p className="max-w-prose text-body-md text-ink-muted text-pretty">
-        Kamu mengelola <strong className="font-semibold text-ink">{data.institution.name}</strong>. Di sini hanya ada angka
-        gabungan per kelas dan per konsep. Foto, catatan, skor, dan nama siswa tidak pernah tampil, dan kelompok dengan
-        kurang dari {data.minGroupSize} siswa tidak ditampilkan angkanya.
+        Kamu mengelola <strong className="font-semibold text-ink">{data.institution.name}</strong>. Di sini hanya ada angka gabungan per
+        kelas dan per konsep. Foto, catatan, skor, dan nama siswa tidak pernah tampil, dan kelompok dengan kurang dari {data.minGroupSize}{' '}
+        siswa tidak ditampilkan angkanya.
       </p>
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <EducatorsCard data={data} onChanged={overview.reload} />
@@ -74,7 +74,9 @@ function EducatorsCard({ data, onChanged }: { data: InstitutionOverview; onChang
       await institutionApi.detachEducator(educator.id);
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError && err.status === 404 ? 'Pengajar ini sudah tidak terhubung.' : 'Gagal melepas pengajar. Coba lagi.');
+      setError(
+        err instanceof ApiError && err.status === 404 ? 'Pengajar ini sudah tidak terhubung.' : 'Gagal melepas pengajar. Coba lagi.',
+      );
       if (err instanceof ApiError && err.status === 404) onChanged();
     }
   };
@@ -117,8 +119,7 @@ function EducatorsCard({ data, onChanged }: { data: InstitutionOverview; onChang
         onCancel={() => setTarget(null)}
         onConfirm={() => void detach()}
       >
-        Kelasnya tetap milik pengajar ini, tapi tidak lagi tercatat di institusimu. Pengajar bisa bergabung lagi dengan kode
-        undangan baru.
+        Kelasnya tetap milik pengajar ini, tapi tidak lagi tercatat di institusimu. Pengajar bisa bergabung lagi dengan kode undangan baru.
       </ConfirmDialog>
     </section>
   );
@@ -140,7 +141,11 @@ function InvitesCard() {
       setFresh(invite.code);
       invites.reload();
     } catch (err) {
-      setError(err instanceof ApiError && err.status === 429 ? 'Batas 20 kode per jam tercapai. Coba lagi nanti.' : 'Kode gagal dibuat. Coba lagi.');
+      setError(
+        err instanceof ApiError && err.status === 429
+          ? 'Batas 20 kode per jam tercapai. Coba lagi nanti.'
+          : 'Kode gagal dibuat. Coba lagi.',
+      );
     } finally {
       setWorking(false);
     }
@@ -233,18 +238,32 @@ function ClassesCard({ data }: { data: InstitutionOverview }) {
           <table className="w-full min-w-[560px] text-left text-body-md">
             <thead>
               <tr className="border-b border-line-soft text-label-lg text-ink-muted">
-                <th scope="col" className="py-2 pr-4 font-semibold">Kelas</th>
-                <th scope="col" className="py-2 pr-4 font-semibold">Pengajar</th>
-                <th scope="col" className="py-2 pr-4 text-right font-semibold">Anggota</th>
-                <th scope="col" className="py-2 pr-4 text-right font-semibold">Siswa dicek</th>
-                <th scope="col" className="py-2 pr-4 text-right font-semibold">Sesi selesai</th>
-                <th scope="col" className="py-2 text-right font-semibold">Rata-rata skor</th>
+                <th scope="col" className="py-2 pr-4 font-semibold">
+                  Kelas
+                </th>
+                <th scope="col" className="py-2 pr-4 font-semibold">
+                  Pengajar
+                </th>
+                <th scope="col" className="py-2 pr-4 text-right font-semibold">
+                  Anggota
+                </th>
+                <th scope="col" className="py-2 pr-4 text-right font-semibold">
+                  Siswa dicek
+                </th>
+                <th scope="col" className="py-2 pr-4 text-right font-semibold">
+                  Sesi selesai
+                </th>
+                <th scope="col" className="py-2 text-right font-semibold">
+                  Rata-rata skor
+                </th>
               </tr>
             </thead>
             <tbody>
               {data.classes.map((c) => (
                 <tr key={c.id} className="border-b border-line-soft last:border-0">
-                  <th scope="row" className="py-3 pr-4 font-normal text-ink">{c.name}</th>
+                  <th scope="row" className="py-3 pr-4 font-normal text-ink">
+                    {c.name}
+                  </th>
                   <td className="py-3 pr-4 text-ink-muted">{c.educator.fullName}</td>
                   <td className="py-3 pr-4 text-right tabular-nums">{c.memberCount}</td>
                   {c.suppressed ? (

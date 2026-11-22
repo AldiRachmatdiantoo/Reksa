@@ -57,7 +57,11 @@ export class LedgerExportService {
     } else {
       if (rows.length === 0) throw new NotFoundError('Tidak ada catatan yang sudah dicek di rentang tanggal ini');
       if (rows.length > LEDGER_EXPORT_MAX) {
-        throw new AppError(400, 'TOO_MANY_SUBMISSIONS', `Satu PDF paling banyak ${LEDGER_EXPORT_MAX} catatan. Persempit rentang tanggalnya.`);
+        throw new AppError(
+          400,
+          'TOO_MANY_SUBMISSIONS',
+          `Satu PDF paling banyak ${LEDGER_EXPORT_MAX} catatan. Persempit rentang tanggalnya.`,
+        );
       }
     }
 

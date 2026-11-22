@@ -44,7 +44,8 @@ export const institutionApi = {
   detachEducator: (id: string) => apiRequest<void>(`/institution/educators/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
   // Sisi pengajar.
-  mine: (signal?: AbortSignal) => apiRequest<{ institution: InstitutionRef | null }>('/me/institution', { signal }).then((r) => r.institution),
+  mine: (signal?: AbortSignal) =>
+    apiRequest<{ institution: InstitutionRef | null }>('/me/institution', { signal }).then((r) => r.institution),
   join: (code: string) =>
     apiRequest<{ institution: InstitutionRef }>('/me/institution', { method: 'POST', body: { code } }).then((r) => r.institution),
 };

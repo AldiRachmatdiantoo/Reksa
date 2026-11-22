@@ -41,10 +41,9 @@ export const governanceApi = {
       (r) => r.materials,
     ),
   cohortBlindSpots: (classId: string, materialId: string, signal?: AbortSignal) =>
-    apiRequest<CohortBlindSpots>(
-      `/governance/classes/${encodeURIComponent(classId)}/blind-spots/${encodeURIComponent(materialId)}`,
-      { signal },
-    ),
+    apiRequest<CohortBlindSpots>(`/governance/classes/${encodeURIComponent(classId)}/blind-spots/${encodeURIComponent(materialId)}`, {
+      signal,
+    }),
   verify: (hash: string) => apiRequest<LedgerVerification>(`/ledger/verify/${encodeURIComponent(hash)}`),
   /** FR-12, khusus Pro. Tautan berlaku 5 menit, file dihapus setelah 24 jam. */
   exportPdf: (body: { submissionIds: string[] } | { from: string; to: string }) =>

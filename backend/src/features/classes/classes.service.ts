@@ -47,9 +47,7 @@ export class ClassesService {
 
   async create(educatorId: string, name: string): Promise<ClassView> {
     const institutionId = await this.deps.repo.getInstitutionId(educatorId);
-    const record = await this.withFreshCode((classCode) =>
-      this.deps.repo.create({ educatorId, institutionId, name, classCode }),
-    );
+    const record = await this.withFreshCode((classCode) => this.deps.repo.create({ educatorId, institutionId, name, classCode }));
     return toView(record, 'OWNER');
   }
 

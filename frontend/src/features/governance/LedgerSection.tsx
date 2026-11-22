@@ -23,8 +23,8 @@ export function LedgerSection() {
           Bukti belajar siswa
         </h2>
         <p className="max-w-prose text-body-md text-ink-muted text-pretty">
-          Setiap catatan yang sudah dicek: kapan sesinya, berapa lama fokus, tebakan nilai siswa dibanding skor, dan foto
-          aslinya. Datanya dikunci dengan hash, jadi perubahan setelah dicek akan ketahuan.
+          Setiap catatan yang sudah dicek: kapan sesinya, berapa lama fokus, tebakan nilai siswa dibanding skor, dan foto aslinya. Datanya
+          dikunci dengan hash, jadi perubahan setelah dicek akan ketahuan.
         </p>
       </div>
 
@@ -91,7 +91,13 @@ function LedgerList({ classId }: { classId: string }) {
     setState({ ...state, loadingMore: true, moreError: false });
     try {
       const page = await governanceApi.ledger(classId, state.nextCursor);
-      setState({ status: 'ready', entries: [...state.entries, ...page.entries], nextCursor: page.nextCursor, loadingMore: false, moreError: false });
+      setState({
+        status: 'ready',
+        entries: [...state.entries, ...page.entries],
+        nextCursor: page.nextCursor,
+        loadingMore: false,
+        moreError: false,
+      });
     } catch {
       setState({ ...state, loadingMore: false, moreError: true });
     }
@@ -197,7 +203,12 @@ function LedgerCard({ entry }: { entry: LedgerEntry }) {
         <LedgerProof hash={entry.ledgerHash} />
       </div>
       {entry.photoUrl ? (
-        <a href={entry.photoUrl} target="_blank" rel="noreferrer" className="block self-start overflow-hidden rounded-md border border-line-soft">
+        <a
+          href={entry.photoUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="block self-start overflow-hidden rounded-md border border-line-soft"
+        >
           <img
             src={entry.photoUrl}
             alt={`Foto catatan tulisan tangan ${entry.student.fullName}`}
@@ -244,7 +255,11 @@ function LedgerProof({ hash }: { hash: string }) {
       </div>
       {/* Sukses cukup terlihat dari tombol "Tersalin"; kalimatnya untuk pembaca layar saja. */}
       <p role="status" className={copy === 'failed' ? 'text-body-sm text-on-danger-wash' : 'sr-only'}>
-        {copy === 'done' ? 'Kode bukti tersalin.' : copy === 'failed' ? 'Kode tidak bisa disalin otomatis. Salin manual dari kotak di atas.' : ''}
+        {copy === 'done'
+          ? 'Kode bukti tersalin.'
+          : copy === 'failed'
+            ? 'Kode tidak bisa disalin otomatis. Salin manual dari kotak di atas.'
+            : ''}
       </p>
     </div>
   );

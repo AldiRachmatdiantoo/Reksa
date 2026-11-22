@@ -9,7 +9,11 @@ import { governanceApi, type LedgerVerification } from './governanceApi';
 
 const HASH_RE = /^[0-9a-f]{64}$/;
 
-type State = { status: 'idle' } | { status: 'checking' } | { status: 'done'; result: LedgerVerification } | { status: 'error'; message: string };
+type State =
+  | { status: 'idle' }
+  | { status: 'checking' }
+  | { status: 'done'; result: LedgerVerification }
+  | { status: 'error'; message: string };
 
 const sessionDay = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 
@@ -36,7 +40,10 @@ export function VerifyLedgerPage() {
         !cancelled &&
         setState({
           status: 'error',
-          message: err instanceof ApiError && err.status === 429 ? 'Terlalu banyak pengecekan. Tunggu satu menit.' : 'Pengecekan gagal. Coba lagi.',
+          message:
+            err instanceof ApiError && err.status === 429
+              ? 'Terlalu banyak pengecekan. Tunggu satu menit.'
+              : 'Pengecekan gagal. Coba lagi.',
         }),
     );
     return () => {

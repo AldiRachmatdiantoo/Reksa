@@ -24,8 +24,7 @@ export function ReviewPage() {
         <div className="flex flex-col gap-3">
           <h1 className="font-display text-headline-lg-mobile text-ink sm:text-headline-lg">Latihan ulang</h1>
           <p className="max-w-prose text-body-lg text-ink-muted text-pretty">
-            Konsep yang terlewat saat dicek muncul lagi di sini 3 dan 7 hari kemudian. Tulis ulang dari ingatan, cukup 3
-            sampai 5 menit.
+            Konsep yang terlewat saat dicek muncul lagi di sini 3 dan 7 hari kemudian. Tulis ulang dari ingatan, cukup 3 sampai 5 menit.
           </p>
         </div>
 

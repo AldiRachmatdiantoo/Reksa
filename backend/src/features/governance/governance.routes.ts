@@ -7,7 +7,13 @@ import { validate } from '../../common/middlewares/validate.middleware.js';
 import type { AccessTokenSigner } from '../../common/utils/jwt.js';
 import type { CohortService } from './cohort.service.js';
 import { GovernanceController } from './governance.controller.js';
-import { ClassIdParamsSchema, ClassMaterialParamsSchema, LedgerExportSchema, LedgerHashParamsSchema, LedgerQuerySchema } from './governance.schema.js';
+import {
+  ClassIdParamsSchema,
+  ClassMaterialParamsSchema,
+  LedgerExportSchema,
+  LedgerHashParamsSchema,
+  LedgerQuerySchema,
+} from './governance.schema.js';
 import type { GovernanceService } from './governance.service.js';
 import type { LedgerExportService } from './ledgerExport.service.js';
 
@@ -23,12 +29,7 @@ const MINUTE = 60_000;
  * GET /governance/classes/:classId/blind-spots/:materialId
  *     Persentase siswa yang melewatkan tiap konsep + saran AI (FR-08). Materi tanpa hasil: 404.
  */
-export function createGovernanceRouter({
-  service,
-  cohort,
-  signer,
-  redis,
-}: GovernanceRouterDeps & { cohort: CohortService }): Router {
+export function createGovernanceRouter({ service, cohort, signer, redis }: GovernanceRouterDeps & { cohort: CohortService }): Router {
   const router = Router();
   const controller = new GovernanceController(service, undefined, cohort);
 
@@ -57,12 +58,7 @@ export function createGovernanceRouter({
  * GET  /ledger/verify/:hash   publik, 30/menit per IP. Hanya { valid, sessionDate }: tanpa nama, skor, atau foto.
  * POST /ledger/exports        STUDENT Pro; PDF bukti belajar milik sendiri (FR-12), 5/jam per user.
  */
-export function createLedgerRouter({
-  service,
-  exports,
-  signer,
-  redis,
-}: GovernanceRouterDeps & { exports: LedgerExportService }): Router {
+export function createLedgerRouter({ service, exports, signer, redis }: GovernanceRouterDeps & { exports: LedgerExportService }): Router {
   const router = Router();
   const controller = new GovernanceController(service, exports);
 

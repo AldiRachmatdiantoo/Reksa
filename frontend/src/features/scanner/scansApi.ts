@@ -36,8 +36,7 @@ export const scansApi = {
     form.append('image', photo);
     return apiRequest<UploadResult>('/scans/upload', { method: 'POST', body: form });
   },
-  get: (id: string, signal?: AbortSignal) =>
-    apiRequest<{ scan: Scan }>(`/scans/${encodeURIComponent(id)}`, { signal }).then((r) => r.scan),
+  get: (id: string, signal?: AbortSignal) => apiRequest<{ scan: Scan }>(`/scans/${encodeURIComponent(id)}`, { signal }).then((r) => r.scan),
   retry: (id: string) => apiRequest<UploadResult>(`/scans/${encodeURIComponent(id)}/retry`, { method: 'POST' }),
   quota: (signal?: AbortSignal) => apiRequest<{ quota: Quota }>('/me/quota', { signal }).then((r) => r.quota),
 };

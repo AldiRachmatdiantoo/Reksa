@@ -118,7 +118,9 @@ class Writer {
     page.drawText(url, { x: urlX, y: top - 13, size: 8, font: fonts.regular, color: TEAL });
     addLink(this.doc, page, url, urlX, top - 15, fonts.regular.widthOfTextAtSize(url, 8), 11);
     page.drawText(
-      toWinAnsi(`Dibuat ${dateTime.format(this.input.generatedAt)} WIB. Skor dibuat mesin dan bisa salah; pakai sebagai bukti proses belajar.`),
+      toWinAnsi(
+        `Dibuat ${dateTime.format(this.input.generatedAt)} WIB. Skor dibuat mesin dan bisa salah; pakai sebagai bukti proses belajar.`,
+      ),
       { x: MARGIN, y: top - 26, size: 7, font: fonts.regular, color: MUTED },
     );
   }

@@ -2,13 +2,7 @@ import { useEffect, useState } from 'react';
 import { useClasses } from '@/features/classes/classesApi';
 import { FillBar } from '@/shared/motion';
 import { Icon } from '@/shared/ui/Icon';
-import {
-  conceptShareLabel,
-  governanceApi,
-  type CohortBlindSpots,
-  type CohortMaterial,
-  type ImportanceLevel,
-} from './governanceApi';
+import { conceptShareLabel, governanceApi, type CohortBlindSpots, type CohortMaterial, type ImportanceLevel } from './governanceApi';
 
 const IMPORTANCE: Record<ImportanceLevel, { label: string; className: string }> = {
   HIGH: { label: 'Penting', className: 'bg-danger-wash text-on-danger-wash' },
@@ -45,8 +39,8 @@ export function CohortSection() {
           Peta bagian sulit
         </h2>
         <p className="max-w-prose text-body-md text-ink-muted text-pretty">
-          Berapa banyak siswa yang melewatkan tiap konsep, dihitung dari hasil cek terakhir setiap siswa. Nama siswa tidak
-          ditampilkan di sini.
+          Berapa banyak siswa yang melewatkan tiap konsep, dihitung dari hasil cek terakhir setiap siswa. Nama siswa tidak ditampilkan di
+          sini.
         </p>
       </div>
 
@@ -217,8 +211,8 @@ function Recommendation({ map }: { map: CohortBlindSpots }) {
       </h3>
       {rec.sample && (
         <p className="rounded-md bg-wash px-4 py-3 text-body-sm text-ink">
-          Contoh: server masih memakai AI tiruan, jadi saran di bawah ini teks tetap, belum dibaca dari data kelasmu.
-          Persentase per konsep sudah asli.
+          Contoh: server masih memakai AI tiruan, jadi saran di bawah ini teks tetap, belum dibaca dari data kelasmu. Persentase per konsep
+          sudah asli.
         </p>
       )}
       <p className="text-body-md text-ink text-pretty">{rec.curriculumRecommendation}</p>

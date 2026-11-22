@@ -14,8 +14,7 @@ export function validateConsent(input: {
     const year = Number(input.birthYear);
     if (!/^\d{4}$/.test(input.birthYear.trim()) || year < 1900) errors.birthYear = 'Tulis tahun lahir 4 angka, mis. 2009.';
     else if (year > maxBirthYear()) errors.birthYear = 'Umur minimal 6 tahun untuk memakai REKSA.';
-    else if (isPossiblyMinor(year) && !input.guardianConsent)
-      errors.guardianConsent = 'Centang pernyataan izin orang tua atau wali dulu.';
+    else if (isPossiblyMinor(year) && !input.guardianConsent) errors.guardianConsent = 'Centang pernyataan izin orang tua atau wali dulu.';
   }
   if (!input.acceptTerms) errors.acceptTerms = 'Setujui Syarat Layanan dan Kebijakan Privasi untuk lanjut.';
   return errors;

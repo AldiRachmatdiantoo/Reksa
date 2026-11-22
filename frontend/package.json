@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "format": "oxfmt",
+    "format:check": "oxfmt --check",
     "test:e2e": "playwright test"
   },
   "dependencies": {

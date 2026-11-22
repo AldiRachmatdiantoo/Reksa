@@ -22,10 +22,7 @@ export function TeacherPage() {
   return (
     <>
       <AppHeader subtitle={portal} />
-      <motion.main
-        {...pageTransition}
-        className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10"
-      >
+      <motion.main {...pageTransition} className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10">
         <header className="flex flex-col gap-2">
           <h1 className="font-display text-headline-lg-mobile text-ink sm:text-headline-lg">Halo, {fullName}</h1>
           <p className="max-w-prose text-body-lg text-ink-muted text-pretty">
@@ -35,9 +32,7 @@ export function TeacherPage() {
           </p>
         </header>
 
-        <Reveal delay={0.1}>
-          {isEducator ? <TeacherClasses /> : <AdminPortal />}
-        </Reveal>
+        <Reveal delay={0.1}>{isEducator ? <TeacherClasses /> : <AdminPortal />}</Reveal>
 
         {isEducator && (
           <Reveal delay={0.15}>
@@ -50,7 +45,6 @@ export function TeacherPage() {
             <CohortSection />
           </Reveal>
         )}
-
       </motion.main>
     </>
   );
