@@ -17,6 +17,15 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 
 ## Riwayat checkpoint
 
+### #44 · Jalur deploy Azure Container Apps · branch `feat/aldi-azure-deploy`
+
+Jatah Render Aldi habis sampai Desember dan Koyeb tidak lagi gratis, jadi backend di-deploy ke Azure for Students (kredit tersisa $90, tanpa kartu, kedaluwarsa 21/09/2027).
+
+- **`.github/workflows/backend-image.yml`:** setiap merge ke `main` yang menyentuh `backend/` membangun target `runner`, memastikan image tidak berjalan sebagai root, lalu mengirimnya ke `ghcr.io/<owner>/reksa-backend` (tag SHA 12 huruf dan `latest`). Hanya memakai `GITHUB_TOKEN`, tanpa secret Azure dan tanpa action pihak ketiga.
+- **`docs/DEPLOY.md` langkah 4c:** Container Apps (Southeast Asia, Consumption, 0.5 vCPU / 1 Gi, replika 0 sampai 1, tanpa Log Analytics), Redis dari Upstash, image privat ditarik dengan token GitHub `read:packages`, budget alert $10, `TRUST_PROXY_HOPS=2`.
+- **Akun Azure Aldi:** ada resource praktikum (VM sudah mati, App Service F1 gratis). Disk dan IP publik VM tetap memotong kredit sedikit; Aldi memilih membiarkannya.
+- **Belum:** resource Azure, Upstash, Supabase, Brevo, dan Vercel dibuat Aldi (D2). Setelah URL Container App ada, tujuan rewrite di `frontend/vercel.json` diganti.
+
 ### #43 · Antrean audit pakai BRPOP, jalur cadangan Koyeb + Upstash · branch `feat/aldi-redis-brpop`
 
 Jatah gratis Render Aldi habis sampai Desember, jadi disiapkan jalur hosting kedua.

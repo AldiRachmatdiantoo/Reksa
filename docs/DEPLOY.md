@@ -67,7 +67,7 @@ Konsekuensi yang perlu diterima di versi gratis:
 | Opsi | Biaya | Catatan |
 | :--- | :--- | :--- |
 | Tunggu jatah Render | Gratis | Jatah bulanan Render reset tiap awal bulan. Paling sederhana: blueprint di langkah 4 sudah siap. |
-| Azure for Students (lewat GitHub Student Developer Pack) | Kredit $100, tanpa kartu, usia 18+ | Backend di App Service atau Container Apps; kredit habis dalam beberapa bulan untuk mesin yang menyala 24 jam. |
+| **Azure for Students** (lewat GitHub Student Developer Pack) | Kredit $100, tanpa kartu, usia 18+ | **Dipakai sekarang**, lihat langkah 4c. Container Apps dengan scale to zero kemungkinan masih di dalam jatah gratis bulanan. |
 | Heroku untuk pelajar (GitHub Student Developer Pack) | Kredit $13/bulan selama 24 bulan | Kemungkinan tetap minta kartu untuk verifikasi. |
 | Google Cloud Run, Oracle Always Free | Ada jatah gratis | Wajib akun billing atau verifikasi kartu. Cloud Run juga perlu CPU selalu aktif agar worker audit jalan di latar. |
 
@@ -79,10 +79,37 @@ Di host mana pun selain Render, Redis bisa dari **Upstash Free**:
 4. Ganti tujuan rewrite pertama di `frontend/vercel.json` ke URL backend baru, dan buktikan `TRUST_PROXY_HOPS` di D4 (bagian 7).
 5. Kuota Upstash 500 ribu perintah/bulan: worker audit yang menganggur memakai sekitar 175 ribu (`BRPOP` 30 detik), sisanya untuk rate limit dan antrean. Pantau grafiknya minggu pertama.
 
+## 4c. Azure Container Apps + Upstash (dipakai November 2026)
+
+Dipilih selama jatah Render habis. Akun Azure for Students tidak memakai kartu kredit: kalau kredit habis, layanan dimatikan, tidak ada tagihan. **Jangan tambahkan kartu kredit** di akun itu, karena kartu menghapus batas pengeluaran.
+
+Biaya: Container Apps memberi jatah gratis per langganan per bulan (180 ribu vCPU-detik, 360 ribu GiB-detik, 2 juta request). Dengan **minimal replika 0**, uji coba dengan sedikit pengguna kemungkinan memotong sekitar $0. Kalau dibuat selalu menyala (minimal 1), perkiraannya sekitar $10 sampai $15 per bulan.
+
+Yang **jangan** dibuat karena berbayar: Azure Cache for Redis (pakai Upstash), Azure Container Registry (pakai GitHub Container Registry), dan Log Analytics (pilih tanpa log).
+
+1. **Upstash:** buat database Redis region **ap-southeast-1 (Singapore)**, eviction mati. Salin URL `rediss://...`, itu `REDIS_URL`.
+2. **Image backend:** workflow `.github/workflows/backend-image.yml` membangun image setiap merge ke `main` yang menyentuh `backend/` (bisa juga dijalankan manual dari tab Actions → Backend image → Run workflow). Hasilnya `ghcr.io/aldirachmatdiantoo/reksa-backend:<12 huruf awal SHA>`; tag lengkapnya tercantum di ringkasan run.
+3. **Akses Azure ke image:** package di GitHub Container Registry privat. Buat GitHub **personal access token (classic)** dengan hak **`read:packages` saja**, masa berlaku secukupnya (mis. 60 hari). Simpan di password manager.
+4. **Buat Container App** di portal Azure (Container Apps → Create):
+   - Grup resource baru `reksa`, nama `reksa-api`, region **Southeast Asia** (dekat Supabase Singapore). Kalau region itu ditolak kebijakan langganan, pilih region Asia lain yang diizinkan.
+   - Environment baru: paket **Consumption only**, zone redundancy mati. Monitoring: **tanpa log** (Don't save logs) supaya tidak ada biaya Log Analytics.
+   - Container: matikan quickstart image. Sumber image: registry lain (Docker Hub or other registries), **Private**, login server `ghcr.io`, username akun GitHub, password = token tadi. Image: `aldirachmatdiantoo/reksa-backend:<tag SHA>`. CPU **0.5**, memori **1 Gi**.
+   - Variabel lingkungan: sama dengan daftar di `render.yaml` (`NODE_ENV=production`, `PORT=3000`, `AI_PROVIDER_MODE=gemini`, `STORAGE_BUCKET=reksa-private`, `STORAGE_FORCE_PATH_STYLE=true`), ditambah `TRUST_PROXY_HOPS=2` (rewrite Vercel + ingress Azure) dan `REDIS_URL`. Nilai rahasia (`DATABASE_URL`, `REDIS_URL`, `JWT_*`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY`, `SMTP_URL`, `GEMINI_API_KEY`) dibuat sebagai **Secret** di Container App lalu dirujuk dari variabel lingkungan. `JWT_ACCESS_SECRET` dan `JWT_REFRESH_SECRET` dibuat sendiri, berbeda satu sama lain, masing-masing minimal 32 karakter acak (mis. `node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"`).
+   - Ingress: aktif, terima trafik dari mana saja, HTTP, target port **3000**.
+5. **Setelah dibuat:**
+   - Scale: **minimal 0, maksimal 1** replika. Maksimal 1 sekaligus membatasi biaya.
+   - Buka `https://<URL aplikasi>/api/v1/health` → `{"status":"ok"}`. Permintaan pertama setelah sepi menunggu beberapa detik (replika dinyalakan).
+   - Ganti tujuan rewrite pertama di `frontend/vercel.json` ke URL itu (`https://<URL aplikasi>/api/:path*`), commit lewat PR.
+6. **Budget alert:** Cost Management → Budgets → anggaran $10 per bulan dengan email peringatan di 50% dan 100%. Cek Cost Management sehari setelah deploy: harus sekitar $0.
+7. **Update berikutnya:** setelah workflow image selesai, buka Container App → Revisions and replicas → buat revisi baru dengan tag SHA yang baru.
+8. **Selesai uji coba:** hapus grup resource `reksa` supaya tidak ada sisa biaya.
+
+Catatan teknis: worker audit berjalan di proses yang sama. Dengan scale to zero, replika tetap hidup beberapa menit setelah request terakhir, cukup untuk menyelesaikan audit yang baru masuk. Job yang tertahan karena replika mati tetap ditangani `AUDIT_STALLED` (kuota dikembalikan, pelajar bisa coba lagi). SSE QR bridge mengirim ping tiap 15 detik, di bawah batas jeda ingress Azure (240 detik).
+
 ## 5. Vercel (frontend)
 
 1. Add New → Project → repo ini, **Root Directory: `frontend`**. Framework dan perintah build dibaca dari `frontend/vercel.json`.
-2. Setelah deploy, isi `CORS_ORIGIN` dan `APP_URL` di Render (atau host backend lain) dengan URL Vercel (mis. `https://reksa.vercel.app`), lalu Render akan deploy ulang.
+2. Setelah deploy, isi `CORS_ORIGIN` dan `APP_URL` di Render atau Azure (langkah 4c) dengan URL Vercel (mis. `https://reksa.vercel.app`), lalu Render akan deploy ulang.
 3. `vercel.json` sudah membawa header keamanan yang sama dengan `nginx.conf` lokal (CSP dengan `img-src` ke `*.supabase.co` untuk signed URL), `sw.js` tanpa cache, dan aset `/assets/` di-cache setahun.
 
 ## 6. Data awal (D3)
@@ -105,7 +132,7 @@ Hal yang tidak bisa dibuktikan di lokal:
 
 - **Unggah lewat rewrite Vercel:** foto catatan (maks. 5 MB) dan PDF materi (maks. 10 MB). Batas body request untuk rewrite ke origin luar tidak tercantum jelas di dokumentasi Vercel (fungsi serverless dibatasi 4,5 MB). Kalau 413, opsi: kompres foto di browser sebelum unggah, atau custom domain bersama untuk frontend dan API.
 - **SSE QR bridge** lewat rewrite: backend mengirim ping tiap 15 detik, di bawah batas jeda 120 detik Vercel.
-- **IP klien untuk rate limit:** `TRUST_PROXY_HOPS=2` mengandaikan rantai Vercel → load balancer Render. Cek dengan login gagal berulang dari dua jaringan berbeda: hanya jaringan yang berulang yang kena 429.
+- **IP klien untuk rate limit:** `TRUST_PROXY_HOPS=2` mengandaikan rantai Vercel → load balancer Render (atau ingress Azure Container Apps). Cek dengan login gagal berulang dari dua jaringan berbeda: hanya jaringan yang berulang yang kena 429.
 - **Cookie:** `__Host-` dan `__Secure-refresh_token` muncul di domain Vercel, `HttpOnly`, `Secure`, `SameSite=Strict`.
 - **Header dan CSP:** konsol browser tanpa pelanggaran CSP (gambar signed URL dari Supabase tampil).
 - **Data API tertutup:** `https://<project-ref>.supabase.co/rest/v1/users` dengan anon key harus ditolak.
