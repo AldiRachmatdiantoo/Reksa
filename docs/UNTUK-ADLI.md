@@ -6,6 +6,14 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: antrean audit pakai BRPOP (branch `feat/aldi-redis-brpop`)
+
+Supaya bisa memakai Redis gratis yang menghitung perintah (Upstash), worker audit tidak lagi memanggil `RPOP` tiap 0,5 detik.
+
+- **`essay-scans/audit.queue.ts`:** `RedisAuditQueue(redis, blocking?)`; `dequeue(waitSeconds = 0)` memakai `BRPOP` di koneksi `blocking` kalau `waitSeconds > 0`, selain itu `RPOP` seperti dulu (`drain()` di test tidak berubah). `interrupt()` memutus koneksi blocking. `AuditWorker` punya opsi `waitSeconds` dan memanggil `interrupt()` saat `stop()`.
+- **`container.ts` / `server.ts`:** `buildAuditWorker(deps, { blockingRedis })` dengan `AUDIT_QUEUE_WAIT_SECONDS = 30`; server membuat koneksi kedua lewat `redis.duplicate()`.
+- **`tests/unit/features/essay-scans/audit.queue.test.ts`:** tiga test baru. Integration baru: `tests/integration/auditQueue.test.ts`.
+
 ## 22 Nov 2026: sesi dua materi (interleaving) menyentuh study-sessions dan essay-scans (branch `feat/aldi-interleaving`)
 
 Detail di `CHECKPOINT.md` #41. Yang berubah di areamu:

@@ -72,6 +72,38 @@ describe('RedisAuditQueue', () => {
     expect(await queue.dequeue()).toBeNull();
     expect(await queue.dequeue()).toMatchObject({ submissionId: expect.any(String) });
   });
+
+  it('waits with BRPOP on the blocking connection only when asked to', async () => {
+    const { redis } = fakeRedis();
+    const a = job();
+    const blocking = {
+      brpop: vi.fn(async () => ['audit:v1:queue', JSON.stringify(a)] as [string, string]),
+      disconnect: vi.fn(),
+    };
+    const queue = new RedisAuditQueue(redis, blocking as unknown as Redis);
+
+    expect(await queue.dequeue(30)).toEqual(a);
+    expect(blocking.brpop).toHaveBeenCalledWith('audit:v1:queue', 30);
+
+    blocking.brpop.mockResolvedValueOnce(null as never); // batas waktu habis tanpa job
+    expect(await queue.dequeue(30)).toBeNull();
+
+    // Tanpa waktu tunggu (drain di test): RPOP di koneksi utama, koneksi blocking tidak disentuh.
+    expect(await queue.dequeue()).toBeNull();
+    expect(redis.rpop).toHaveBeenCalledTimes(1);
+    expect(blocking.brpop).toHaveBeenCalledTimes(2);
+
+    queue.interrupt();
+    expect(blocking.disconnect).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to RPOP when no blocking connection is given', async () => {
+    const { redis } = fakeRedis();
+    const queue = new RedisAuditQueue(redis);
+    expect(await queue.dequeue(30)).toBeNull();
+    expect(redis.rpop).toHaveBeenCalledTimes(1);
+    expect(() => queue.interrupt()).not.toThrow();
+  });
 });
 
 describe('AuditWorker background loop', () => {
@@ -216,6 +248,25 @@ describe('AuditWorker background loop', () => {
     await worker.stop();
 
     expect(peak).toBe(1);
+  });
+
+  it('passes waitSeconds to the queue and interrupts a pending wait on stop() without reporting it', async () => {
+    let release!: (err: Error) => void;
+    const queue = {
+      dequeue: vi.fn(() => new Promise<AuditJob | null>((_, reject) => (release = reject))),
+      interrupt: vi.fn(() => release(new Error('Connection is closed.'))),
+    };
+    const onError = vi.fn();
+    const worker = new AuditWorker({ queue, concurrency: 1, waitSeconds: 30, onError, handle: async () => {} });
+
+    worker.start();
+    await until(() => queue.dequeue.mock.calls.length === 1);
+    expect(queue.dequeue).toHaveBeenCalledWith(30);
+
+    await worker.stop();
+    expect(queue.interrupt).toHaveBeenCalledTimes(1);
+    expect(onError).not.toHaveBeenCalled();
+    expect(queue.dequeue).toHaveBeenCalledTimes(1);
   });
 
   it('drain() runs every queued job in order, reports errors, and returns when empty', async () => {
