@@ -114,7 +114,7 @@ function PrivacyBody() {
         <p>
           Selama masa lomba, REKSA memakai Gemini versi gratis. Di versi ini Google boleh memakai data yang dikirim untuk mengembangkan
           produk dan model AI-nya, dan petugas peninjau Google bisa membacanya tanpa keterangan akun pengirimnya. Karena itu, jangan tulis
-          nama, NIS, atau data pribadi lain di catatan, dan jangan unggah materi yang rahasia.
+          nama, NIM, atau data pribadi lain di catatan, dan jangan unggah materi yang rahasia.
         </p>
         <p>Kalau REKSA sedang berjalan tanpa Gemini (mode uji coba), penilaian memakai contoh jawaban buatan, bukan AI sungguhan.</p>
       </Section>
