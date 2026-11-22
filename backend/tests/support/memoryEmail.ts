@@ -23,7 +23,7 @@ export class MemoryEmailService implements IEmailService {
   }
 
   /** Token dari tautan di email terakhir ke alamat itu. */
-  tokenFor(to: string, path: 'verifikasi-email' | 'atur-ulang-password'): string {
+  tokenFor(to: string, path: 'verifikasi-email' | 'atur-ulang-password' | 'konfirmasi-email'): string {
     const text = this.lastTo(to)?.text ?? '';
     const match = new RegExp(`/${path}\\?token=([A-Za-z0-9_-]+)`).exec(text);
     if (!match?.[1]) throw new Error(`Tidak ada tautan ${path} untuk ${to}`);

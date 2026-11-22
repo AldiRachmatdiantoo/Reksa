@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { ACCESS_COOKIE, REFRESH_COOKIE } from '../../src/common/utils/authCookies.js';
@@ -161,5 +162,124 @@ describe('PATCH /me and /me/password', () => {
       .send({ currentPassword: 'SalahSekali123', newPassword: NEW_PASSWORD });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('INVALID_CURRENT_PASSWORD');
+  });
+});
+
+describe('email change (F1)', () => {
+  const NEW_EMAIL = 'dimas.baru@reksa.id';
+  const ask = (cookie: string, body: Record<string, unknown>) => request(ctx.app).post('/api/v1/me/email').set('Cookie', cookie).send(body);
+
+  it('asks for confirmation from the new address, then switches the login email and marks it verified', async () => {
+    const { access, userId } = await register();
+    ctx.emails.clear();
+
+    const res = await ask(access, { newEmail: '  Dimas.Baru@Reksa.ID ', currentPassword: VALID_PASSWORD });
+    expect(res.status).toBe(202);
+    expect(res.body.message).toMatch(/alamat baru/);
+    expect(ctx.emails.sent.map((m) => m.to).sort()).toEqual([EMAIL, NEW_EMAIL].sort());
+    expect(ctx.emails.lastTo(EMAIL)?.text).toContain('d***@reksa.id');
+
+    const token = ctx.emails.tokenFor(NEW_EMAIL, 'konfirmasi-email');
+    const row = await ctx.owner.authToken.findFirstOrThrow({ where: { purpose: 'EMAIL_CHANGE' } });
+    expect(row).toMatchObject({ userId, newEmail: NEW_EMAIL, tokenHash: hashEmailToken(token), usedAt: null });
+    expect((await request(ctx.app).get('/api/v1/auth/me').set('Cookie', access)).body.user.email).toBe(EMAIL);
+
+    expect((await request(ctx.app).post('/api/v1/auth/email/confirm').send({ token })).status).toBe(204);
+
+    const me = await request(ctx.app).get('/api/v1/auth/me').set('Cookie', access);
+    expect(me.body.user).toMatchObject({ email: NEW_EMAIL, emailVerified: true });
+    expect((await request(ctx.app).post('/api/v1/auth/login').send({ email: NEW_EMAIL, password: VALID_PASSWORD })).status).toBe(200);
+    expect((await request(ctx.app).post('/api/v1/auth/login').send({ email: EMAIL, password: VALID_PASSWORD })).status).toBe(401);
+
+    const again = await request(ctx.app).post('/api/v1/auth/email/confirm').send({ token });
+    expect(again.status).toBe(400);
+    expect(again.body.error.code).toBe('INVALID_TOKEN');
+  });
+
+  it('answers the same for an address that already has an account, and sends that address an explanation instead of a link', async () => {
+    const { access } = await register();
+    await register('pemilik@reksa.id');
+    const free = await ask(access, { newEmail: 'kosong@reksa.id', currentPassword: VALID_PASSWORD });
+    ctx.emails.clear();
+    await ctx.owner.authToken.deleteMany({ where: { purpose: 'EMAIL_CHANGE' } });
+
+    const taken = await ask(access, { newEmail: 'pemilik@reksa.id', currentPassword: VALID_PASSWORD });
+
+    expect(taken.status).toBe(free.status);
+    expect(taken.body).toEqual(free.body);
+    expect(ctx.emails.lastTo('pemilik@reksa.id')?.subject).toBe('Alamat ini sudah dipakai akun REKSA');
+    expect(() => ctx.emails.tokenFor('pemilik@reksa.id', 'konfirmasi-email')).toThrow();
+    expect(await ctx.owner.authToken.count({ where: { purpose: 'EMAIL_CHANGE' } })).toBe(0);
+  });
+
+  it('a confirm link changes only the account that asked, whoever opens it', async () => {
+    const asker = await register();
+    const other = await register('lain@reksa.id');
+    await ask(asker.access, { newEmail: NEW_EMAIL, currentPassword: VALID_PASSWORD });
+
+    const res = await request(ctx.app)
+      .post('/api/v1/auth/email/confirm')
+      .set('Cookie', other.access)
+      .send({ token: ctx.emails.tokenFor(NEW_EMAIL, 'konfirmasi-email') });
+
+    expect(res.status).toBe(204);
+    expect((await ctx.owner.user.findUniqueOrThrow({ where: { id: asker.userId } })).email).toBe(NEW_EMAIL);
+    expect((await ctx.owner.user.findUniqueOrThrow({ where: { id: other.userId } })).email).toBe('lain@reksa.id');
+  });
+
+  it('rejects anonymous calls, a wrong password, the current address, and foreign fields', async () => {
+    const { access } = await register();
+    expect((await request(ctx.app).post('/api/v1/me/email').send({ newEmail: NEW_EMAIL, currentPassword: VALID_PASSWORD })).status).toBe(
+      401,
+    );
+
+    const wrong = await ask(access, { newEmail: NEW_EMAIL, currentPassword: 'SalahSekali123' });
+    expect(wrong.status).toBe(400);
+    expect(wrong.body.error.code).toBe('INVALID_CURRENT_PASSWORD');
+
+    const same = await ask(access, { newEmail: EMAIL.toUpperCase(), currentPassword: VALID_PASSWORD });
+    expect(same.status).toBe(400);
+    expect(same.body.error.code).toBe('SAME_EMAIL');
+
+    for (const body of [
+      { newEmail: NEW_EMAIL, currentPassword: VALID_PASSWORD, userId: randomUUID() },
+      { newEmail: 'bukan-email', currentPassword: VALID_PASSWORD },
+      { newEmail: NEW_EMAIL },
+    ]) {
+      const res = await ask(access, body);
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    }
+    expect(await ctx.owner.authToken.count({ where: { purpose: 'EMAIL_CHANGE' } })).toBe(0);
+  });
+
+  it('limits requests to 5 per hour per user', async () => {
+    const { access } = await register();
+    const statuses: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      statuses.push((await ask(access, { newEmail: `baru${i}@reksa.id`, currentPassword: VALID_PASSWORD })).status);
+    }
+    expect(statuses).toEqual([202, 202, 202, 202, 202, 429]);
+  });
+
+  it('answers 409 when the address got an account between request and confirmation', async () => {
+    const { access, userId } = await register();
+    await ask(access, { newEmail: NEW_EMAIL, currentPassword: VALID_PASSWORD });
+    const token = ctx.emails.tokenFor(NEW_EMAIL, 'konfirmasi-email');
+    await register(NEW_EMAIL);
+
+    const res = await request(ctx.app).post('/api/v1/auth/email/confirm').send({ token });
+    expect(res.status).toBe(409);
+    expect((await ctx.owner.user.findUniqueOrThrow({ where: { id: userId } })).email).toBe(EMAIL);
+    expect((await ctx.owner.authToken.findFirstOrThrow({ where: { purpose: 'EMAIL_CHANGE' } })).usedAt).toBeNull();
+  });
+
+  it('the database refuses an EMAIL_CHANGE token without a target address, and a target on other tokens', async () => {
+    const { userId } = await register();
+    const base = { userId, expiresAt: new Date(Date.now() + 60_000) };
+    await expect(ctx.owner.authToken.create({ data: { ...base, purpose: 'EMAIL_CHANGE', tokenHash: 'a'.repeat(64) } })).rejects.toThrow();
+    await expect(
+      ctx.owner.authToken.create({ data: { ...base, purpose: 'EMAIL_VERIFY', tokenHash: 'b'.repeat(64), newEmail: NEW_EMAIL } }),
+    ).rejects.toThrow();
   });
 });

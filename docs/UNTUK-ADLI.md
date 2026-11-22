@@ -6,6 +6,14 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: helper E2E baca email dari Mailpit (branch `feat/aldi-change-email`)
+
+Untuk F1 (ganti email, area `auth` Aldi) ada tambahan kecil di areamu:
+
+- **`frontend/tests/e2e/helpers.ts`:** `tokenFromEmail(to, path)` mengambil token dari tautan di email terbaru lewat API Mailpit (`E2E_MAILPIT_URL`, bawaan `http://127.0.0.1:8025`). Bisa dipakai untuk E2E verifikasi email atau reset password juga.
+- **`frontend/tests/e2e/email-change.spec.ts`** (baru). CI E2E kini menyalakan `mailpit` bersama `backend frontend`.
+- **Halaman Akun** punya field "Kata sandi akun" di bagian Ganti email. Field hapus akun tetap berlabel "Kata sandi", jadi `getByLabel('Kata sandi', { exact: true })` masih menunjuk satu field.
+
 ## 22 Nov 2026: Stage 2 pindah model, kode gagal baru (branch `feat/aldi-gemini-free`)
 
 Aldi memutuskan tetap memakai free tier Gemini. Yang berubah di areamu:

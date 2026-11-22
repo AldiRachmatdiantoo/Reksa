@@ -196,7 +196,8 @@ jobs:
       - name: Run migrations
         run: docker compose --profile tools run --rm --build migrate
       - name: Start full stack
-        run: docker compose up -d --build --wait backend frontend
+        # Mailpit menangkap email supaya E2E bisa membuka tautan konfirmasi (email-change.spec.ts).
+        run: docker compose up -d --build --wait backend frontend mailpit
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}

@@ -64,3 +64,60 @@ export function resetPasswordMessage(to: string, fullName: string, link: string)
     ),
   };
 }
+
+/** "nama@contoh.com" → "n***@contoh.com". Dipakai di email ke alamat lama supaya alamat baru tidak tertulis utuh. */
+export function maskEmail(email: string): string {
+  const at = email.lastIndexOf('@');
+  if (at < 1) return '***';
+  return `${email[0]}***${email.slice(at)}`;
+}
+
+/** F1: dikirim ke alamat BARU. Email akun baru berganti setelah tautan ini dibuka. */
+export function confirmEmailChangeMessage(to: string, fullName: string, link: string): EmailMessage {
+  const name = fullName.trim() || 'kamu';
+  const lines = [
+    'Ada permintaan memakai alamat ini sebagai email akun REKSA-mu. Klik tautan di bawah untuk mengonfirmasi. Tautan berlaku 24 jam dan hanya bisa dipakai sekali.',
+    'Setelah dikonfirmasi, masuk ke REKSA memakai alamat ini.',
+    'Kalau kamu tidak memintanya, abaikan email ini. Tidak ada yang berubah.',
+  ];
+  return {
+    to,
+    subject: 'Konfirmasi email baru akun REKSA',
+    text: [`Halo ${name},`, '', lines[0], link, '', lines[1], lines[2]].join('\n'),
+    html: layout([`Halo ${escapeHtml(name)},`, ...lines], link, 'Konfirmasi email baru'),
+  };
+}
+
+/** F1: dikirim ke alamat LAMA saat ada permintaan ganti email. `maskedNewEmail` dari maskEmail. */
+export function emailChangeRequestedNotice(to: string, fullName: string, maskedNewEmail: string, accountLink: string): EmailMessage {
+  const name = fullName.trim() || 'kamu';
+  const lines = [
+    `Ada permintaan mengganti email akun REKSA-mu ke ${maskedNewEmail}. Email akunmu belum berubah sampai tautan yang kami kirim ke alamat baru itu dibuka.`,
+    'Kalau itu kamu, tidak perlu melakukan apa-apa di sini.',
+    'Kalau bukan kamu, ganti kata sandi sekarang dari halaman Akun. Mengganti kata sandi membatalkan permintaan ini dan mengeluarkan perangkat lain dari akunmu.',
+  ];
+  return {
+    to,
+    subject: 'Permintaan ganti email akun REKSA',
+    text: [`Halo ${name},`, '', ...lines, '', accountLink].join('\n'),
+    html: layout([`Halo ${escapeHtml(name)},`, ...lines.map(escapeHtml)], accountLink, 'Buka halaman Akun'),
+  };
+}
+
+/**
+ * F1: dikirim ke alamat baru yang ternyata sudah terdaftar. Peminta tidak diberi tahu (jawaban API sama),
+ * jadi penjelasannya sampai ke pemilik alamat saja.
+ */
+export function emailTakenNotice(to: string, loginLink: string): EmailMessage {
+  const lines = [
+    'Ada permintaan memakai alamat ini sebagai email akun REKSA, tapi alamat ini sudah dipakai akun REKSA lain, jadi permintaan itu tidak diproses.',
+    'Kalau kamu yang meminta, masuk ke akun yang memakai alamat ini, atau pakai alamat lain. Lupa kata sandinya? Pilih "Lupa kata sandi" di halaman masuk.',
+    'Kalau bukan kamu, abaikan email ini. Akunmu aman dan tidak ada yang berubah.',
+  ];
+  return {
+    to,
+    subject: 'Alamat ini sudah dipakai akun REKSA',
+    text: ['Halo,', '', ...lines, '', loginLink].join('\n'),
+    html: layout(['Halo,', ...lines.map(escapeHtml)], loginLink, 'Masuk ke REKSA'),
+  };
+}

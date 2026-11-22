@@ -37,7 +37,7 @@ export type RefreshTokenRecord = {
   expiresAt: Date;
 };
 
-export type AuthTokenPurpose = 'EMAIL_VERIFY' | 'PASSWORD_RESET';
+export type AuthTokenPurpose = 'EMAIL_VERIFY' | 'PASSWORD_RESET' | 'EMAIL_CHANGE';
 
 export interface AuthRepository {
   findUserByEmail(email: string): Promise<UserRecord | null>;
@@ -49,6 +49,8 @@ export interface AuthRepository {
   updatePasswordHash(userId: string, passwordHash: string): Promise<void>;
   /** Hanya mengisi bila masih kosong, supaya tanggal verifikasi pertama tidak tertimpa. */
   markEmailVerified(userId: string, at: Date): Promise<void>;
+  /** Ganti email sekaligus menandainya terverifikasi pada `verifiedAt`. ConflictError bila alamat sudah dipakai akun lain. */
+  updateEmail(userId: string, email: string, verifiedAt: Date): Promise<void>;
 
   createRefreshToken(data: { userId: string; tokenHash: string; familyId: string; expiresAt: Date }): Promise<void>;
   /** Locks the row (SELECT ... FOR UPDATE) so two concurrent refreshes cannot both rotate it. */
@@ -66,7 +68,14 @@ export interface AuthRepository {
    */
   deleteAllRefreshTokens(userId: string): Promise<void>;
 
-  createAuthToken(data: { userId: string; purpose: AuthTokenPurpose; tokenHash: string; expiresAt: Date }): Promise<void>;
+  /** `newEmail` wajib untuk EMAIL_CHANGE dan dilarang untuk tujuan lain (CHECK di database). */
+  createAuthToken(data: {
+    userId: string;
+    purpose: AuthTokenPurpose;
+    tokenHash: string;
+    expiresAt: Date;
+    newEmail?: string;
+  }): Promise<void>;
   /** Token lama yang belum dipakai ikut mati saat token baru diterbitkan atau setelah salah satunya dipakai. */
   deleteUnusedAuthTokens(userId: string, purpose: AuthTokenPurpose): Promise<void>;
   /**
@@ -75,6 +84,8 @@ export interface AuthRepository {
    * token tidak ada, salah tujuan, sudah dipakai, atau kedaluwarsa.
    */
   consumeAuthToken(tokenHash: string, purpose: AuthTokenPurpose, now: Date): Promise<string | null>;
+  /** Sama dengan consumeAuthToken untuk EMAIL_CHANGE, ditambah alamat tujuannya. */
+  consumeEmailChangeToken(tokenHash: string, now: Date): Promise<{ userId: string; newEmail: string } | null>;
 
   withTransaction<T>(fn: (repo: AuthRepository) => Promise<T>): Promise<T>;
 }
@@ -137,6 +148,17 @@ export class PrismaAuthRepository implements AuthRepository {
     await this.db.user.updateMany({ where: { id: userId, emailVerifiedAt: null }, data: { emailVerifiedAt: at } });
   }
 
+  async updateEmail(userId: string, email: string, verifiedAt: Date): Promise<void> {
+    try {
+      await this.db.user.update({ where: { id: userId }, data: { email, emailVerifiedAt: verifiedAt } });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        throw new ConflictError('Alamat email ini sudah dipakai akun lain');
+      }
+      throw err;
+    }
+  }
+
   async createRefreshToken(data: { userId: string; tokenHash: string; familyId: string; expiresAt: Date }): Promise<void> {
     await this.db.refreshToken.create({ data });
   }
@@ -189,7 +211,13 @@ export class PrismaAuthRepository implements AuthRepository {
     await this.db.refreshToken.deleteMany({ where: { userId } });
   }
 
-  async createAuthToken(data: { userId: string; purpose: AuthTokenPurpose; tokenHash: string; expiresAt: Date }): Promise<void> {
+  async createAuthToken(data: {
+    userId: string;
+    purpose: AuthTokenPurpose;
+    tokenHash: string;
+    expiresAt: Date;
+    newEmail?: string;
+  }): Promise<void> {
     await this.db.authToken.create({ data });
   }
 
@@ -205,6 +233,12 @@ export class PrismaAuthRepository implements AuthRepository {
     if (count === 0) return null;
     const token = await this.db.authToken.findUnique({ where: { tokenHash }, select: { userId: true } });
     return token?.userId ?? null;
+  }
+
+  async consumeEmailChangeToken(tokenHash: string, now: Date): Promise<{ userId: string; newEmail: string } | null> {
+    if (!(await this.consumeAuthToken(tokenHash, 'EMAIL_CHANGE', now))) return null;
+    const token = await this.db.authToken.findUnique({ where: { tokenHash }, select: { userId: true, newEmail: true } });
+    return token?.newEmail ? { userId: token.userId, newEmail: token.newEmail } : null;
   }
 
   withTransaction<T>(fn: (repo: AuthRepository) => Promise<T>): Promise<T> {

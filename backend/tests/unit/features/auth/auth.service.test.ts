@@ -12,6 +12,7 @@ import type {
 } from '../../../../src/features/auth/auth.repository.js';
 import {
   AuthService,
+  EMAIL_CHANGE_TTL_MS,
   EMAIL_VERIFY_TTL_MS,
   hashEmailToken,
   PASSWORD_RESET_TTL_MS,
@@ -29,7 +30,14 @@ const fakeHasher: PasswordHasher = {
 };
 
 type StoredToken = RefreshTokenRecord & { tokenHash: string };
-type StoredAuthToken = { userId: string; purpose: AuthTokenPurpose; tokenHash: string; expiresAt: Date; usedAt: Date | null };
+type StoredAuthToken = {
+  userId: string;
+  purpose: AuthTokenPurpose;
+  tokenHash: string;
+  expiresAt: Date;
+  usedAt: Date | null;
+  newEmail?: string;
+};
 
 class InMemoryAuthRepository implements AuthRepository {
   users: UserRecord[] = [];
@@ -70,6 +78,11 @@ class InMemoryAuthRepository implements AuthRepository {
     const user = this.users.find((u) => u.id === userId);
     if (user && !user.emailVerifiedAt) user.emailVerifiedAt = at;
   }
+  async updateEmail(userId: string, email: string, verifiedAt: Date) {
+    if (this.users.some((u) => u.email === email && u.id !== userId)) throw new ConflictError('Alamat email ini sudah dipakai akun lain');
+    const user = this.users.find((u) => u.id === userId);
+    if (user) Object.assign(user, { email, emailVerifiedAt: verifiedAt });
+  }
   async createAuthToken(data: Omit<StoredAuthToken, 'usedAt'>) {
     this.authTokens.push({ ...data, usedAt: null });
   }
@@ -81,6 +94,11 @@ class InMemoryAuthRepository implements AuthRepository {
     if (!t) return null;
     t.usedAt = now;
     return t.userId;
+  }
+  async consumeEmailChangeToken(tokenHash: string, now: Date) {
+    const userId = await this.consumeAuthToken(tokenHash, 'EMAIL_CHANGE', now);
+    const t = this.authTokens.find((x) => x.tokenHash === tokenHash);
+    return userId && t?.newEmail ? { userId, newEmail: t.newEmail } : null;
   }
   async createRefreshToken(data: { userId: string; tokenHash: string; familyId: string; expiresAt: Date }) {
     this.tokens.push({ id: randomUUID(), isRevoked: false, rotatedAt: null, ...data });
@@ -106,8 +124,15 @@ class InMemoryAuthRepository implements AuthRepository {
   async deleteAllRefreshTokens(userId: string) {
     this.tokens = this.tokens.filter((t) => t.userId !== userId);
   }
-  withTransaction<T>(fn: (repo: AuthRepository) => Promise<T>): Promise<T> {
-    return fn(this);
+  /** Meniru rollback: perubahan dibuang bila fn melempar error. */
+  async withTransaction<T>(fn: (repo: AuthRepository) => Promise<T>): Promise<T> {
+    const snapshot = structuredClone({ users: this.users, tokens: this.tokens, authTokens: this.authTokens });
+    try {
+      return await fn(this);
+    } catch (err) {
+      Object.assign(this, snapshot);
+      throw err;
+    }
   }
 }
 
@@ -537,6 +562,141 @@ describe('AuthService', () => {
     it('rejects a new password equal to the old one', async () => {
       const { user } = await service.register(registerInput);
       await expect(service.changePassword(user.id, registerInput.password, registerInput.password)).rejects.toBeInstanceOf(BadRequestError);
+    });
+  });
+
+  describe('email change (F1)', () => {
+    const NEW = 'baru@reksa.id';
+    const confirmToken = () => mail.tokenFor(NEW, 'konfirmasi-email');
+
+    it('sends a link to the new address and a masked notice to the old one; the email stays until confirmed', async () => {
+      const { user } = await service.register(registerInput);
+      mail.clear();
+
+      await service.requestEmailChange(user.id, NEW, registerInput.password);
+
+      expect(mail.sent.map((m) => m.to).sort()).toEqual([NEW, 'siswa@reksa.id'].sort());
+      expect(mail.lastTo(NEW)?.subject).toBe('Konfirmasi email baru akun REKSA');
+      const notice = mail.lastTo('siswa@reksa.id');
+      expect(notice?.subject).toBe('Permintaan ganti email akun REKSA');
+      expect(notice?.text).toContain('b***@reksa.id');
+      expect(notice?.text).not.toContain(NEW);
+      expect(notice?.text).not.toContain('konfirmasi-email');
+
+      const raw = confirmToken();
+      expect(repo.authTokens.find((t) => t.purpose === 'EMAIL_CHANGE')).toMatchObject({
+        tokenHash: hashEmailToken(raw),
+        newEmail: NEW,
+        expiresAt: new Date(now.getTime() + EMAIL_CHANGE_TTL_MS),
+      });
+      expect(JSON.stringify(repo.authTokens)).not.toContain(raw);
+      expect((await service.getCurrentUser(user.id)).email).toBe('siswa@reksa.id');
+      expect(events.map((e) => e.event)).toContain('EMAIL_CHANGE_REQUESTED');
+    });
+
+    it('confirming switches the email, marks it verified, keeps sessions, and kills links sent to the old address', async () => {
+      const { user, refreshToken } = await service.register(registerInput);
+      await service.requestPasswordReset('siswa@reksa.id');
+      const oldReset = mail.tokenFor('siswa@reksa.id', 'atur-ulang-password');
+      await service.requestEmailChange(user.id, NEW, registerInput.password);
+      now = new Date(now.getTime() + 60_000);
+
+      await service.confirmEmailChange(confirmToken());
+
+      const me = await service.getCurrentUser(user.id);
+      expect(me).toMatchObject({ email: NEW, emailVerified: true });
+      expect(repo.users[0]?.emailVerifiedAt).toEqual(now);
+      await expect(service.refresh(refreshToken)).resolves.toBeDefined();
+      await expect(service.resetPassword(oldReset, 'PasswordBaru456')).rejects.toMatchObject({ code: 'INVALID_TOKEN' });
+      expect(repo.authTokens.filter((t) => !t.usedAt)).toEqual([]);
+      await expect(service.login({ email: NEW, password: registerInput.password })).resolves.toBeDefined();
+      await expect(service.login({ email: 'siswa@reksa.id', password: registerInput.password })).rejects.toBeInstanceOf(UnauthorizedError);
+      expect(events.map((e) => e.event)).toContain('EMAIL_CHANGED');
+    });
+
+    it('a confirm link works once, expires after 24 hours, and a newer request replaces it', async () => {
+      const { user } = await service.register(registerInput);
+      await service.requestEmailChange(user.id, NEW, registerInput.password);
+      const first = confirmToken();
+      await service.requestEmailChange(user.id, NEW, registerInput.password);
+      const second = confirmToken();
+      await expect(service.confirmEmailChange(first)).rejects.toMatchObject({ statusCode: 400, code: 'INVALID_TOKEN' });
+
+      now = new Date(now.getTime() + EMAIL_CHANGE_TTL_MS + 1);
+      await expect(service.confirmEmailChange(second)).rejects.toMatchObject({ code: 'INVALID_TOKEN' });
+      expect(repo.users[0]?.email).toBe('siswa@reksa.id');
+    });
+
+    it('a used confirm link cannot be replayed', async () => {
+      const { user } = await service.register(registerInput);
+      await service.requestEmailChange(user.id, NEW, registerInput.password);
+      const raw = confirmToken();
+      await service.confirmEmailChange(raw);
+      await expect(service.confirmEmailChange(raw)).rejects.toMatchObject({ code: 'INVALID_TOKEN' });
+    });
+
+    it('verify and reset tokens cannot confirm an email change, and the reverse', async () => {
+      const { user } = await service.register(registerInput);
+      const verify = mail.tokenFor('siswa@reksa.id', 'verifikasi-email');
+      await service.requestEmailChange(user.id, NEW, registerInput.password);
+      await expect(service.confirmEmailChange(verify)).rejects.toMatchObject({
+        code: 'INVALID_TOKEN',
+      });
+      await expect(service.verifyEmail(confirmToken())).rejects.toMatchObject({ code: 'INVALID_TOKEN' });
+    });
+
+    it('rejects a wrong password with 400 INVALID_CURRENT_PASSWORD and the current address with 400 SAME_EMAIL, sending nothing', async () => {
+      const { user } = await service.register(registerInput);
+      mail.clear();
+      await expect(service.requestEmailChange(user.id, NEW, 'salah')).rejects.toMatchObject({
+        statusCode: 400,
+        code: 'INVALID_CURRENT_PASSWORD',
+      });
+      await expect(service.requestEmailChange(user.id, 'siswa@reksa.id', registerInput.password)).rejects.toMatchObject({
+        statusCode: 400,
+        code: 'SAME_EMAIL',
+      });
+      expect(mail.sent).toEqual([]);
+      expect(repo.authTokens.some((t) => t.purpose === 'EMAIL_CHANGE')).toBe(false);
+    });
+
+    it('an address used by another account gets an explanation instead of a link, and the caller sees no difference', async () => {
+      const { user } = await service.register(registerInput);
+      await service.register({ ...registerInput, email: NEW });
+      mail.clear();
+
+      await expect(service.requestEmailChange(user.id, NEW, registerInput.password)).resolves.toBeUndefined();
+
+      expect(mail.lastTo(NEW)?.subject).toBe('Alamat ini sudah dipakai akun REKSA');
+      expect(mail.lastTo(NEW)?.text).not.toContain('konfirmasi-email');
+      expect(mail.lastTo('siswa@reksa.id')?.subject).toBe('Permintaan ganti email akun REKSA');
+      expect(repo.authTokens.some((t) => t.purpose === 'EMAIL_CHANGE')).toBe(false);
+    });
+
+    it('fails with 409 and keeps the link usable when the address was taken after the request', async () => {
+      const { user } = await service.register(registerInput);
+      await service.requestEmailChange(user.id, NEW, registerInput.password);
+      const raw = confirmToken();
+      await service.register({ ...registerInput, email: NEW });
+
+      await expect(service.confirmEmailChange(raw)).rejects.toBeInstanceOf(ConflictError);
+      expect(repo.users[0]?.email).toBe('siswa@reksa.id');
+      expect(repo.authTokens.find((t) => t.purpose === 'EMAIL_CHANGE')?.usedAt).toBeNull();
+    });
+
+    it('changing or resetting the password cancels a pending email change', async () => {
+      const { user } = await service.register(registerInput);
+      await service.requestEmailChange(user.id, NEW, registerInput.password);
+      const pending = confirmToken();
+      await service.changePassword(user.id, registerInput.password, 'PasswordBaru456');
+      await expect(service.confirmEmailChange(pending)).rejects.toMatchObject({ code: 'INVALID_TOKEN' });
+
+      await service.requestEmailChange(user.id, NEW, 'PasswordBaru456');
+      const again = confirmToken();
+      await service.requestPasswordReset('siswa@reksa.id');
+      await service.resetPassword(mail.tokenFor('siswa@reksa.id', 'atur-ulang-password'), 'PasswordLain789');
+      await expect(service.confirmEmailChange(again)).rejects.toMatchObject({ code: 'INVALID_TOKEN' });
+      expect(repo.users[0]?.email).toBe('siswa@reksa.id');
     });
   });
 });

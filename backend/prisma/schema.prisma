@@ -30,6 +30,7 @@ enum Role {
 enum AuthTokenPurpose {
   EMAIL_VERIFY
   PASSWORD_RESET
+  EMAIL_CHANGE
 }
 
 enum Tier {
@@ -124,6 +125,8 @@ model AuthToken {
   expiresAt DateTime         @map("expires_at") @db.Timestamptz(6)
   usedAt    DateTime?        @map("used_at") @db.Timestamptz(6)
   createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  /// Alamat tujuan, hanya untuk EMAIL_CHANGE (CHECK di migrasi email_change_target).
+  newEmail  String?          @map("new_email") @db.VarChar(254)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

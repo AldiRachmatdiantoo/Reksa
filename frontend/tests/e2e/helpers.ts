@@ -79,3 +79,28 @@ export async function expectResult(page: Page) {
   await expect(page.getByText(/Hasil contoh/)).toHaveCount(0);
   await expect(page.getByText(/Rencana latihan ulang|Tidak ada konsep yang terlewat/)).toBeVisible();
 }
+
+/** Mailpit di docker compose (port 8025 hanya di 127.0.0.1). CI ikut menyalakannya bersama stack. */
+const MAILPIT_URL = process.env.E2E_MAILPIT_URL ?? 'http://127.0.0.1:8025';
+
+/** Token dari tautan `/<path>?token=` di email terbaru ke alamat itu. Menunggu sampai emailnya tiba. */
+export async function tokenFromEmail(to: string, path: string): Promise<string> {
+  let token = '';
+  await expect
+    .poll(
+      async () => {
+        const search = await fetch(`${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`);
+        if (!search.ok) return '';
+        const { messages } = (await search.json()) as { messages: { ID: string }[] };
+        for (const { ID } of messages) {
+          const message = (await (await fetch(`${MAILPIT_URL}/api/v1/message/${ID}`)).json()) as { Text: string };
+          const match = new RegExp(`/${path}[?]token=([A-Za-z0-9_-]+)`).exec(message.Text);
+          if (match?.[1]) return (token = match[1]);
+        }
+        return '';
+      },
+      { message: `email berisi /${path} untuk ${to}`, timeout: 15_000 },
+    )
+    .not.toBe('');
+  return token;
+}
