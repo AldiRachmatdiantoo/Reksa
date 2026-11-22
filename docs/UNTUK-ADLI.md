@@ -1,10 +1,21 @@
 # Catatan untuk Adli
 
 Dari: Aldi
-Terakhir diperbarui: 21 November 2026
+Terakhir diperbarui: 22 November 2026
 Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `materials` di PR `feat/aldi-materials` (lihat §1d). Frontend kini repo terpisah (lihat §0).
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
+
+## 22 Nov 2026: Gemini Stage 1 dan 3 (branch `feat/aldi-gemini-text`)
+
+- `geminiAi.provider.ts` (filemu): stub `extractRubric` dan `clusterCohortBlindSpots` kuisi dengan delegasi ke `geminiRubric.ts` dan `geminiCohort.ts`, plus opsi baru `textModel`. Stage 2 tidak berubah.
+- `ai.factory.ts` sekarang mengembalikan `GeminiAiProvider` di mode `gemini`, jadi item BACKLOG "rangkai `AI_PROVIDER_MODE=gemini`" sudah selesai. Model Stage 2 diambil dari env `GEMINI_VISION_MODEL` (default `gemini-2.5-flash`), dan `onSignal` dicatat sebagai warning di log server.
+- Tes di areamu: tes `GeminiAiProvider` di `geminiVision.test.ts` tinggal menguji Stage 2 (Stage 1/3 diuji di `geminiRubric.test.ts`), tes `createAiService` di `mockAi.provider.test.ts` diganti karena mode gemini kini jalan, dan `materials.service.test.ts` ditambah kasus AI gagal. File baru: `geminiRubric.test.ts`, `geminiCohort.test.ts`, `gemini.text.live.test.ts`.
+- `tests/support/testContext.ts`: properti baru `ai` (instance `MockAiProvider` yang dipakai app), supaya integration test bisa mensimulasikan AI gagal lewat `vi.spyOn`.
+- ⏳ menunggu: dua usulan untuk Stage 2, belum kuubah karena ada di filemu.
+  1. `maxOutputTokens` bawaan `geminiClient.ts` 4.096. Token berpikir Gemini 2.5 Flash ikut dihitung di batas ini; kalau habis, jawaban terpotong (`MAX_TOKENS`) dan audit gagal sebagai `INVALID_OUTPUT`. Stage 1/3 memakai 16.384 dan 8.192. Usulku: `GeminiVisionAuditor.evaluate` mengirim `maxOutputTokens: 8192` atau lebih.
+  2. `buildRubricPart` memakai `JSON.stringify` biasa. Konsep rubrik berasal dari materi pengguna, jadi teks seperti `</rubric_json>` bisa muncul apa adanya di dalam blok data. `delimitedJson` di `geminiRubric.ts` menulis `<` dan `>` sebagai `\u003c` dan `\u003e`; tinggal dipakai.
+- Kebijakan Privasi dan catatan di langkah foto (`CalibratePage`) sekarang menyebut Google Gemini versi gratis. Kalau kamu menulis E2E yang mencari teks lama ("tidak dibagikan ke pihak lain"), sesuaikan.
 
 ## 22 Nov 2026: perbaikan bug QA (branch `fix/aldi-qa-bugs`)
 

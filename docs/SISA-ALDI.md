@@ -32,7 +32,7 @@ Centang `[x]` saat selesai dan catat di `docs/CHECKPOINT.md`.
   - `vercel.json` di reksa-frontend: rewrite `/api/*` ke Render, header keamanan (CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`)
   - Konfigurasi Render untuk backend
   - Penyedia email produksi (misal Resend atau Amazon SES) untuk `SMTP_URL`
-- [ ] **Gemini Stage 1 (`extractRubric`)** di `GeminiAiProvider`, menggantikan mock saat unggah materi (Fase 3)
+- [x] **Gemini Stage 1 (`extractRubric`)** di `GeminiAiProvider`, menggantikan mock saat unggah materi (branch `feat/aldi-gemini-text`, belum diuji dengan API key)
 - [ ] **QA frontend:** E2E Playwright + `@axe-core/playwright`, CI GitHub Actions (typecheck, test, build)
 
 ## Bisa dibangun sekarang, diuji penuh setelah sesi dan scan Adli jadi
@@ -41,7 +41,9 @@ Centang `[x]` saat selesai dan catat di `docs/CHECKPOINT.md`.
 - [x] **FR-07 Proof of Understanding Ledger** (`governance`): ledger guru, Signed URL, `GET /ledger/verify/:hash`, halaman `/cek-bukti` (branch `feat/aldi-ledger`)
 - [x] **FR-12 Ekspor PDF Proof of Understanding** (Pro): `POST /ledger/exports`, PDF `pdf-lib` dengan kode bukti + tautan cek di tiap halaman (branch `feat/aldi-ledger-pdf`)
 - [x] **FR-08 Peta blind spot kelas** (branch `feat/aldi-cohort-blind-spots`), dengan `MockAiProvider`
-- [ ] **Gemini Stage 3 (`clusterCohortBlindSpots`)** (Fase 3)
+- [x] **Gemini Stage 3 (`clusterCohortBlindSpots`)** (branch `feat/aldi-gemini-text`, belum diuji dengan API key)
+- [ ] **Uji Gemini asli:** isi `GEMINI_API_KEY`, jalankan `gemini.text.live.test.ts` dan `gemini.live.test.ts`, lalu coba alur unggah materi, foto, dan peta kelas di stack lokal
+- [ ] **Keputusan batas usia Gemini API:** ketentuan Gemini API melarang aplikasi yang ditujukan atau kemungkinan diakses pengguna di bawah 18 tahun (lihat CHECKPOINT #28)
 - [ ] **Sambungkan frontend studio ke backend Adli:** sesi belajar, unggah foto, hasil audit asli (ganti `SAMPLE_AUDIT`), QR bridge laptop ke HP
 
 ## Temuan QA 22 November 2026

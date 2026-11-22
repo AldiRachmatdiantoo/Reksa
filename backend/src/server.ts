@@ -14,14 +14,17 @@ async function main(): Promise<void> {
 
   const prisma = createPrismaClient(env.DATABASE_URL);
   const redis = createRedisClient(env.REDIS_URL);
-  const ai = createAiService(env);
+  const ai = createAiService(env, {
+    onSignal: (signal) => logger.warn({ aiSignal: signal }, 'Audit Stage 2: instruksi mencurigakan atau klaim tanpa bukti'),
+  });
   const storage = createStorageService(env);
   const email = createEmailService(env, logger);
 
   await prisma.$connect();
   await redis.connect();
   await storage.checkConnection();
-  logger.info({ aiProviderMode: env.AI_PROVIDER_MODE }, 'Database, Redis, storage, dan AI provider siap');
+  const aiModels = env.AI_PROVIDER_MODE === 'gemini' ? { textModel: env.GEMINI_TEXT_MODEL, visionModel: env.GEMINI_VISION_MODEL } : {};
+  logger.info({ aiProviderMode: env.AI_PROVIDER_MODE, ...aiModels }, 'Database, Redis, storage, dan AI provider siap');
 
   const routes = buildRoutes({ env, logger, prisma, redis, ai, storage, email });
   // Worker audit AI (FR-05) di proses yang sama; berhenti sebelum koneksi DB/Redis ditutup.

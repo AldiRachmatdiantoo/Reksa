@@ -108,10 +108,15 @@ function PrivacyBody() {
 
       <Section title="Penyedia AI pihak ketiga">
         <p>
-          Untuk menilai catatan, teks materi dan foto catatanmu dikirim ke penyedia AI (Google Gemini). Kami memilih paket dan ketentuan
-          penyedia yang tidak memakai data itu untuk melatih model. Selama uji coba, sebagian penilaian masih memakai contoh jawaban buatan,
-          bukan AI sungguhan.
+          Untuk menyusun konsep kunci dari materi dan menilai catatanmu, teks materi dan foto catatanmu dikirim ke Google Gemini. Nama,
+          email, dan tahun lahirmu tidak ikut dikirim. Saran untuk guru dibuat dari daftar konsep yang terlewat, tanpa nama siswa.
         </p>
+        <p>
+          Selama masa lomba, REKSA memakai Gemini versi gratis. Di versi ini Google boleh memakai data yang dikirim untuk mengembangkan
+          produk dan model AI-nya, dan petugas peninjau Google bisa membacanya tanpa keterangan akun pengirimnya. Karena itu, jangan tulis
+          nama, NIS, atau data pribadi lain di catatan, dan jangan unggah materi yang rahasia.
+        </p>
+        <p>Kalau REKSA sedang berjalan tanpa Gemini (mode uji coba), penilaian memakai contoh jawaban buatan, bukan AI sungguhan.</p>
       </Section>
 
       <Section title="Berapa lama disimpan">

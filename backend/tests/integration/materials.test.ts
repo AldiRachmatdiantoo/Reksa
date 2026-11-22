@@ -1,5 +1,6 @@
 import request from 'supertest';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AiProviderError } from '../../src/common/ai/ai.errors.js';
 import { ACCESS_COOKIE } from '../../src/common/utils/authCookies.js';
 import { MATERIAL_MAX_PDF_BYTES } from '../../src/features/materials/materials.schema.js';
 import { buildPdf, SAMPLE_PDF_TEXT } from '../support/pdfFixture.js';
@@ -8,6 +9,7 @@ import { CONSENT, cookieHeader, createTestContext, parseSetCookies, VALID_PASSWO
 const ctx = createTestContext();
 
 beforeEach(() => ctx.reset());
+afterEach(() => vi.restoreAllMocks());
 afterAll(() => ctx.close());
 
 async function login(email = 'siswa@reksa.id', role: 'STUDENT' | 'EDUCATOR' = 'STUDENT') {
@@ -52,6 +54,20 @@ describe('POST /materials (text)', () => {
   it('requires login', async () => {
     const res = await request(ctx.app).post('/api/v1/materials').send(text);
     expect(res.status).toBe(401);
+  });
+
+  // Kuota Gemini habis atau server Gemini sibuk: 503 dengan pesan yang bisa ditampilkan, tanpa detail teknis.
+  it('answers 503 AI_UNAVAILABLE when the AI cannot build the rubric, and saves nothing', async () => {
+    const { cookie } = await login();
+    vi.spyOn(ctx.ai, 'extractRubric').mockRejectedValueOnce(new AiProviderError('TRANSIENT', 'Gemini menjawab HTTP 429'));
+    const res = await request(ctx.app).post('/api/v1/materials').set('Cookie', cookie).send(text);
+
+    expect(res.status).toBe(503);
+    expect(res.body.error.code).toBe('AI_UNAVAILABLE');
+    expect(res.body.error.message).toMatch(/sibuk/);
+    expect(JSON.stringify(res.body)).not.toContain('429');
+    expect(await ctx.owner.studyMaterial.count()).toBe(0);
+    expect(await ctx.redis.keys('rubric:v1:*')).toEqual([]);
   });
 
   it('rejects unknown fields (strict schema), such as a forged uploaderId', async () => {

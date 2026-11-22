@@ -1,5 +1,12 @@
 # Checkpoint Frontend REKSA
 
+## #21 · 2026-11-22 · Teks privasi untuk Gemini versi gratis, pesan saat AI sibuk
+
+Branch: `feat/aldi-gemini-text`. (#20 ada di branch `feat/aldi-photo-privacy-tip`.)
+
+- `LegalPage` (bagian "Penyedia AI pihak ketiga"), `CookieNotice`, dan catatan di langkah foto `CalibratePage`: materi dan foto dikirim ke Google Gemini; selama lomba dipakai versi gratis, jadi Google boleh memakai data itu dan petugas peninjau bisa membacanya. Janji lama ("tidak memakai data untuk melatih model", "tidak dibagikan ke pihak lain") dihapus.
+- `uploadErrorMessage`: error `AI_UNAVAILABLE` (503 dari backend saat rubrik gagal dibuat) menampilkan pesan backend apa adanya. Tes di `materialsApi.test.ts`.
+
 ## #19 · 2026-11-22 · Catatan kualitas: code splitting, token URL, formatter, CSP
 
 Branch: `fix/aldi-qa-bugs`.
