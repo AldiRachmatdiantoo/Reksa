@@ -26,7 +26,7 @@ Centang `[x]` saat selesai dan catat di `docs/CHECKPOINT.md`.
   - Kode aktivasi Pro: disimpan sebagai hash, punya durasi dan batas pemakaian, `POST /me/activate-pro`, wajib email terverifikasi
   - Tampilan tier dan masa berlaku di halaman Akun
   - Catatan: pemotongan kuota scan harian ada di `essay-scans` (Adli)
-- [ ] **FR-10 Portal admin institusi**
+- [x] **FR-10 Portal admin institusi** (branch `feat/aldi-institution-admin`): skrip `institution:create`, kode undangan pengajar, daftar pengajar/kelas, agregat dengan batas 5 siswa
 - [ ] **Persiapan deploy** (Supabase, Vercel, Render)
   - Migrasi pencabutan hak `anon`/`authenticated` di Supabase (Data API)
   - `vercel.json` di reksa-frontend: rewrite `/api/*` ke Render, header keamanan (CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`)

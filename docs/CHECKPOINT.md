@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, FR-08 peta bagian sulit kelas (Aldi, branch `feat/aldi-cohort-blind-spots`, ditumpuk di atas `feat/aldi-ledger-pdf`)
+**Checkpoint terakhir:** 22 November 2026, FR-10 portal admin institusi (Aldi, branch `feat/aldi-institution-admin`, ditumpuk di atas `feat/aldi-cohort-blind-spots`)
 
 ---
 
@@ -16,6 +16,14 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #24 · FR-10 portal admin institusi · branch `feat/aldi-institution-admin`
+
+- Migrasi `20261122000300_institution_admin`: tabel `educator_invites` (hash SHA-256 saja, CHECK format hash dan masa berlaku), indeks `institution_id` di `users` dan `classes`, fungsi `SECURITY DEFINER` `institution_class_stats` dan `institution_concept_stats`. Keduanya memeriksa sendiri bahwa pemanggil (`app.current_user_id`) adalah `INSTITUTION_ADMIN` dari institusi itu; tanpa konteks hasilnya kosong. Kelompok di bawah 5 siswa: angkanya `NULL` (dicek lagi di service).
+- Modul `institutions`: `GET /institution`, `GET /institution/concepts`, `GET|POST /institution/invites`, `DELETE /institution/invites/:id` (cabut), `DELETE /institution/educators/:id` (lepas; kelas tetap milik pengajar, `institution_id` dikosongkan). Untuk pengajar: `GET|POST /me/institution` (10 percobaan/jam, 404 yang sama untuk kode salah/kedaluwarsa/dicabut, 409 jika sudah di institusi lain, idempoten untuk institusi yang sama).
+- Skrip `npm run institution:create -- --name ... --admin-email ... --admin-name ...` (role pemilik skema): membuat institusi dan admin, kata sandi sementara tampil sekali. Sudah dicoba di stack lokal lewat container `migrate`.
+- Frontend: `AdminPortal` di `/guru` untuk admin (pengajar + lepas, kode undangan + salin + cabut, tabel kelas, konsep tersulit) dan bagian **Institusi** di halaman Akun pengajar.
+- **Hasil:** backend 549 lulus (3 skip), 11 unit + 10 integrasi baru, `prisma migrate diff` kosong; frontend 44 unit; E2E 9/9. Alur admin juga dicoba ujung ke ujung dengan Playwright (buat kode, guru gabung, kelas baru tercatat, lepas, cabut).
 
 ### #23 · FR-08 peta bagian sulit kelas · branch `feat/aldi-cohort-blind-spots`
 

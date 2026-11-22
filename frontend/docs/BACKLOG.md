@@ -17,6 +17,7 @@ Urutan kasar sesuai ketergantungan ke backend. Tandai `✅` saat selesai dan cat
 - [x] **Bukti belajar** (`governance` FR-07): ledger + signed URL + `/cek-bukti` (checkpoint #13).
 - [x] **PDF bukti belajar** (FR-12, Pro): halaman Akun dan halaman Hasil (checkpoint #14).
 - [x] **Peta bagian sulit** (FR-08): Portal Guru (checkpoint #15).
+- [x] **Portal admin institusi** (FR-10): `/guru` untuk admin + bagian Institusi di Akun pengajar (checkpoint #16).
 - [ ] **Peta blind spot kelas** (FR-08).
 
 ## Bisa dikerjakan sekarang

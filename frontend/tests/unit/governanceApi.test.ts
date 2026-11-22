@@ -18,3 +18,17 @@ describe('governanceApi helpers', () => {
     expect(conceptShareLabel({ studentCount: 2, percent: 67 }, 3)).toBe('2 dari 3 siswa (67%)');
   });
 });
+
+import { formatScore, INVITE_STATUS_LABEL } from '@/features/institution/institutionApi';
+
+describe('institutionApi helpers', () => {
+  it('formats the class average with an Indonesian decimal comma, or a dash when hidden', () => {
+    expect(formatScore(71.5)).toBe('71,5');
+    expect(formatScore(65)).toBe('65');
+    expect(formatScore(null)).toBe('-');
+  });
+
+  it('labels every invite status', () => {
+    expect(INVITE_STATUS_LABEL).toEqual({ ACTIVE: 'Aktif', EXPIRED: 'Kedaluwarsa', REVOKED: 'Dicabut' });
+  });
+});

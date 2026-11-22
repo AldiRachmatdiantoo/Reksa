@@ -22,6 +22,14 @@ test('the teacher portal shows the ledger and blind-spot map sections for an own
   await expect(cohort).toBeVisible();
   await expect(cohort.getByText('Belum ada catatan yang dicek di kelas ini.')).toBeVisible();
   await expectAccessible(page, 'portal guru dengan ledger');
+
+  // FR-10: guru bisa bergabung ke institusi dari halaman Akun. Kode yang tidak dikenal dijawab pesan umum.
+  await page.goto('/akun');
+  const institution = page.getByRole('region', { name: 'Institusi' });
+  await institution.getByLabel('Kode undangan').fill('A'.repeat(43));
+  await institution.getByRole('button', { name: 'Gabung' }).click();
+  await expect(institution.getByText('Kode undangan tidak berlaku.', { exact: false })).toBeVisible();
+  await expectAccessible(page, 'akun guru dengan form institusi');
 });
 
 test('the public proof checker rejects unknown codes without showing personal data', async ({ page }) => {
