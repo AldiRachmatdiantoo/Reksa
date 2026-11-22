@@ -39,7 +39,11 @@ describe('GeminiClient request', () => {
     const body = JSON.parse(init!.body as string);
     expect(body.systemInstruction).toEqual({ parts: [{ text: 'SYSTEM' }] });
     expect(body.contents).toEqual([{ role: 'user', parts: request.parts }]);
-    expect(body.generationConfig).toMatchObject({ temperature: 0, responseMimeType: 'application/json', responseSchema: request.responseSchema });
+    expect(body.generationConfig).toMatchObject({
+      temperature: 0,
+      responseMimeType: 'application/json',
+      responseSchema: request.responseSchema,
+    });
     expect(init!.signal).toBeInstanceOf(AbortSignal);
   });
 

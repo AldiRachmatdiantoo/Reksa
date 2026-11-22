@@ -50,7 +50,9 @@ describe('SharpImageProcessor', () => {
   });
 
   it('never enlarges small photos', async () => {
-    const small = await sharp({ create: { width: 800, height: 600, channels: 3, background: '#fff' } }).png().toBuffer();
+    const small = await sharp({ create: { width: 800, height: 600, channels: 3, background: '#fff' } })
+      .png()
+      .toBuffer();
     const out = await processor.process(small);
     expect([out.width, out.height]).toEqual([800, 600]);
   });
@@ -64,14 +66,18 @@ describe('SharpImageProcessor', () => {
     const exe = Buffer.concat([Buffer.from('MZ'), Buffer.alloc(200)]);
     const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>alert(1)</script></svg>');
     const pdf = Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<<>>\nendobj\n');
-    const gif = await sharp({ create: { width: 10, height: 10, channels: 3, background: '#000' } }).gif().toBuffer();
+    const gif = await sharp({ create: { width: 10, height: 10, channels: 3, background: '#000' } })
+      .gif()
+      .toBuffer();
     for (const file of [exe, svg, pdf, gif, Buffer.alloc(0)]) {
       await expect(processor.process(file)).rejects.toMatchObject({ statusCode: 415 });
     }
   });
 
   it('rejects HEIC/AVIF-family files even though they are images (no HEVC decoder)', async () => {
-    const avif = await sharp({ create: { width: 64, height: 64, channels: 3, background: '#123' } }).avif().toBuffer();
+    const avif = await sharp({ create: { width: 64, height: 64, channels: 3, background: '#123' } })
+      .avif()
+      .toBuffer();
     await expect(processor.process(avif)).rejects.toMatchObject({ statusCode: 415 });
   });
 
@@ -82,7 +88,9 @@ describe('SharpImageProcessor', () => {
 
   it('answers 422 for images above the pixel limit (decompression bomb)', async () => {
     const strict = new SharpImageProcessor({ allowedMimeTypes: SCAN_ALLOWED_MIME_TYPES, maxInputPixels: 100 * 100 });
-    const big = await sharp({ create: { width: 200, height: 200, channels: 3, background: '#fff' } }).png().toBuffer();
+    const big = await sharp({ create: { width: 200, height: 200, channels: 3, background: '#fff' } })
+      .png()
+      .toBuffer();
     await expect(strict.process(big)).rejects.toMatchObject({ statusCode: 422 });
   });
 });

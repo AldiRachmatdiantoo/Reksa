@@ -224,8 +224,22 @@ describe('PrivacyService', () => {
   describe('cleanupExpiredExports', () => {
     it('deletes only expired files and rows, and keeps rows whose file could not be deleted', async () => {
       repo.exports = [
-        { id: 'old', userId: USER, kind: 'ACCOUNT', storageKey: 'exports/x/old.zip', expiresAt: new Date(NOW.getTime() - 1), createdAt: NOW },
-        { id: 'new', userId: USER, kind: 'ACCOUNT', storageKey: 'exports/x/new.zip', expiresAt: new Date(NOW.getTime() + 1), createdAt: NOW },
+        {
+          id: 'old',
+          userId: USER,
+          kind: 'ACCOUNT',
+          storageKey: 'exports/x/old.zip',
+          expiresAt: new Date(NOW.getTime() - 1),
+          createdAt: NOW,
+        },
+        {
+          id: 'new',
+          userId: USER,
+          kind: 'ACCOUNT',
+          storageKey: 'exports/x/new.zip',
+          expiresAt: new Date(NOW.getTime() + 1),
+          createdAt: NOW,
+        },
       ];
       expect(await service.cleanupExpiredExports()).toBe(1);
       expect(repo.exports.map((e) => e.id)).toEqual(['new']);

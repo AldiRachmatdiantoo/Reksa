@@ -12,11 +12,7 @@ import {
 } from '../../../../src/common/errors/AppError.js';
 import { PdfTooManyPagesError, type PdfTextExtractor } from '../../../../src/common/utils/pdfText.js';
 import type { IStorageService } from '../../../../src/config/storage.js';
-import type {
-  CreateMaterialData,
-  MaterialRecord,
-  MaterialsRepository,
-} from '../../../../src/features/materials/materials.repository.js';
+import type { CreateMaterialData, MaterialRecord, MaterialsRepository } from '../../../../src/features/materials/materials.repository.js';
 import {
   AI_BUSY_MESSAGE,
   AI_DOWN_MESSAGE,

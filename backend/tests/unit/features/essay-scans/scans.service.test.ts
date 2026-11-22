@@ -41,7 +41,15 @@ beforeEach(() => {
   stored = new Map();
   tickets = new Map();
   notified = [];
-  images = { process: vi.fn(async () => ({ buffer: Buffer.from('clean'), mimeType: 'image/webp' as const, ext: 'webp' as const, width: 1600, height: 1200 })) };
+  images = {
+    process: vi.fn(async () => ({
+      buffer: Buffer.from('clean'),
+      mimeType: 'image/webp' as const,
+      ext: 'webp' as const,
+      width: 1600,
+      height: 1200,
+    })),
+  };
   service = new ScansService({
     repo,
     sessions: {
@@ -206,7 +214,12 @@ describe('get', () => {
 describe('retry', () => {
   it('re-queues a FAILED audit and charges quota again', async () => {
     const session = repo.addSession();
-    const sub = repo.addSubmission(session.id, { auditStatus: 'FAILED', auditAttempts: 1, auditErrorCode: 'AI_UNAVAILABLE', quotaChargedAt: null });
+    const sub = repo.addSubmission(session.id, {
+      auditStatus: 'FAILED',
+      auditAttempts: 1,
+      auditErrorCode: 'AI_UNAVAILABLE',
+      quotaChargedAt: null,
+    });
 
     const result = await service.retry(USER, sub.id);
 

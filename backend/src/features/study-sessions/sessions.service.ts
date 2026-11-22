@@ -203,9 +203,7 @@ export class SessionsService {
     if (session.status === 'EXPIRED') throw new SessionExpiredError();
     if (session.status !== 'AWAITING_SCAN' || session.hasSubmission) {
       throw new InvalidSessionStateError(
-        session.status === 'FOCUS_ACTIVE'
-          ? 'Simpan tebakan nilai dulu sebelum mengunggah foto.'
-          : 'Foto untuk sesi ini sudah diunggah.',
+        session.status === 'FOCUS_ACTIVE' ? 'Simpan tebakan nilai dulu sebelum mengunggah foto.' : 'Foto untuk sesi ini sudah diunggah.',
       );
     }
     return this.deps.qrBridge.issue({ userId, sessionId });

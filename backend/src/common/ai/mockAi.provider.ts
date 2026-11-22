@@ -56,11 +56,7 @@ export class MockAiProvider implements IAiService {
     return AiRubricOutputSchema.parse(structuredClone(fixture));
   }
 
-  async evaluateHandwritingEssay(
-    imageBuffer: Buffer,
-    _mimeType: string,
-    rubric: AiRubricOutput,
-  ): Promise<AiEssayAuditOutput> {
+  async evaluateHandwritingEssay(imageBuffer: Buffer, _mimeType: string, rubric: AiRubricOutput): Promise<AiEssayAuditOutput> {
     await this.simulateLatency();
     if (this.auditFailureRate > 0 && this.random() < this.auditFailureRate) {
       throw new AiProviderError('TRANSIENT', 'Simulasi: penyedia AI sementara tidak tersedia');
@@ -68,9 +64,7 @@ export class MockAiProvider implements IAiService {
     return AiEssayAuditOutputSchema.parse(structuredClone(pickAudit(imageBuffer, rubric)));
   }
 
-  async clusterCohortBlindSpots(
-    _blindSpotsList: AiEssayAuditOutput['blindSpots'][],
-  ): Promise<AiCohortClusterOutput> {
+  async clusterCohortBlindSpots(_blindSpotsList: AiEssayAuditOutput['blindSpots'][]): Promise<AiCohortClusterOutput> {
     await this.simulateLatency();
     return AiCohortClusterOutputSchema.parse(structuredClone(MOCK_COHORT_CLUSTERS));
   }

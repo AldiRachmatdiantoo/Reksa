@@ -110,15 +110,35 @@ describe('InstitutionService', () => {
     expect(overview.institution).toEqual(INST);
     expect(overview.minGroupSize).toBe(5);
     expect(overview.classes).toEqual([
-      { id: 'c1', name: 'XI-1', educator: { id: 'e1', fullName: 'Bu Guru' }, memberCount: 30, auditedStudents: 12, completedSessions: 40, avgScore: 71.5, suppressed: false },
+      {
+        id: 'c1',
+        name: 'XI-1',
+        educator: { id: 'e1', fullName: 'Bu Guru' },
+        memberCount: 30,
+        auditedStudents: 12,
+        completedSessions: 40,
+        avgScore: 71.5,
+        suppressed: false,
+      },
       // Walau SQL mengembalikan angka, kelompok 4 siswa tetap disembunyikan.
-      { id: 'c2', name: 'XI-2', educator: { id: 'e1', fullName: 'Bu Guru' }, memberCount: 3, auditedStudents: null, completedSessions: null, avgScore: null, suppressed: true },
+      {
+        id: 'c2',
+        name: 'XI-2',
+        educator: { id: 'e1', fullName: 'Bu Guru' },
+        memberCount: 3,
+        auditedStudents: null,
+        completedSessions: null,
+        avgScore: null,
+        suppressed: true,
+      },
     ]);
   });
 
   it('lists concepts with percentages and drops small cohorts', async () => {
     expect(await service.concepts(ADMIN)).toEqual({
-      concepts: [{ materialId: 'm1', materialTitle: 'Homeostasis', concept: 'Umpan balik', studentsMissing: 9, studentsAudited: 12, percent: 75 }],
+      concepts: [
+        { materialId: 'm1', materialTitle: 'Homeostasis', concept: 'Umpan balik', studentsMissing: 9, studentsAudited: 12, percent: 75 },
+      ],
       minGroupSize: 5,
     });
   });

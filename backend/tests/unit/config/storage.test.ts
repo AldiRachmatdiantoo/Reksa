@@ -1,11 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import {
-  buildObjectKey,
-  isValidObjectKey,
-  S3StorageService,
-  SIGNED_URL_MAX_TTL_SEC,
-} from '../../../src/config/storage.js';
+import { buildObjectKey, isValidObjectKey, S3StorageService, SIGNED_URL_MAX_TTL_SEC } from '../../../src/config/storage.js';
 
 const owner = randomUUID();
 

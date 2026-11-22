@@ -115,9 +115,12 @@ describe('SessionsController.qrBridgeEvents', () => {
   });
 
   it('checks ownership before opening the stream, so a 404 stays plain JSON', async () => {
-    const t = sse(async () => 'never', async () => {
-      throw new NotFoundError('Sesi belajar tidak ditemukan');
-    });
+    const t = sse(
+      async () => 'never',
+      async () => {
+        throw new NotFoundError('Sesi belajar tidak ditemukan');
+      },
+    );
     await expect(t.run()).rejects.toMatchObject({ statusCode: 404 });
     expect(t.res.writeHead).not.toHaveBeenCalled();
     expect(t.service.waitForQrUpload).not.toHaveBeenCalled();

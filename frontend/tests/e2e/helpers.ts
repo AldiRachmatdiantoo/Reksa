@@ -8,7 +8,9 @@ export const PASSWORD = 'PasswordKuat123';
 /** Akun pelajar baru; cookie sesi tersimpan di konteks browser pemilik `request`. */
 export async function registerStudent(request: APIRequestContext, label: string) {
   const email = `e2e-${label}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@reksa.test`;
-  const res = await request.post('/api/v1/auth/register', { data: { email, password: PASSWORD, fullName: `Siswa ${label}`, birthYear: 2000, acceptTerms: true } });
+  const res = await request.post('/api/v1/auth/register', {
+    data: { email, password: PASSWORD, fullName: `Siswa ${label}`, birthYear: 2000, acceptTerms: true },
+  });
   expect(res.status(), await res.text()).toBe(201);
   return email;
 }
@@ -33,10 +35,18 @@ export async function expectAccessible(page: Page, name: string) {
   await page.waitForFunction(() =>
     document.getAnimations().every((a) => a.playState !== 'running' || a.effect?.getComputedTiming().iterations === Infinity),
   );
-  const results = await new AxeBuilder({ page: page as unknown as AxePage }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+  const results = await new AxeBuilder({ page: page as unknown as AxePage })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze();
   const blocking = results.violations
     .filter((v) => v.impact === 'critical' || v.impact === 'serious')
-    .map((v) => `${v.impact} ${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(' | ')})`);
+    .map(
+      (v) =>
+        `${v.impact} ${v.id}: ${v.help} (${v.nodes
+          .map((n) => n.target.join(' '))
+          .slice(0, 3)
+          .join(' | ')})`,
+    );
   expect(blocking, `Pelanggaran aksesibilitas di ${name}`).toEqual([]);
 }
 

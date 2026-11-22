@@ -145,9 +145,7 @@ describe('AuditWorker background loop', () => {
   it('reports queue outages (e.g. Redis down) without a job and retries after the idle delay', async () => {
     const queue = new MemoryQueue();
     const j = job();
-    queue.dequeue
-      .mockRejectedValueOnce(new Error('ECONNREFUSED'))
-      .mockImplementation(async () => queue.jobs.shift() ?? null);
+    queue.dequeue.mockRejectedValueOnce(new Error('ECONNREFUSED')).mockImplementation(async () => queue.jobs.shift() ?? null);
     queue.jobs = [j];
     const onError = vi.fn();
     const handled: AuditJob[] = [];

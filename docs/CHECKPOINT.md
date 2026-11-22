@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, CP-1 Gerbang Lengkap setelah Fase B (Aldi, branch `feat/aldi-cp1-gate`)
+**Checkpoint terakhir:** 22 November 2026, perbaikan area Adli dan C1 Stage 2 (Aldi, branch `fix/aldi-adli-area`)
 
 ---
 
@@ -16,6 +16,14 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #35 · Perbaikan area Adli + C1 · branch `fix/aldi-adli-area`
+
+Adli sudah setuju areanya disentuh. Detail untuk Adli di `UNTUK-ADLI.md`.
+
+- **C1 selesai:** Stage 2 memakai `delimitedJson` untuk blok rubrik (menutup celah materi berisi `</rubric_json>`) dan `maxOutputTokens` 16.384 (sebelumnya bawaan 4.096, bisa terpotong token berpikir Gemini 2.5). Dua tes baru di `geminiVision.test.ts`, gagal di kode lama.
+- **E3 selesai:** 26 file dirapikan dengan `oxfmt`, `format:check` dipasang di CI backend dan frontend. Batas unggah per IP sudah ada sejak awal.
+- **Gerbang:** typecheck dan `format:check` kedua paket lolos, unit backend 365 dan frontend 64 lolos, integration lolos.
 
 ### #34 · CP-1 Gerbang Lengkap · branch `feat/aldi-cp1-gate`
 
@@ -475,8 +483,8 @@ Branch ini dibuat **di atas** `feat/adli-essay-scans` (PR belum di-merge), jadi 
 
 Urutan kerja lengkap, gerbang uji, dan checkpoint ada di [SISA-ALDI.md](SISA-ALDI.md). Langkah terdekat:
 
-1. Fase C: AI asli (C1 Stage 2 siap dipakai, C2 Aldi membuat API key)
-2. E3: rapikan format file area Adli supaya `format:check` lolos
+1. C2: Aldi membuat API key Gemini dan mengisi `.env` root
+2. C3 dan C4: uji dengan Gemini asli, pantau kuota free tier
 3. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
 
 ## Catatan teknis yang perlu diingat
