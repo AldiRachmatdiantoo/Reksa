@@ -104,6 +104,6 @@ export function auditFailureText(code: string | null): string {
     case 'AUDIT_STALLED':
       return 'Pengecekan terlalu lama dan dihentikan.';
     default:
-      return 'Pemeriksa otomatis sedang tidak tersedia.';
+      return 'Pemeriksa otomatis sedang penuh atau tidak tersedia. Tunggu sekitar satu menit, lalu cek ulang.';
   }
 }

@@ -6,6 +6,12 @@ import type { IAiService } from '../../../../src/common/ai/ai.provider.interface
 import { MOCK_ESSAY_AUDIT, MOCK_ESSAY_AUDIT_HIGH, MOCK_RUBRIC } from '../../../../src/common/ai/mockAi.fixtures.js';
 import { AuditService, classifyAiError, focusRubric } from '../../../../src/features/essay-scans/audit.service.js';
 import { computeLedgerHash } from '../../../../src/features/essay-scans/ledgerHash.js';
+import {
+  AI_CALL_TIMEOUT_MS,
+  AI_INVALID_OUTPUT_RETRIES,
+  AI_TRANSIENT_BACKOFF_MS,
+  STALE_PROCESSING_MS,
+} from '../../../../src/features/essay-scans/scans.schema.js';
 import { FakeScansRepository } from './fakeScansRepository.js';
 
 const USER = randomUUID();
@@ -106,7 +112,7 @@ describe('AuditService.run: retries (FR-05)', () => {
       .mockRejectedValueOnce(new Error('ECONNRESET'));
     const { job } = pending();
     await expect(service().run(job)).resolves.toBe('DONE');
-    expect(sleeps).toEqual([2000, 5000]);
+    expect(sleeps).toEqual([10_000, 40_000]);
     expect(ai.evaluateHandwritingEssay).toHaveBeenCalledTimes(3);
   });
 
@@ -114,7 +120,7 @@ describe('AuditService.run: retries (FR-05)', () => {
     ai.evaluateHandwritingEssay.mockImplementationOnce(() => new Promise(() => {}));
     const { job } = pending();
     await expect(service({ timeoutMs: 10 }).run(job)).resolves.toBe('DONE');
-    expect(sleeps).toEqual([2000]);
+    expect(sleeps).toEqual([10_000]);
   });
 
   it('retries invalid output once, and re-validates provider output with Zod', async () => {
@@ -253,5 +259,18 @@ describe('AuditService.run: spaced review (FR-06)', () => {
     expect(repo.submissions.get(submission.id)!.auditStatus).toBe('FAILED');
     expect(repo.reviewSchedules.get(scheduleId)!.completed).toBe(false);
     expect(repo.quota.dailyScanCount).toBe(2);
+  });
+});
+
+describe('audit timing limits', () => {
+  it('the slowest possible audit still finishes before it is declared stalled', () => {
+    // Setiap pengulangan (TRANSIENT atau output rusak) memanggil AI sekali lagi dengan batas AI_CALL_TIMEOUT_MS.
+    const calls = 1 + AI_TRANSIENT_BACKOFF_MS.length + AI_INVALID_OUTPUT_RETRIES;
+    const backoff = AI_TRANSIENT_BACKOFF_MS.reduce((sum, ms) => sum + ms, 0);
+    expect(calls * AI_CALL_TIMEOUT_MS + backoff).toBeLessThan(STALE_PROCESSING_MS);
+  });
+
+  it('waits long enough between retries for a per-minute rate limit to recover', () => {
+    expect(AI_TRANSIENT_BACKOFF_MS.reduce((sum, ms) => sum + ms, 0)).toBeGreaterThanOrEqual(45_000);
   });
 });
