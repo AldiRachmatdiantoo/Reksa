@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createAiService } from '../../../../src/common/ai/ai.factory.js';
 import { GeminiAiProvider } from '../../../../src/common/ai/geminiAi.provider.js';
-import {
-  AiCohortClusterOutputSchema,
-  AiEssayAuditOutputSchema,
-  AiRubricOutputSchema,
-} from '../../../../src/common/ai/ai.schema.js';
+import { AiCohortClusterOutputSchema, AiEssayAuditOutputSchema, AiRubricOutputSchema } from '../../../../src/common/ai/ai.schema.js';
 import { AiProviderError } from '../../../../src/common/ai/ai.errors.js';
 import {
   MOCK_ESSAY_AUDIT,
@@ -111,9 +107,7 @@ describe('MockAiProvider fixture variants', () => {
 describe('MockAiProvider failure simulation', () => {
   it('throws a TRANSIENT AiProviderError when the roll is below auditFailureRate', async () => {
     const failing = new MockAiProvider({ latencyMs: 0, auditFailureRate: 0.5, random: () => 0.1 });
-    const error = await failing
-      .evaluateHandwritingEssay(Buffer.from('x'), 'image/webp', MOCK_RUBRIC)
-      .catch((err: unknown) => err);
+    const error = await failing.evaluateHandwritingEssay(Buffer.from('x'), 'image/webp', MOCK_RUBRIC).catch((err: unknown) => err);
     expect(error).toBeInstanceOf(AiProviderError);
     expect((error as AiProviderError).kind).toBe('TRANSIENT');
   });

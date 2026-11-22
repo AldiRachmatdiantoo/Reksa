@@ -80,10 +80,7 @@ describe('planRefund', () => {
 
 describe('quotaView', () => {
   it('reports remaining scans and the next reset', () => {
-    const view = quotaView(
-      { tier: 'FREE', dailyScanCount: 2, lastScanResetAt: at('2026-11-21T01:00:00Z') },
-      at('2026-11-21T05:00:00Z'),
-    );
+    const view = quotaView({ tier: 'FREE', dailyScanCount: 2, lastScanResetAt: at('2026-11-21T01:00:00Z') }, at('2026-11-21T05:00:00Z'));
     expect(view).toEqual({ tier: 'FREE', used: 2, limit: 3, remaining: 1, resetAt: '2026-11-21T17:00:00.000Z' });
   });
 });

@@ -10,11 +10,7 @@ import {
   type DeleteClassResult,
 } from '../../../../src/features/classes/classes.repository.js';
 import { CLASS_CODE_ALPHABET } from '../../../../src/features/classes/classes.schema.js';
-import {
-  ClassesService,
-  generateClassCode,
-  normalizeClassCode,
-} from '../../../../src/features/classes/classes.service.js';
+import { ClassesService, generateClassCode, normalizeClassCode } from '../../../../src/features/classes/classes.service.js';
 
 type Row = CreateClassData & { id: string; createdAt: Date };
 
@@ -59,7 +55,12 @@ class InMemoryClassesRepository implements ClassesRepository {
   async listForStudent(studentId: string) {
     return this.members
       .filter((m) => m.studentId === studentId)
-      .map((m) => this.record(this.rows.find((r) => r.id === m.classId)!, m.joinedAt));
+      .map((m) =>
+        this.record(
+          this.rows.find((r) => r.id === m.classId)!,
+          m.joinedAt,
+        ),
+      );
   }
   async findForEducator(educatorId: string, classId: string) {
     const row = this.owned(educatorId, classId);

@@ -123,8 +123,7 @@ export const MOCK_COHORT_CLUSTERS: AiCohortClusterOutput = {
       affectedStudentCount: 13,
       failureRatePercent: 41,
       severity: 'MEDIUM',
-      remediationSuggestion:
-        'Gunakan analogi termostat ruangan untuk membedakan sensor (reseptor) dari pengendali (pusat kontrol).',
+      remediationSuggestion: 'Gunakan analogi termostat ruangan untuk membedakan sensor (reseptor) dari pengendali (pusat kontrol).',
     },
   ],
   curriculumRecommendation:
@@ -290,8 +289,4 @@ export const MOCK_ESSAY_AUDIT_FOTOSINTESIS: AiEssayAuditOutput = {
 };
 
 /** Audit Stage 2 untuk materi homeostasis, urut dari skor tertinggi. */
-export const MOCK_ESSAY_AUDIT_VARIANTS: readonly AiEssayAuditOutput[] = [
-  MOCK_ESSAY_AUDIT_HIGH,
-  MOCK_ESSAY_AUDIT,
-  MOCK_ESSAY_AUDIT_LOW,
-];
+export const MOCK_ESSAY_AUDIT_VARIANTS: readonly AiEssayAuditOutput[] = [MOCK_ESSAY_AUDIT_HIGH, MOCK_ESSAY_AUDIT, MOCK_ESSAY_AUDIT_LOW];

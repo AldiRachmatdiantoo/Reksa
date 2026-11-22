@@ -57,12 +57,7 @@ export const STALE_PROCESSING_MS = 5 * 60_000;
 
 export type AuditStatus = 'PENDING' | 'PROCESSING' | 'DONE' | 'FAILED';
 /** Kode di `audit_error_code` dan `ScanView.errorCode`. */
-export type AuditErrorCode =
-  | 'AI_UNAVAILABLE'
-  | 'AI_INVALID_OUTPUT'
-  | 'MATERIAL_UNAVAILABLE'
-  | 'STORAGE_UNAVAILABLE'
-  | 'AUDIT_STALLED';
+export type AuditErrorCode = 'AI_UNAVAILABLE' | 'AI_INVALID_OUTPUT' | 'MATERIAL_UNAVAILABLE' | 'STORAGE_UNAVAILABLE' | 'AUDIT_STALLED';
 
 export const ScanIdParamsSchema = z.object({ id: z.uuid() }).strict();
 

@@ -40,6 +40,7 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npx prisma validate
+      - run: npm run format:check
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
@@ -155,6 +156,9 @@ jobs:
       - if: steps.detect.outputs.exists == 'true'
         working-directory: frontend
         run: npm ci
+      - if: steps.detect.outputs.exists == 'true'
+        working-directory: frontend
+        run: npm run format:check
       - if: steps.detect.outputs.exists == 'true'
         working-directory: frontend
         run: npm test

@@ -63,7 +63,7 @@ Daftar ini urut: kerjakan dari atas. Centang `[x]` saat PR-nya sudah masuk `main
 
 ## Fase C · AI asli
 
-- [ ] **C1. Stage 2 siap dipakai** (file Adli, dicatat di `UNTUK-ADLI.md`): `maxOutputTokens` dinaikkan dari 4.096 ke 8.192 atau lebih, dan blok rubrik memakai `delimitedJson`.
+- [x] **C1. Stage 2 siap dipakai** (file Adli, dicatat di `UNTUK-ADLI.md`, branch `fix/aldi-adli-area`, Adli sudah setuju area-nya disentuh): `maxOutputTokens` dinaikkan dari 4.096 ke 8.192 atau lebih, dan blok rubrik memakai `delimitedJson`.
 - [ ] **C2. Aldi membuat API key** di [Google AI Studio](https://aistudio.google.com/apikey), lalu mengisi `AI_PROVIDER_MODE=gemini` dan `GEMINI_API_KEY` di `.env` root. Key tidak dikirim lewat chat.
 - [ ] **C3. Uji dengan Gemini asli:**
   - Test live Stage 1, 2, dan 3.
@@ -87,7 +87,7 @@ Daftar ini urut: kerjakan dari atas. Centang `[x]` saat PR-nya sudah masuk `main
 
 - [ ] **E1. Gemini berbayar:** pindah ke paket berbayar (data tidak dipakai Google), perbarui Kebijakan Privasi, dan naikkan versi dokumen di `backend/src/config/policies.ts` dan `frontend/src/features/legal/policyVersions.ts`.
 - [ ] **E2. Tinjauan hukum** Kebijakan Privasi dan Syarat Layanan (UU PDP) oleh orang yang paham hukum.
-- [ ] **E3. Koordinasi dengan Adli:** format area Adli dengan oxfmt lalu pasang `format:check` di CI; batas unggah foto per IP (`scans:upload:ip`).
+- [x] **E3. Koordinasi dengan Adli:** format area Adli dengan oxfmt lalu pasang `format:check` di CI (selesai 22 November 2026, `fix/aldi-adli-area`); batas unggah foto per IP (`scans:upload:ip`, 30 per jam) ternyata sudah ada di `scans.routes.ts`.
 - [ ] **CP-4 · Gerbang Lengkap.**
 
 ## Fase F · Pasca-MVP (PRD §4.5), dari yang paling kecil

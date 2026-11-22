@@ -6,6 +6,17 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: perbaikan di areamu, atas izinmu (branch `fix/aldi-adli-area`)
+
+Kamu sudah bilang ke Aldi tidak apa-apa areamu disentuh. Yang diubah:
+
+- **Bug keamanan Stage 2** (`geminiVision.ts`): `buildRubricPart` memakai `JSON.stringify` biasa. Teks rubrik berasal dari materi pengguna, jadi materi berisi `</rubric_json>` bisa menutup blok data dan menyamar sebagai instruksi. Sekarang memakai `delimitedJson` dari `geminiRubric.ts` (sama dengan Stage 1): `<` dan `>` ditulis sebagai `\u003c`/`\u003e`, isi JSON tetap sama.
+- **Bug Stage 2 dengan Gemini asli:** `generateJson` memakai bawaan `maxOutputTokens: 4096`. Token berpikir Gemini 2.5 ikut dihitung, jadi rubrik 10 konsep bisa terpotong dan audit gagal `INVALID_OUTPUT`. Sekarang `STAGE2_MAX_OUTPUT_TOKENS = 16_384`, sama dengan Stage 1.
+- **Tes baru** di `tests/unit/common/ai/geminiVision.test.ts`: blok rubrik tidak bisa ditutup dari dalam, dan permintaan memakai batas token baru. Kedua tes gagal di kode lama.
+- **Format:** 25 file backend (sebagian besar di `tests/unit/`, plus `geminiVision`, `mockAi.*`, `audit.service`, `scans.schema`, `sessions.repository`, `sessions.service`) dan `frontend/tests/e2e/helpers.ts` dirapikan dengan `oxfmt`. Hanya perubahan format, logika tidak berubah.
+- **CI:** `npm run format:check` kini dijalankan untuk backend dan frontend. Jalankan `npm run format` sebelum push.
+- Batas unggah per IP (`scans:upload:ip`, 30 per jam) ternyata sudah ada, jadi butir itu ditutup.
+
 ## 22 Nov 2026: latihan ulang H+3/H+7 dinilai AI, menyentuh areamu (branch `feat/aldi-graded-review`)
 
 Langkah B3 di `SISA-ALDI.md`. Mohon direview; kalau ada yang ingin diubah, tulis di `UNTUK-ALDI.md`.

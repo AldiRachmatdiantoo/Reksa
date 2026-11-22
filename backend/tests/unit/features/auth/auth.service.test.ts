@@ -77,9 +77,7 @@ class InMemoryAuthRepository implements AuthRepository {
     this.authTokens = this.authTokens.filter((t) => !(t.userId === userId && t.purpose === purpose && !t.usedAt));
   }
   async consumeAuthToken(tokenHash: string, purpose: AuthTokenPurpose, now: Date) {
-    const t = this.authTokens.find(
-      (x) => x.tokenHash === tokenHash && x.purpose === purpose && !x.usedAt && x.expiresAt > now,
-    );
+    const t = this.authTokens.find((x) => x.tokenHash === tokenHash && x.purpose === purpose && !x.usedAt && x.expiresAt > now);
     if (!t) return null;
     t.usedAt = now;
     return t.userId;
@@ -239,9 +237,7 @@ describe('AuthService', () => {
     it('asks legacy accounts without a birth year to provide one', async () => {
       const { user } = await service.register(registerInput);
       Object.assign(repo.users[0]!, { birthYear: null, termsVersion: null, privacyVersion: null });
-      await expect(service.recordConsent(user.id, { acceptTerms: true, adultConfirmed: false })).rejects.toBeInstanceOf(
-        BadRequestError,
-      );
+      await expect(service.recordConsent(user.id, { acceptTerms: true, adultConfirmed: false })).rejects.toBeInstanceOf(BadRequestError);
       await expect(service.recordConsent(user.id, { acceptTerms: true, birthYear: 2010, adultConfirmed: true })).rejects.toMatchObject({
         code: 'AGE_RESTRICTED',
       });
@@ -303,9 +299,7 @@ describe('AuthService', () => {
 
     it('still runs a password verification when the email does not exist (timing)', async () => {
       const verify = vi.spyOn(fakeHasher, 'verify');
-      await expect(service.login({ email: 'tidak.ada@reksa.id', password: 'x' })).rejects.toBeInstanceOf(
-        UnauthorizedError,
-      );
+      await expect(service.login({ email: 'tidak.ada@reksa.id', password: 'x' })).rejects.toBeInstanceOf(UnauthorizedError);
       expect(verify).toHaveBeenCalledTimes(1);
       verify.mockRestore();
     });
@@ -417,9 +411,7 @@ describe('AuthService', () => {
       const raw = token();
       expect(raw).toMatch(/^[A-Za-z0-9_-]{43}$/);
       expect(mail.lastTo('siswa@reksa.id')?.text).toContain(`https://app.reksa.test/verifikasi-email?token=${raw}`);
-      expect(repo.authTokens).toEqual([
-        expect.objectContaining({ purpose: 'EMAIL_VERIFY', tokenHash: hashEmailToken(raw), usedAt: null }),
-      ]);
+      expect(repo.authTokens).toEqual([expect.objectContaining({ purpose: 'EMAIL_VERIFY', tokenHash: hashEmailToken(raw), usedAt: null })]);
       expect(repo.authTokens[0]?.expiresAt.getTime()).toBe(now.getTime() + EMAIL_VERIFY_TTL_MS);
       expect(JSON.stringify(repo.authTokens)).not.toContain(raw);
     });
@@ -428,7 +420,12 @@ describe('AuthService', () => {
       mail.failNext = true;
       const warnings: string[] = [];
       service = new AuthService({
-        repo, hasher: fakeHasher, signer, refreshTokenKey: 'b'.repeat(32), email: mail, appUrl: 'x',
+        repo,
+        hasher: fakeHasher,
+        signer,
+        refreshTokenKey: 'b'.repeat(32),
+        email: mail,
+        appUrl: 'x',
         onWarning: (m) => warnings.push(m),
       });
       await expect(service.register(registerInput)).resolves.toBeDefined();
@@ -486,9 +483,7 @@ describe('AuthService', () => {
       const { user } = await service.register(registerInput);
       await service.login({ email: registerInput.email, password: registerInput.password });
       await service.requestPasswordReset('siswa@reksa.id');
-      expect(repo.authTokens.find((t) => t.purpose === 'PASSWORD_RESET')?.expiresAt.getTime()).toBe(
-        now.getTime() + PASSWORD_RESET_TTL_MS,
-      );
+      expect(repo.authTokens.find((t) => t.purpose === 'PASSWORD_RESET')?.expiresAt.getTime()).toBe(now.getTime() + PASSWORD_RESET_TTL_MS);
 
       await service.resetPassword(token(), 'PasswordBaru456');
 
@@ -541,9 +536,7 @@ describe('AuthService', () => {
 
     it('rejects a new password equal to the old one', async () => {
       const { user } = await service.register(registerInput);
-      await expect(service.changePassword(user.id, registerInput.password, registerInput.password)).rejects.toBeInstanceOf(
-        BadRequestError,
-      );
+      await expect(service.changePassword(user.id, registerInput.password, registerInput.password)).rejects.toBeInstanceOf(BadRequestError);
     });
   });
 });

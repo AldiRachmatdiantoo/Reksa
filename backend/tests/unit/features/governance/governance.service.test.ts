@@ -109,7 +109,7 @@ describe('GovernanceService', () => {
       expect(warnings).toContain('Signed URL foto ledger gagal dibuat');
     });
 
-    it("answers 404 for a class the educator does not own, before reading any rows", async () => {
+    it('answers 404 for a class the educator does not own, before reading any rows', async () => {
       repo.owner = false;
       await expect(service.ledger(TEACHER, CLASS, { limit: 20 })).rejects.toMatchObject({ statusCode: 404 });
       expect(repo.calls).toEqual([]);

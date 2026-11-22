@@ -54,9 +54,7 @@ describe('loadEnv', () => {
   });
 
   it('rejects identical access and refresh secrets', () => {
-    expect(() => loadEnv({ ...validEnv, JWT_REFRESH_SECRET: validEnv.JWT_ACCESS_SECRET })).toThrow(
-      /JWT_REFRESH_SECRET/,
-    );
+    expect(() => loadEnv({ ...validEnv, JWT_REFRESH_SECRET: validEnv.JWT_ACCESS_SECRET })).toThrow(/JWT_REFRESH_SECRET/);
   });
 
   it('never echoes secret values in the error message', () => {

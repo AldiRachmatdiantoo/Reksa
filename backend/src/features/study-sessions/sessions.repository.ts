@@ -96,11 +96,7 @@ type SessionRow = Prisma.StudySessionGetPayload<{ select: typeof sessionSelect }
 
 function materialAccessibleBy(userId: string): Prisma.StudyMaterialWhereInput {
   return {
-    OR: [
-      { uploaderId: userId },
-      { class: { educatorId: userId } },
-      { class: { members: { some: { studentId: userId } } } },
-    ],
+    OR: [{ uploaderId: userId }, { class: { educatorId: userId } }, { class: { members: { some: { studentId: userId } } } }],
   };
 }
 

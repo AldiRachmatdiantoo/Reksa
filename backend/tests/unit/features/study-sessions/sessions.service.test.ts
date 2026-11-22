@@ -9,11 +9,7 @@ import type {
   SessionsRepository,
 } from '../../../../src/features/study-sessions/sessions.repository.js';
 import type { SessionStatus } from '../../../../src/features/study-sessions/sessions.schema.js';
-import {
-  actualFocusSec,
-  SessionsService,
-  validityOf,
-} from '../../../../src/features/study-sessions/sessions.service.js';
+import { actualFocusSec, SessionsService, validityOf } from '../../../../src/features/study-sessions/sessions.service.js';
 
 const USER = randomUUID();
 const OTHER = randomUUID();
@@ -74,9 +70,7 @@ class FakeSessionsRepository implements SessionsRepository {
   }
 
   async findActive(userId: string) {
-    const s = [...this.sessions.values()].find(
-      (x) => x.userId === userId && ['FOCUS_ACTIVE', 'AWAITING_SCAN'].includes(x.status),
-    );
+    const s = [...this.sessions.values()].find((x) => x.userId === userId && ['FOCUS_ACTIVE', 'AWAITING_SCAN'].includes(x.status));
     return s ? { ...s } : null;
   }
 
@@ -161,9 +155,9 @@ describe('start', () => {
     expect(ok.classId).toBe(CLASS);
 
     repo.accessibleMaterials.add(`${OTHER}:${MATERIAL}`);
-    await expect(
-      service.start(OTHER, { materialId: MATERIAL, preset: 'CLASSIC_25_5', classId: CLASS }),
-    ).rejects.toMatchObject({ statusCode: 404 });
+    await expect(service.start(OTHER, { materialId: MATERIAL, preset: 'CLASSIC_25_5', classId: CLASS })).rejects.toMatchObject({
+      statusCode: 404,
+    });
   });
 
   it('refuses a second active session with 409 and the active id', async () => {
@@ -349,11 +343,19 @@ describe('startReview (FR-06)', () => {
 
   it('creates a 5-minute SPACED_REVIEW session without a preset', async () => {
     const view = await service.startReview(USER, { spacedScheduleId: SCHEDULE, materialId: MATERIAL });
-    expect(view).toMatchObject({ sessionType: 'SPACED_REVIEW', plannedDurationSec: 300, preset: null, status: 'FOCUS_ACTIVE', classId: null });
+    expect(view).toMatchObject({
+      sessionType: 'SPACED_REVIEW',
+      plannedDurationSec: 300,
+      preset: null,
+      status: 'FOCUS_ACTIVE',
+      classId: null,
+    });
   });
 
   it('answers 404 for a material the student can no longer read', async () => {
-    await expect(service.startReview(USER, { spacedScheduleId: SCHEDULE, materialId: randomUUID() })).rejects.toMatchObject({ statusCode: 404 });
+    await expect(service.startReview(USER, { spacedScheduleId: SCHEDULE, materialId: randomUUID() })).rejects.toMatchObject({
+      statusCode: 404,
+    });
   });
 
   it('stops after 3 review sessions for the same schedule', async () => {
