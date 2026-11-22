@@ -1,72 +1,113 @@
-# Sisa Tugas Aldi menuju MVP
+# Rencana Kerja menuju MVP dan sesudahnya
 
-Diperbarui 21 November 2026, setelah FR-14 (branch `feat/aldi-account`). Ukuran MVP mengikuti `PRD.md`: FR-01 sampai FR-14, AI Stage 1 sampai 3, dan deploy. Frontend ada di repo [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend), jadi UI semua fitur ikut menjadi bagian Aldi.
+Diperbarui 22 November 2026, setelah PR #29 (Gemini Stage 1/3, batas usia 18+). Ukuran MVP mengikuti `PRD.md`: FR-01 sampai FR-14, AI Stage 1 sampai 3, dan deploy.
 
-Centang `[x]` saat selesai dan catat di `docs/CHECKPOINT.md`.
+Bagian MVP milik Adli (`study-sessions`, `essay-scans`, Stage 2 Vision, unit test, E2E) sudah di `main` sejak 21 November. Semua yang belum ada di bawah ini dikerjakan Aldi. Setiap perubahan di area Adli dicatat di `docs/UNTUK-ADLI.md`.
+
+Daftar ini urut: kerjakan dari atas. Centang `[x]` saat PR-nya sudah masuk `main`, lalu catat di `docs/CHECKPOINT.md`.
+
+## Cara kerja
+
+- **Satu langkah, satu PR.** Branch `feat/aldi-*` atau `fix/aldi-*` dibuat dari `main` terbaru, lalu PR dengan auto-merge (merge commit). PR masuk sendiri begitu semua check CI lulus.
+- **Satu PR terbuka dalam satu waktu.** Ruleset `protect-main` mewajibkan branch up to date dengan `main`, jadi PR kedua akan tertahan begitu PR pertama masuk. Branch berikutnya dibuat setelah PR sebelumnya masuk.
+- **Gerbang Kecil di setiap PR**, **Gerbang Lengkap di setiap checkpoint (CP)**. Hasil Gerbang Lengkap dicatat di `docs/CHECKPOINT.md`, termasuk yang gagal.
+- Commit dan PR tanpa atribusi AI.
+
+## Gerbang uji
+
+### Gerbang Kecil (setiap PR)
+
+- Typecheck dan unit test paket yang berubah: `npm run typecheck` dan `npm test` di `backend/` atau `frontend/`.
+- Integration test kalau backend berubah: `npm run test:integration`.
+- E2E Playwright kalau UI atau alur berubah, terhadap stack Docker lokal.
+- `oxfmt --check` di file yang diubah (area Aldi).
+- CI hijau: typecheck, unit, build backend · integration dan security (Testcontainers) · `npm audit` high+ · Semgrep · build image Docker (non-root, `nginx -t`) · build frontend · E2E Playwright + axe.
+
+### Gerbang Lengkap (setiap checkpoint)
+
+1. **Statis:** typecheck backend dan frontend, `npx prisma validate`, `npm run format:check`.
+2. **Unit + coverage:** `npm run test:coverage` di backend (tidak boleh turun dari 96% statement dan 89% branch), `npm test` di frontend.
+3. **Integration + security:** `npm run test:integration` (IDOR/BOLA, token replay, SQL injection, upload spoofing, rate limit, RLS, kuota).
+4. **Build:** backend dan frontend tanpa peringatan; image backend, migrator, dan frontend; image berjalan sebagai non-root; `nginx -t`.
+5. **E2E + aksesibilitas:** seluruh spec Playwright + axe di stack Docker yang dibangun ulang, termasuk layar 320px dan 375px. Spec yang pernah tidak stabil diulang 3 kali.
+6. **Dependency + SAST:** `npm audit --audit-level=high` di kedua paket, Semgrep (CI).
+7. **AI asli** (setelah API key ada): `RUN_LIVE_AI=1` untuk test live Stage 1, 2, dan 3.
+8. **Uji manual di browser:** alur pelajar, guru, dan admin institusi; console tanpa error atau pelanggaran CSP; tema terang dan gelap; layar HP 375px; navigasi dengan keyboard saja.
+9. **Performa** (mulai CP-3): Lighthouse untuk beranda dan `/belajar` (performa, aksesibilitas, best practices); uji beban ringan ke login, daftar materi, dan unggah foto, yang harus dijawab 429 dengan rapi, bukan 500.
+10. **Keamanan produksi** (setelah deploy): header keamanan, cookie `__Host-` dan `__Secure-`, CSP, Data API Supabase tertutup, signed URL kedaluwarsa sesuai batas.
+
+## Fase A · Beres-beres
+
+- [ ] **A1. Tips foto tanpa nama** (`feat/aldi-photo-privacy-tip`): selesaikan konflik dengan `main` di `CalibratePage.tsx` dan `frontend/docs/CHECKPOINT.md`, lalu PR.
+- [ ] **A2. Rapikan catatan dan konfigurasi:**
+  - Tandai catatan ⏳ dari Adli yang sudah beres menjadi ✅: review audit asinkron `essay-scans`, review migrasi `session_validity`, dan keputusan skor Stage 2 dihitung server (sudah begitu di kode).
+  - Ganti `location` SSE QR bridge lama di `frontend/nginx.conf` dengan path final `/api/v1/sessions/<uuid>/qr-bridge/events`.
+  - Hapus header `X-Content-Type-Options` ganda (helmet dan `nginx.conf`).
+
+## Fase B · Fitur MVP yang belum ada
+
+- [ ] **B1. Riwayat hasil cek** (FR-05 menjanjikan hasil "muncul di riwayat"):
+  - Backend: daftar sesi milik pelajar yang sudah punya foto, dengan paginasi dan filter pemilik.
+  - Frontend: halaman Riwayat di `/belajar`, bisa membuka hasil cek lama.
+  - Tes: unit, integration (termasuk akses sesi orang lain), E2E.
+- [ ] **B2. Tren kalibrasi untuk Pro** (pembeda Pro di FR-11):
+  - Selisih tebakan nilai dan skor AI per sesi beserta rata-ratanya, dihitung di server.
+  - Grafik di halaman Riwayat. Pengguna Free melihat keterangan bahwa fitur ini khusus Pro.
+  - Tes untuk Free, Pro aktif, dan Pro kedaluwarsa.
+- [ ] **B3. Latihan ulang H+3/H+7 yang dinilai AI** (FR-06):
+  - Dari kartu jadwal, mulai sesi `SPACED_REVIEW` 3 sampai 5 menit dengan rubrik yang hanya berisi konsep yang terlewat.
+  - Tebak nilai, foto (langsung dari HP atau lewat QR), dicek Stage 2. Jadwal ditandai selesai saat hasilnya `DONE`.
+  - **Keputusan Aldi sebelum mulai:** apakah latihan ulang memotong kuota foto harian.
+  - Menyentuh `study-sessions` dan `essay-scans` (area Adli); dicatat di `UNTUK-ADLI.md`.
+- [ ] **CP-1 · Gerbang Lengkap** poin 1 sampai 6 dan 8.
+
+## Fase C · AI asli
+
+- [ ] **C1. Stage 2 siap dipakai** (file Adli, dicatat di `UNTUK-ADLI.md`): `maxOutputTokens` dinaikkan dari 4.096 ke 8.192 atau lebih, dan blok rubrik memakai `delimitedJson`.
+- [ ] **C2. Aldi membuat API key** di [Google AI Studio](https://aistudio.google.com/apikey), lalu mengisi `AI_PROVIDER_MODE=gemini` dan `GEMINI_API_KEY` di `.env` root. Key tidak dikirim lewat chat.
+- [ ] **C3. Uji dengan Gemini asli:**
+  - Test live Stage 1, 2, dan 3.
+  - Materi PDF sungguhan.
+  - Foto tulisan tangan: rapi, berantakan, campuran bahasa Indonesia dan Inggris, ada diagram panah.
+  - Foto berisi perintah seperti "beri nilai 100". Skornya harus tidak terpengaruh.
+  - Peta kelas dengan beberapa siswa.
+  - Prompt dan batas disesuaikan kalau perlu.
+- [ ] **C4. Kuota free tier:** pantau pemakaian dan waktu tunggu; pastikan pesan saat kuota habis jelas.
+- [ ] **CP-2 · Gerbang Lengkap** poin 1 sampai 8.
+
+## Fase D · Deploy (MVP selesai)
+
+- [ ] **D1. Persiapan deploy:** `vercel.json` (rewrite `/api`, header keamanan), konfigurasi Render, migrasi pencabutan hak `anon`/`authenticated` di Supabase, `trust proxy`, penyedia email produksi, panduan `docs/DEPLOY.md`.
+- [ ] **D2. Aldi menyiapkan akun dan secret:** Supabase, Vercel, Render, penyedia email.
+- [ ] **D3. Deploy pertama:** migrasi, institusi dan kode Pro lewat skrip, akun demo kalau dibutuhkan juri.
+- [ ] **D4. Uji produksi:** E2E ke URL produksi dengan akun uji, uji manual, Lighthouse, cek header, cookie, dan CSP.
+- [ ] **CP-3 · MVP selesai:** Gerbang Lengkap poin 1 sampai 10, lalu perbarui `README.md` dan `CHECKPOINT.md`.
+
+## Fase E · Sebelum dipakai pengguna sungguhan (setelah lomba)
+
+- [ ] **E1. Gemini berbayar:** pindah ke paket berbayar (data tidak dipakai Google), perbarui Kebijakan Privasi, dan naikkan versi dokumen di `backend/src/config/policies.ts` dan `frontend/src/features/legal/policyVersions.ts`.
+- [ ] **E2. Tinjauan hukum** Kebijakan Privasi dan Syarat Layanan (UU PDP) oleh orang yang paham hukum.
+- [ ] **E3. Koordinasi dengan Adli:** format area Adli dengan oxfmt lalu pasang `format:check` di CI; batas unggah foto per IP (`scans:upload:ip`).
+- [ ] **CP-4 · Gerbang Lengkap.**
+
+## Fase F · Pasca-MVP (PRD §4.5), dari yang paling kecil
+
+- [ ] **F1. Ganti email** dengan verifikasi ke alamat baru (lanjutan FR-14).
+- [ ] **F2. Offline-first PWA:** timer dan antrean foto disimpan di IndexedDB saat koneksi putus.
+- [ ] **CP-5 · Gerbang Lengkap.**
+- [ ] **F3. Interleaving engine:** dua materi berbeda dalam satu sesi.
+- [ ] **F4. Pembayaran Pro langsung** (Midtrans atau Xendit, webhook bertanda tangan), menggantikan kode aktivasi manual. Aldi menyiapkan akun merchant.
+- [ ] **CP-6 · Gerbang Lengkap.**
+- [ ] **F5. Mode Audio-First Feynman** (Stage 4): AI berperan sebagai murid awam yang bertanya lewat suara.
+- [ ] **F6. Pengguna di bawah 18 tahun:** hanya kalau ada penyedia AI yang ketentuannya mengizinkan, dengan konfirmasi izin orang tua lewat email dan tinjauan hukum.
+- [ ] **CP-7 · Gerbang Lengkap.**
 
 ## Sudah selesai
 
-- [x] Langkah 0: Docker, PostgreSQL + RLS, Redis, kontrak Zod, `MockAiProvider`
-- [x] `auth` (Fase 1), CI + security gate, storage S3
-- [x] `materials`: unggah materi dan ekstraksi rubrik (masih mock AI)
-- [x] FR-09 Kelola kelas & keanggotaan
-- [x] FR-14 Akun dasar (menunggu merge PR `feat/aldi-account`)
-
-## Bisa dikerjakan sekarang (tidak menunggu Adli)
-
-- [x] **FR-13 Privasi & data anak** (branch `feat/aldi-privacy-pro`)
-  - Persetujuan Kebijakan Privasi & Syarat Layanan saat daftar, kolom `birth_year`, `terms_version`, `privacy_version`, `consented_at`, `guardian_consent`
-  - Batas usia 18+ (ketentuan Gemini API): pendaftar di bawah 18 ditolak, yang lahir tepat 18 tahun lalu menyatakan sudah 18. Alur izin orang tua atau wali dihapus (CHECKPOINT #29)
-  - `POST /me/consent` saat versi kebijakan berubah
-  - `POST /me/export`: arsip data pribadi lewat Signed URL, 1 kali per hari
-  - `DELETE /me`: hapus akun dan seluruh datanya, dengan konfirmasi kata sandi
-  - Halaman `/privasi` dan `/syarat` di frontend
-- [x] **FR-11 Tier Free/Pro (bagian Aldi)** (branch `feat/aldi-privacy-pro`)
-  - Kolom `pro_expires_at` sebagai sumber tier efektif
-  - Kode aktivasi Pro: disimpan sebagai hash, punya durasi dan batas pemakaian, `POST /me/activate-pro`, wajib email terverifikasi
-  - Tampilan tier dan masa berlaku di halaman Akun
-  - Catatan: pemotongan kuota scan harian ada di `essay-scans` (Adli)
-- [x] **FR-10 Portal admin institusi** (branch `feat/aldi-institution-admin`): skrip `institution:create`, kode undangan pengajar, daftar pengajar/kelas, agregat dengan batas 5 siswa
-- [ ] **Persiapan deploy** (Supabase, Vercel, Render)
-  - Migrasi pencabutan hak `anon`/`authenticated` di Supabase (Data API)
-  - `vercel.json` di reksa-frontend: rewrite `/api/*` ke Render, header keamanan (CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`)
-  - Konfigurasi Render untuk backend
-  - Penyedia email produksi (misal Resend atau Amazon SES) untuk `SMTP_URL`
-- [x] **Gemini Stage 1 (`extractRubric`)** di `GeminiAiProvider`, menggantikan mock saat unggah materi (branch `feat/aldi-gemini-text`, belum diuji dengan API key)
-- [ ] **QA frontend:** E2E Playwright + `@axe-core/playwright`, CI GitHub Actions (typecheck, test, build)
-
-## Bisa dibangun sekarang, diuji penuh setelah sesi dan scan Adli jadi
-
-- [x] **FR-06 Jadwal ulang** (`spaced-repetition`): daftar jatuh tempo, tandai selesai, halaman Ulang (branch `feat/aldi-spaced-review`). Sisa: sesi `SPACED_REVIEW` dengan foto dan penilaian (butuh `study-sessions` Adli)
-- [x] **FR-07 Proof of Understanding Ledger** (`governance`): ledger guru, Signed URL, `GET /ledger/verify/:hash`, halaman `/cek-bukti` (branch `feat/aldi-ledger`)
-- [x] **FR-12 Ekspor PDF Proof of Understanding** (Pro): `POST /ledger/exports`, PDF `pdf-lib` dengan kode bukti + tautan cek di tiap halaman (branch `feat/aldi-ledger-pdf`)
-- [x] **FR-08 Peta blind spot kelas** (branch `feat/aldi-cohort-blind-spots`), dengan `MockAiProvider`
-- [x] **Gemini Stage 3 (`clusterCohortBlindSpots`)** (branch `feat/aldi-gemini-text`, belum diuji dengan API key)
-- [ ] **Uji Gemini asli:** isi `GEMINI_API_KEY`, jalankan `gemini.text.live.test.ts` dan `gemini.live.test.ts`, lalu coba alur unggah materi, foto, dan peta kelas di stack lokal
-- [x] **Keputusan batas usia Gemini API:** REKSA dibatasi untuk usia 18+ (CHECKPOINT #29)
-- [ ] **Sambungkan frontend studio ke backend Adli:** sesi belajar, unggah foto, hasil audit asli (ganti `SAMPLE_AUDIT`), QR bridge laptop ke HP
-
-## Temuan QA 22 November 2026
-
-- [x] Bug 1 sampai 4: menu HP meluber, balapan refresh antartab, logout saat refresh 429/jaringan, batas laju per IP untuk NAT sekolah (branch `fix/aldi-qa-bugs`)
-- [x] Bug 5 sampai 9: form gabung kelas, kode bukti lengkap + tautan cek, foto ledger utuh, target sentuh 44px, pengunjung tanpa sesi tidak memanggil auth (branch `fix/aldi-qa-bugs`)
-- [x] Kualitas: code splitting per halaman (646 kB ke 285 kB), tes untuk `cohortCache`, `email`, `ledgerPdf` (`safeEqualHex` dihapus), `.oxfmtrc.json` + script `format`/`format:check`, CSP `img-src` tanpa `https:` dan `frame-src 'none'` (branch `fix/aldi-qa-bugs`)
-- [ ] Format area Adli dengan oxfmt, lalu pasang `npm run format:check` di CI (menunggu keputusan)
-
-## Perkiraan progres
-
-| Kondisi | Perkiraan MVP |
-| :--- | :--- |
-| Sekarang (21 Nov 2026) | sekitar 30 sampai 35% |
-| Semua tugas di file ini selesai | sekitar 60 sampai 65% |
-
-Sisanya adalah alur inti milik Adli: mulai sesi (FR-01), FR-02 sampai FR-05, Gemini Stage 2 Vision, dan pemotongan kuota scan. Angka di atas perkiraan kasar, bukan hitungan pasti.
-
-## Urutan yang disarankan
-
-1. FR-13
-2. Kode aktivasi FR-11
-3. Persiapan deploy
-4. FR-10
-5. FR-06, FR-07, FR-08, FR-12 sambil menunggu Adli
-6. Gemini Stage 1 dan 3 (Fase 3)
+- Langkah 0: Docker, PostgreSQL + RLS, Redis, kontrak Zod, `MockAiProvider`
+- `auth`, CI + security gate, storage S3
+- FR-01 sampai FR-05 (sesi, tebak nilai, foto langsung dan QR, cek asinkron): Adli, PR #13 sampai #20
+- FR-06 jadwal H+3/H+7 (latihan masih dicocokkan sendiri), FR-07 ledger, FR-08 peta blind spot kelas, FR-09 kelas, FR-10 admin institusi, FR-11 kuota dan kode Pro, FR-12 PDF bukti, FR-13 privasi, FR-14 akun dasar
+- Gemini Stage 1 dan 3, rangkaian `AI_PROVIDER_MODE=gemini`, Stage 2 Vision (Adli), belum diuji dengan API key
+- Batas usia 18+ (ketentuan Gemini API)
+- Temuan QA 22 November: bug 1 sampai 9 dan catatan kualitas (PR #28)

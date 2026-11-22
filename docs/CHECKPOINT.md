@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, REKSA dibatasi untuk usia 18+ (Aldi, branch `feat/aldi-gemini-text`)
+**Checkpoint terakhir:** 22 November 2026, rencana kerja urut sampai pasca-MVP (Aldi, branch `feat/aldi-work-plan`)
 
 ---
 
@@ -16,6 +16,13 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #30 · Rencana kerja urut · branch `feat/aldi-work-plan`
+
+- PR #29 (Gemini Stage 1/3, batas usia 18+) masuk `main` lewat auto-merge. "Allow auto-merge" kini aktif di pengaturan repo; metode merge commit.
+- `docs/SISA-ALDI.md` ditulis ulang menjadi rencana kerja urut: Fase A beres-beres, B fitur MVP yang belum ada, C AI asli, D deploy (MVP selesai di CP-3), E sebelum dipakai pengguna sungguhan, F pasca-MVP dari PRD §4.5. Setiap fase ditutup checkpoint dengan Gerbang Lengkap (10 jenis uji, dari statis sampai keamanan produksi); setiap PR melewati Gerbang Kecil dan CI.
+- Hasil pemeriksaan MVP terhadap PRD: bagian Adli lengkap. Yang belum ada: riwayat hasil cek, tren kalibrasi Pro, latihan ulang H+3/H+7 yang dinilai AI, uji Gemini asli, dan deploy.
+- Ruleset `protect-main` mewajibkan branch up to date dengan `main`, jadi PR dibuka satu per satu.
 
 ### #29 · Batas usia 18+ · branch `feat/aldi-gemini-text`
 
@@ -426,17 +433,12 @@ Branch ini dibuat **di atas** `feat/adli-essay-scans` (PR belum di-merge), jadi 
 
 ## Berikutnya
 
-**Aldi** (daftar lengkap dan perkiraan progres di [SISA-ALDI.md](SISA-ALDI.md))
-1. Merge PR `feat/aldi-account` di kedua repo
-2. Modul `spaced-repetition` (jadwal H+3/H+7) lalu `governance`
-3. Persiapan deploy: migrasi pencabutan hak `anon`/`authenticated` Supabase, `vercel.json` di reksa-frontend (rewrite + header), konfigurasi Render
-4. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
+Urutan kerja lengkap, gerbang uji, dan checkpoint ada di [SISA-ALDI.md](SISA-ALDI.md). Langkah terdekat:
 
-**Adli** (lihat [UNTUK-ADLI.md](UNTUK-ADLI.md))
-1. ~~Review schema di foldernya, perkaya `mockAi.fixtures.ts`~~ ✅
-2. ~~Backend `study-sessions`~~ ✅ (PR #13)
-3. ~~`imageProcessor`, kuota, QR bridge~~ ✅ · ~~unggah + worker audit + `GET /scans/:id` + retry~~ ✅ (`feat/adli-essay-scans`)
-4. Unggah + worker `essay-scans`: menunggu keputusan Aldi soal `essay_submissions` append-only dan infra antrean (lihat `UNTUK-ALDI.md`)
+1. A1: PR tips foto tanpa nama (`feat/aldi-photo-privacy-tip`), konflik dengan `main` diselesaikan dulu
+2. A2: tandai catatan ⏳ Adli yang sudah beres, rapikan `nginx.conf`
+3. B1 sampai B3: riwayat hasil cek, tren kalibrasi Pro, latihan ulang yang dinilai AI, lalu CP-1
+4. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
 
 ## Catatan teknis yang perlu diingat
 
