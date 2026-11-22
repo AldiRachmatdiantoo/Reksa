@@ -1,6 +1,15 @@
 import { z } from 'zod';
 
 const GEMINI_MODEL_PATTERN = /^[a-z0-9.-]{1,64}$/;
+const geminiModelList = z
+  .string()
+  .transform((v) =>
+    v
+      .split(',')
+      .map((m) => m.trim())
+      .filter(Boolean),
+  )
+  .pipe(z.array(z.string().regex(GEMINI_MODEL_PATTERN, 'Nama model Gemini tidak valid')).min(1).max(4));
 
 // Not .strict(): process.env always carries many unrelated variables (PATH, HOME, ...).
 // Only the keys declared here are read; everything else is ignored.
@@ -37,10 +46,10 @@ export const EnvSchema = z
     AI_PROVIDER_MODE: z.enum(['mock', 'gemini']).default('mock'),
     MOCK_AI_LATENCY_MS: z.coerce.number().int().min(0).max(10_000).default(300),
     GEMINI_API_KEY: z.string().optional(),
-    // Model per tahap. Free tier punya kuota harian per model, jadi Stage 1/3 bisa dipindah ke model yang
-    // kuotanya lebih longgar (mis. gemini-2.5-flash-lite) tanpa mengubah model penilai foto.
-    GEMINI_TEXT_MODEL: z.string().regex(GEMINI_MODEL_PATTERN, 'Nama model Gemini tidak valid').default('gemini-2.5-flash'),
-    GEMINI_VISION_MODEL: z.string().regex(GEMINI_MODEL_PATTERN, 'Nama model Gemini tidak valid').default('gemini-2.5-flash'),
+    // Model per tahap, boleh daftar dipisah koma (maks. 4). Free tier punya kuota harian per model: saat kuota
+    // model pertama habis, model berikutnya dipakai. Bawaan ada di geminiAi.provider.ts.
+    GEMINI_TEXT_MODEL: geminiModelList.optional(),
+    GEMINI_VISION_MODEL: geminiModelList.optional(),
   })
   .superRefine((env, ctx) => {
     if (env.AI_PROVIDER_MODE === 'gemini' && !env.GEMINI_API_KEY) {

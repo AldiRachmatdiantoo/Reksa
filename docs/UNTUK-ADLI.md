@@ -6,6 +6,15 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: Stage 2 pindah model, kode gagal baru (branch `feat/aldi-gemini-free`)
+
+Aldi memutuskan tetap memakai free tier Gemini. Yang berubah di areamu:
+
+- **Model Stage 2** kini `gemini-3.5-flash-lite`, cadangan `gemini-2.5-flash-lite` (dipakai otomatis saat kuota harian model pertama habis). `gemini-2.5-flash` dialihkan Google mulai Desember 2026. Hasil uji live 22 Nov: `gemini-3.5-flash-lite` memberi nilai sama untuk catatan dengan dan tanpa baris perintah (80/80) dan menandai injeksi; `gemini-3.5-flash` terlalu longgar (93 untuk catatan parsial) dan `gemini-3-flash-preview` justru naik nilainya saat ada baris perintah (93 vs 80), jadi tidak dipakai.
+- **`gemini.live.test.ts`:** skenario "catatan parsial + baris perintah" kini membandingkan dengan catatan yang sama tanpa baris perintah (`injected <= clean + 10`), bukan ambang tetap `< 80`. Model berbeda wajar menilai sedikit lebih longgar atau ketat; yang diuji adalah baris perintah tidak menaikkan nilai.
+- **Kode gagal audit baru `AI_QUOTA_EXHAUSTED`** (`scans.schema.ts`, `audit.service.ts`): kuota harian habis langsung gagal tanpa jeda 10 + 40 detik, kuota cek pelajar dikembalikan seperti biasa. `auditFailureText` di `scansApi.ts` punya pesan "coba cek ulang besok".
+- Tes baru: `audit.service.test.ts` (kuota habis), `frontend/tests/unit/scansApi.test.ts`.
+
 ## 22 Nov 2026: batas unggah per IP dilonggarkan (branch `feat/aldi-gemini-quota`)
 
 - **`scans.routes.ts`:** `scans:upload:ip` dari 30 ke 120 per jam (`SCAN_UPLOAD_IP_LIMIT_PER_HOUR`). Satu kelas di wifi sekolah berbagi satu IP, jadi 30 per jam bisa memblokir kelas 30+ siswa di tengah jalan. Pembatas utama tetap kuota harian per akun. Tes baru di `tests/integration/qrBridge.test.ts`.

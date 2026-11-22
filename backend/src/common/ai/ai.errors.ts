@@ -5,8 +5,10 @@
  * - INVALID_OUTPUT: output tidak lolos skema Zod, dicoba ulang sekali.
  * - FATAL: permintaan ditolak karena konfigurasi (400/401/403: API key, model, atau body salah).
  *   Mengulang tidak akan berhasil, jadi audit langsung FAILED.
+ * - QUOTA_EXHAUSTED: kuota harian model habis (429 dengan kuota "PerDay") atau saldo prabayar habis (402).
+ *   Baru pulih besok, jadi tidak diulang dengan jeda; provider mencoba model cadangan kalau ada.
  */
-export type AiProviderErrorKind = 'TRANSIENT' | 'INVALID_OUTPUT' | 'FATAL';
+export type AiProviderErrorKind = 'TRANSIENT' | 'INVALID_OUTPUT' | 'FATAL' | 'QUOTA_EXHAUSTED';
 
 export class AiProviderError extends Error {
   readonly kind: AiProviderErrorKind;

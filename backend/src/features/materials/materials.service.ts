@@ -31,7 +31,12 @@ export type MaterialsServiceDeps = {
   storage: IStorageService;
   pdf: PdfTextExtractor;
   onWarning?: (message: string, data: Record<string, unknown>) => void;
+  /** Jeda sebelum mencoba sekali lagi saat AI sibuk (503/429 per menit/batas waktu). */
+  transientRetryDelayMs?: number;
 };
+
+/** Satu panggilan rubrik hanya beberapa detik, jadi satu kali coba ulang singkat masih layak saat pengguna menunggu. */
+const TRANSIENT_RETRY_DELAY_MS = 2_000;
 
 export type UploadedPdf = { buffer: Buffer; size: number };
 
@@ -39,8 +44,9 @@ export type UploadedPdf = { buffer: Buffer; size: number };
 export const AI_UNAVAILABLE_CODE = 'AI_UNAVAILABLE';
 export const AI_BUSY_MESSAGE = 'Penyusun konsep kunci sedang sibuk. Tunggu sebentar, lalu kirim lagi.';
 export const AI_DOWN_MESSAGE = 'Penyusun konsep kunci sedang tidak bisa dipakai. Coba lagi nanti.';
+export const AI_QUOTA_MESSAGE = 'Jatah penyusun konsep kunci untuk hari ini sudah habis. Coba kirim lagi besok.';
 
-function aiErrorKind(err: unknown): 'TRANSIENT' | 'INVALID_OUTPUT' | 'FATAL' {
+function aiErrorKind(err: unknown): 'TRANSIENT' | 'INVALID_OUTPUT' | 'FATAL' | 'QUOTA_EXHAUSTED' {
   if (err instanceof AiProviderError) return err.kind;
   if (err instanceof ZodError) return 'INVALID_OUTPUT';
   return 'TRANSIENT';
@@ -191,11 +197,12 @@ export class MaterialsService {
   }
 
   /**
-   * Jawaban AI yang rusak dicoba sekali lagi. Gangguan sementara (kuota per menit habis, server sibuk, batas
-   * waktu) tidak dicoba ulang di sini karena pengguna sedang menunggu; pesannya meminta kirim ulang sebentar lagi.
-   * Detail error hanya masuk log, tidak pernah ke respons.
+   * Jawaban AI yang rusak dicoba sekali lagi. Gangguan sementara (server sibuk, kuota per menit, batas waktu) juga
+   * dicoba sekali lagi setelah jeda singkat; kalau masih gagal, pesannya meminta kirim ulang sebentar lagi. Kuota
+   * harian habis tidak dicoba ulang. Detail error hanya masuk log, tidak pernah ke respons.
    */
   private async extractRubric(text: string): Promise<AiRubricOutput> {
+    let transientRetried = false;
     for (let attempt = 1; ; attempt++) {
       try {
         // Output AI divalidasi ulang di sini juga: provider apa pun tidak dipercaya begitu saja.
@@ -203,8 +210,14 @@ export class MaterialsService {
       } catch (err) {
         const kind = aiErrorKind(err);
         if (kind === 'INVALID_OUTPUT' && attempt < 2) continue;
+        if (kind === 'TRANSIENT' && !transientRetried) {
+          transientRetried = true;
+          await new Promise((resolve) => setTimeout(resolve, this.deps.transientRetryDelayMs ?? TRANSIENT_RETRY_DELAY_MS));
+          continue;
+        }
         this.deps.onWarning?.('Rubrik gagal dibuat AI', { kind, attempt, err });
-        throw new ServiceUnavailableError(kind === 'FATAL' ? AI_DOWN_MESSAGE : AI_BUSY_MESSAGE, AI_UNAVAILABLE_CODE);
+        const message = kind === 'FATAL' ? AI_DOWN_MESSAGE : kind === 'QUOTA_EXHAUSTED' ? AI_QUOTA_MESSAGE : AI_BUSY_MESSAGE;
+        throw new ServiceUnavailableError(message, AI_UNAVAILABLE_CODE);
       }
     }
   }

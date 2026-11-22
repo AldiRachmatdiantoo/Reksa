@@ -160,6 +160,17 @@ describe('AuditService.run: retries (FR-05)', () => {
     expect(sleeps).toEqual([]);
   });
 
+  it('fails at once with AI_QUOTA_EXHAUSTED when the daily quota is used up, and refunds the check', async () => {
+    ai.evaluateHandwritingEssay.mockRejectedValue(new AiProviderError('QUOTA_EXHAUSTED', 'Kuota harian Gemini habis (HTTP 429)'));
+    const { submission, job } = pending();
+    const usedBefore = repo.quota.dailyScanCount;
+    await expect(service().run(job)).resolves.toBe('FAILED');
+    expect(repo.submissions.get(submission.id)!.auditErrorCode).toBe('AI_QUOTA_EXHAUSTED');
+    expect(ai.evaluateHandwritingEssay).toHaveBeenCalledTimes(1);
+    expect(sleeps).toEqual([]);
+    expect(repo.quota.dailyScanCount).toBe(usedBefore - 1);
+  });
+
   it('fails with AI_INVALID_OUTPUT after two invalid outputs', async () => {
     ai.evaluateHandwritingEssay.mockRejectedValue(new z.ZodError([]));
     const { submission, job } = pending();
