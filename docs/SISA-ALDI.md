@@ -59,7 +59,7 @@ Daftar ini urut: kerjakan dari atas. Centang `[x]` saat PR-nya sudah masuk `main
   - Tebak nilai, foto (langsung dari HP atau lewat QR), dicek Stage 2. Jadwal ditandai selesai saat hasilnya `DONE`.
   - **Diputuskan (22 November 2026):** latihan ulang tidak memotong kuota foto harian. Jumlahnya sudah terbatas: paling banyak 2 latihan per sesi utama yang selesai dicek, dan sesi utama sendiri dibatasi kuota.
   - Menyentuh `study-sessions` dan `essay-scans` (area Adli); dicatat di `UNTUK-ADLI.md`.
-- [ ] **CP-1 · Gerbang Lengkap** poin 1 sampai 6 dan 8.
+- [x] **CP-1 · Gerbang Lengkap** poin 1 sampai 6 dan 8 (22 November 2026, hasil di `CHECKPOINT.md` #34). Catatan: `format:check` masih gagal di file area Adli (E3), admin institusi hanya dicek lewat E2E.
 
 ## Fase C · AI asli
 

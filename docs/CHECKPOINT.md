@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, B3 latihan ulang dinilai AI (Aldi, branch `feat/aldi-graded-review`)
+**Checkpoint terakhir:** 22 November 2026, CP-1 Gerbang Lengkap setelah Fase B (Aldi, branch `feat/aldi-cp1-gate`)
 
 ---
 
@@ -16,6 +16,21 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #34 · CP-1 Gerbang Lengkap · branch `feat/aldi-cp1-gate`
+
+Dijalankan setelah Fase B (PR #33 dan #34 sudah di `main`). Tidak ada perubahan kode.
+
+- **Statis:** `typecheck` backend dan frontend lolos, `prisma validate` lolos. `format:check` **gagal**: 25 file backend dan `frontend/tests/e2e/helpers.ts`, semuanya di area Adli. Ini butir E3 yang sudah tercatat, belum diperbaiki.
+- **Unit + coverage:** 627 lolos, 6 dilewati. Statements 96,3%, branches 89,86% (batas 96/89).
+- **Integration:** 264 lolos (Testcontainers).
+- **Build:** build backend bersih, build frontend tanpa peringatan. Image backend jalan sebagai uid 1000, frontend uid 101, `nginx -t` lolos.
+- **E2E:** 15/15 lolos termasuk lebar 320/375px dan axe. `study-flow`, `history`, `review`, `mobile-layout` diulang 3 kali: 21/21, tidak ada yang flaky.
+- **`npm audit --audit-level=high`:** frontend 0 kerentanan. Backend 8 moderate (rantai `testcontainers`, `archiver`, `glob`, `minimatch`, `zip-stream`, semuanya devDependency), 0 high.
+- **Cek manual di browser (stack lokal port 8088):**
+  - Siswa: riwayat, tren kalibrasi Pro (gelap di lebar laptop, terang di 375px), latihan ulang dinilai AI dari kartu jadwal sampai jadwal selesai.
+  - Guru: portal kelas, kode kelas, peta kelas; tema terang dan gelap, 375px tanpa scroll ke samping, fokus keyboard terlihat, target sentuh 44px, konsol tanpa error atau pelanggaran CSP setelah muat ulang.
+  - Admin institusi: **tidak dicek manual** (belum ada akun uji). Alurnya tercakup `tests/e2e/governance.spec.ts` dan `tests/integration/institution.test.ts`.
 
 ### #33 · B3 latihan ulang H+3/H+7 dinilai AI · branch `feat/aldi-graded-review`
 
@@ -460,8 +475,8 @@ Branch ini dibuat **di atas** `feat/adli-essay-scans` (PR belum di-merge), jadi 
 
 Urutan kerja lengkap, gerbang uji, dan checkpoint ada di [SISA-ALDI.md](SISA-ALDI.md). Langkah terdekat:
 
-1. CP-1: Gerbang Lengkap
-2. Fase C: AI asli (C1 Stage 2 siap dipakai, C2 Aldi membuat API key)
+1. Fase C: AI asli (C1 Stage 2 siap dipakai, C2 Aldi membuat API key)
+2. E3: rapikan format file area Adli supaya `format:check` lolos
 3. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
 
 ## Catatan teknis yang perlu diingat
