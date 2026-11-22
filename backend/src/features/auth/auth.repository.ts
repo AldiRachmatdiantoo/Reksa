@@ -32,6 +32,8 @@ export type RefreshTokenRecord = {
   userId: string;
   familyId: string;
   isRevoked: boolean;
+  /** Kapan token ini diganti lewat rotasi normal; null bila belum dirotasi atau dicabut dengan cara lain. */
+  rotatedAt: Date | null;
   expiresAt: Date;
 };
 
@@ -53,6 +55,8 @@ export interface AuthRepository {
   findRefreshTokenByHashForUpdate(tokenHash: string): Promise<RefreshTokenRecord | null>;
   findRefreshTokenByHash(tokenHash: string): Promise<RefreshTokenRecord | null>;
   revokeRefreshToken(id: string): Promise<void>;
+  /** Mencabut token karena sudah diganti token baru (rotasi), sambil mencatat waktunya. */
+  markRefreshTokenRotated(id: string, at: Date): Promise<void>;
   revokeFamily(familyId: string): Promise<void>;
   revokeAllUserTokens(userId: string): Promise<void>;
   /**
@@ -145,8 +149,8 @@ export class PrismaAuthRepository implements AuthRepository {
   async findRefreshTokenByHashForUpdate(tokenHash: string): Promise<RefreshTokenRecord | null> {
     // Prisma's query API has no FOR UPDATE; the tagged template is still parameterized.
     const rows = await this.db.$queryRaw<
-      { id: string; user_id: string; family_id: string; is_revoked: boolean; expires_at: Date }[]
-    >`SELECT id, user_id, family_id, is_revoked, expires_at
+      { id: string; user_id: string; family_id: string; is_revoked: boolean; rotated_at: Date | null; expires_at: Date }[]
+    >`SELECT id, user_id, family_id, is_revoked, rotated_at, expires_at
       FROM refresh_tokens
       WHERE token_hash = ${tokenHash}
       FOR UPDATE`;
@@ -157,6 +161,7 @@ export class PrismaAuthRepository implements AuthRepository {
           userId: row.user_id,
           familyId: row.family_id,
           isRevoked: row.is_revoked,
+          rotatedAt: row.rotated_at ? new Date(row.rotated_at) : null,
           expiresAt: new Date(row.expires_at),
         }
       : null;
@@ -165,12 +170,16 @@ export class PrismaAuthRepository implements AuthRepository {
   findRefreshTokenByHash(tokenHash: string): Promise<RefreshTokenRecord | null> {
     return this.db.refreshToken.findUnique({
       where: { tokenHash },
-      select: { id: true, userId: true, familyId: true, isRevoked: true, expiresAt: true },
+      select: { id: true, userId: true, familyId: true, isRevoked: true, rotatedAt: true, expiresAt: true },
     });
   }
 
   async revokeRefreshToken(id: string): Promise<void> {
     await this.db.refreshToken.update({ where: { id }, data: { isRevoked: true } });
+  }
+
+  async markRefreshTokenRotated(id: string, at: Date): Promise<void> {
+    await this.db.refreshToken.update({ where: { id }, data: { isRevoked: true, rotatedAt: at } });
   }
 
   async revokeFamily(familyId: string): Promise<void> {

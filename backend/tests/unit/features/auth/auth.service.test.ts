@@ -15,6 +15,8 @@ import {
   EMAIL_VERIFY_TTL_MS,
   hashEmailToken,
   PASSWORD_RESET_TTL_MS,
+  REFRESH_ROTATION_GRACE_MS,
+  RefreshRaceError,
   type SecurityEvent,
 } from '../../../../src/features/auth/auth.service.js';
 import { PRIVACY_VERSION, TERMS_VERSION } from '../../../../src/config/policies.js';
@@ -83,7 +85,7 @@ class InMemoryAuthRepository implements AuthRepository {
     return t.userId;
   }
   async createRefreshToken(data: { userId: string; tokenHash: string; familyId: string; expiresAt: Date }) {
-    this.tokens.push({ id: randomUUID(), isRevoked: false, ...data });
+    this.tokens.push({ id: randomUUID(), isRevoked: false, rotatedAt: null, ...data });
   }
   async findRefreshTokenByHashForUpdate(tokenHash: string) {
     return this.tokens.find((t) => t.tokenHash === tokenHash) ?? null;
@@ -93,6 +95,9 @@ class InMemoryAuthRepository implements AuthRepository {
   }
   async revokeRefreshToken(id: string) {
     this.tokens.filter((t) => t.id === id).forEach((t) => (t.isRevoked = true));
+  }
+  async markRefreshTokenRotated(id: string, at: Date) {
+    this.tokens.filter((t) => t.id === id).forEach((t) => Object.assign(t, { isRevoked: true, rotatedAt: at }));
   }
   async revokeFamily(familyId: string) {
     this.tokens.filter((t) => t.familyId === familyId).forEach((t) => (t.isRevoked = true));
@@ -294,6 +299,7 @@ describe('AuthService', () => {
       expect(second.refreshToken).not.toBe(first.refreshToken);
       expect(repo.tokens).toHaveLength(2);
       expect(repo.tokens[0]?.isRevoked).toBe(true);
+      expect(repo.tokens[0]?.rotatedAt).toEqual(now);
       expect(repo.tokens[1]?.isRevoked).toBe(false);
       expect(repo.tokens[1]?.familyId).toBe(repo.tokens[0]?.familyId);
     });
@@ -302,10 +308,32 @@ describe('AuthService', () => {
       const first = await service.register(registerInput);
       await service.login({ email: registerInput.email, password: registerInput.password }); // second device
       await service.refresh(first.refreshToken);
+      now = new Date(now.getTime() + REFRESH_ROTATION_GRACE_MS + 1);
 
       await expect(service.refresh(first.refreshToken)).rejects.toBeInstanceOf(UnauthorizedError);
 
       expect(repo.tokens.every((t) => t.isRevoked)).toBe(true);
+      expect(events.map((e) => e.event)).toContain('REFRESH_TOKEN_REUSE');
+    });
+
+    it('treats a rotated token replayed within the grace window as a tab race: no revocation', async () => {
+      const first = await service.register(registerInput);
+      const winner = await service.refresh(first.refreshToken);
+      now = new Date(now.getTime() + REFRESH_ROTATION_GRACE_MS);
+
+      const race = service.refresh(first.refreshToken);
+      await expect(race).rejects.toBeInstanceOf(RefreshRaceError);
+      await expect(race).rejects.toMatchObject({ statusCode: 401, code: 'REFRESH_RACE' });
+
+      expect(events.map((e) => e.event)).not.toContain('REFRESH_TOKEN_REUSE');
+      expect(repo.tokens.filter((t) => !t.isRevoked)).toHaveLength(1);
+      await expect(service.refresh(winner.refreshToken)).resolves.toBeDefined();
+    });
+
+    it('still treats a token revoked by logout as reuse, even right away', async () => {
+      const first = await service.register(registerInput);
+      await service.logout(first.refreshToken);
+      await expect(service.refresh(first.refreshToken)).rejects.not.toBeInstanceOf(RefreshRaceError);
       expect(events.map((e) => e.event)).toContain('REFRESH_TOKEN_REUSE');
     });
 

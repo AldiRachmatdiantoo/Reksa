@@ -132,13 +132,15 @@ model AuthToken {
 }
 
 model RefreshToken {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  tokenHash String   @map("token_hash") @db.VarChar(128)
-  familyId  String   @map("family_id") @db.Uuid
-  isRevoked Boolean  @default(false) @map("is_revoked")
-  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @map("token_hash") @db.VarChar(128)
+  familyId  String    @map("family_id") @db.Uuid
+  isRevoked Boolean   @default(false) @map("is_revoked")
+  /// Diisi hanya saat rotasi normal; dipakai untuk membedakan balapan antartab dari token curian.
+  rotatedAt DateTime? @map("rotated_at") @db.Timestamptz(6)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

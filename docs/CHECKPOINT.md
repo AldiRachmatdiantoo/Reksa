@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, FR-10 portal admin institusi (Aldi, branch `feat/aldi-institution-admin`, ditumpuk di atas `feat/aldi-cohort-blind-spots`)
+**Checkpoint terakhir:** 22 November 2026, perbaikan bug hasil QA 1 sampai 4 (Aldi, branch `fix/aldi-qa-bugs`, ditumpuk di atas `feat/aldi-institution-admin`)
 
 ---
 
@@ -16,6 +16,17 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #25 · Perbaikan bug QA 1 sampai 4 · branch `fix/aldi-qa-bugs`
+
+QA penuh 22 November menemukan 9 bug. Empat yang paling berat diperbaiki di sini; sisanya (5 sampai 9) dan catatan kualitas belum dikerjakan.
+
+1. **Menu pelajar meluber di HP.** Empat menu dengan ikon di samping label butuh 435px, jadi di layar 375px menu Kelas terpotong dan seluruh halaman bisa digeser ke samping. Di bawah `md`, `AppHeader` sekarang menaruh ikon di atas label (`StudentNav stacked`). E2E baru `mobile-layout.spec.ts` memeriksa 5 halaman pelajar di 320px dan 375px.
+2. **Dua tab refresh bersamaan mencabut semua sesi.** Migrasi `20261122000400_refresh_rotation_grace` menambah `refresh_tokens.rotated_at` (diisi hanya saat rotasi). Token yang sudah dirotasi dan muncul lagi dalam 10 detik (`REFRESH_ROTATION_GRACE_MS`) dijawab `401 REFRESH_RACE` tanpa pencabutan dan tanpa menghapus cookie. Lewat 10 detik, atau token yang dicabut karena logout, tetap dianggap reuse. Di frontend, `apiClient` memakai Web Locks (`reksa-auth-refresh`) supaya tab-tab refresh bergantian, dan mengulang request setelah `REFRESH_RACE`.
+3. **Refresh yang gagal karena 429/5xx/jaringan mengeluarkan pengguna.** `apiClient` sekarang membedakan `expired` dari `unavailable`; yang kedua dilempar sebagai `503 SESSION_REFRESH_UNAVAILABLE` tanpa memanggil `onSessionExpired`.
+4. **Batas laju per IP terlalu sempit untuk satu kelas di balik NAT sekolah.** Login 5/menit per akun per IP + 100/menit per IP, register 100/jam, refresh 10/menit per token + 300/menit per IP, logout 300/menit, verifikasi email 200/jam, lupa password 60/jam per IP (+ 3/jam per email tetap), reset 60/15 menit. `rateLimit` mendapat opsi `skip`. Batas unggah foto `scans:upload:ip` (30/jam per IP) punya masalah yang sama, tapi ada di area Adli; dicatat di `UNTUK-ADLI.md`.
+
+- **Hasil:** backend 560 lulus (3 skip), coverage statements 94.9%; uji keamanan baru untuk balapan refresh, cookie tidak terhapus, dan batas per akun/per token; `prisma migrate diff` kosong. Frontend 48 unit, E2E 11/11. Dicoba juga di stack lokal: dua refresh paralel kini 200 + `REFRESH_RACE` dan sesi tetap hidup; dua tab dengan access token habis sama-sama pulih (refresh 200, 200 berurutan).
 
 ### #24 · FR-10 portal admin institusi · branch `feat/aldi-institution-admin`
 

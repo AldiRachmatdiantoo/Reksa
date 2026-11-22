@@ -6,6 +6,14 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: perbaikan bug QA (branch `fix/aldi-qa-bugs`)
+
+- ⏳ menunggu: **batas unggah foto per IP** (`scans:upload:ip`, 30/jam di `scans.routes.ts`, areamu). Satu kelas biasanya keluar lewat satu IP sekolah, jadi siswa ke-31 dalam satu jam kena 429. Usulanku: batas IP dinaikkan (misal 300/jam) untuk meredam banjir sebelum multer, lalu batas utama dipasang per user untuk unggahan yang login dan per `qrToken` untuk unggahan lewat QR. Kabari kalau setuju atau mau kamu kerjakan sendiri.
+- `auth.service.test.ts` (areamu, tapi isinya tes modul `auth` milikku): repo tiruan menambah `rotatedAt` dan `markRefreshTokenRotated`, ditambah dua tes balapan refresh. Kalau kamu punya repo tiruan `AuthRepository` lain, tambahkan dua hal itu.
+- `RefreshTokenRecord` sekarang punya `rotatedAt`, dan ada migrasi baru `20261122000400_refresh_rotation_grace`.
+- `apiClient` (frontend): refresh dikunci antartab lewat Web Locks, `401 REFRESH_RACE` diulang otomatis, dan refresh yang gagal karena 429/5xx/jaringan menjadi `503 SESSION_REFRESH_UNAVAILABLE` tanpa mengeluarkan pengguna.
+- E2E baru `frontend/tests/e2e/mobile-layout.spec.ts` (file baru, tidak mengubah spec lain).
+
 ## 22 Nov 2026: FR-10 portal admin institusi (branch `feat/aldi-institution-admin`)
 
 - Migrasi baru `20261122000300_institution_admin`. Fungsi agregat membaca `essay_submissions.blind_spots_json`, `actual_ai_score`, dan `audit_status = 'DONE'`. Kalau bentuk kolom itu berubah, kabari saya supaya fungsinya ikut diubah.

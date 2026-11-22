@@ -82,13 +82,13 @@ describe('account: enumeration and brute force', () => {
     expect(keys.join(',')).not.toContain('reksa');
   });
 
-  it('forgot password is limited to 10 per hour per IP across different emails', async () => {
+  it('forgot password is limited to 60 per hour per IP across different emails (roomy for one school IP)', async () => {
     const statuses: number[] = [];
-    for (let i = 0; i < 11; i++) {
+    for (let i = 0; i < 61; i++) {
       statuses.push((await request(ctx.app).post('/api/v1/auth/password/forgot').send({ email: `u${i}@reksa.id` })).status);
     }
-    expect(statuses.slice(0, 10).every((s) => s === 202)).toBe(true);
-    expect(statuses[10]).toBe(429);
+    expect(statuses.slice(0, 60).every((s) => s === 202)).toBe(true);
+    expect(statuses[60]).toBe(429);
   });
 
   it('changing password is limited to 5 attempts per 15 minutes per user', async () => {

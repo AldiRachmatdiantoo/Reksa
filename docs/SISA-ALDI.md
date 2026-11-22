@@ -44,6 +44,16 @@ Centang `[x]` saat selesai dan catat di `docs/CHECKPOINT.md`.
 - [ ] **Gemini Stage 3 (`clusterCohortBlindSpots`)** (Fase 3)
 - [ ] **Sambungkan frontend studio ke backend Adli:** sesi belajar, unggah foto, hasil audit asli (ganti `SAMPLE_AUDIT`), QR bridge laptop ke HP
 
+## Temuan QA 22 November 2026
+
+- [x] Bug 1 sampai 4: menu HP meluber, balapan refresh antartab, logout saat refresh 429/jaringan, batas laju per IP untuk NAT sekolah (branch `fix/aldi-qa-bugs`)
+- [ ] 5: form gabung kelas menampilkan pesan verifikasi email dua kali; tombol Gabung tetap aktif untuk akun belum terverifikasi
+- [ ] 6: kartu ledger guru hanya menampilkan potongan hash, tanpa tautan ke `/cek-bukti`
+- [ ] 7: thumbnail foto ledger terpotong (`object-cover`)
+- [ ] 8: target sentuh di bawah 44px ("Lupa kata sandi?", "Mulai sesi belajar", tautan "Baca juga" di `/privasi` dan `/syarat`)
+- [ ] 9: pengunjung tanpa login memicu `/auth/me` 401 lalu `/auth/refresh` 401 di setiap muat halaman
+- [ ] Kualitas: bundle JS 646 kB tanpa code splitting, coverage rendah (`cohortCache.ts`, `config/email.ts`, `crypto.ts`, cabang `ledgerPdf.ts`), oxfmt tanpa config, CSP `img-src`/`frame-src` mengizinkan semua `https:`
+
 ## Perkiraan progres
 
 | Kondisi | Perkiraan MVP |

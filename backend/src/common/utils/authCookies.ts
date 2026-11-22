@@ -1,4 +1,4 @@
-import type { CookieOptions, Response } from 'express';
+import type { CookieOptions, Request, Response } from 'express';
 import { ACCESS_TOKEN_TTL_SEC } from './jwt.js';
 
 export const ACCESS_COOKIE = '__Host-access_token';
@@ -30,6 +30,11 @@ export function setAuthCookies(res: Response, tokens: { accessToken: string; ref
     ...refreshCookieOptions,
     maxAge: REFRESH_TOKEN_TTL_SEC * 1000,
   });
+}
+
+export function readRefreshCookie(req: Request): string | undefined {
+  const value: unknown = req.cookies?.[REFRESH_COOKIE];
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
 export function clearAuthCookies(res: Response): void {

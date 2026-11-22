@@ -1,5 +1,12 @@
 # Checkpoint Frontend REKSA
 
+## #17 · 2026-11-22 · Perbaikan bug QA: menu HP dan refresh sesi
+
+Branch: `fix/aldi-qa-bugs`.
+
+- `shared/ui/AppHeader.tsx`: di bawah `md`, menu pelajar memakai ikon di atas label (`stacked`), jadi Belajar/Materi/Ulang/Kelas muat di 320px. Sebelumnya butuh 435px, menu Kelas terpotong, dan halaman bisa digeser ke samping. E2E `mobile-layout.spec.ts` (320 dan 375px).
+- `core/apiClient.ts`: refresh dikunci antartab dengan Web Locks (`reksa-auth-refresh`), `401 REFRESH_RACE` dari backend diulang dengan cookie baru, dan refresh yang gagal karena 429/5xx/jaringan dilempar sebagai `503 SESSION_REFRESH_UNAVAILABLE` tanpa mengeluarkan pengguna (`AuthProvider` menampilkannya sebagai server tidak terjangkau). Unit test baru di `apiClient.test.ts`.
+
 ## #16 · 2026-11-22 · Portal admin institusi (FR-10)
 
 Branch: `feat/aldi-institution-admin`.

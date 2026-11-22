@@ -40,6 +40,21 @@ const INVALID_LINK = 'Tautan tidak valid, sudah dipakai, atau sudah kedaluwarsa.
 export const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60_000;
 export const PASSWORD_RESET_TTL_MS = 30 * 60_000;
 
+/**
+ * Token yang sudah dirotasi lalu muncul lagi dalam jendela ini adalah dua tab (atau permintaan ulang
+ * jaringan) yang refresh bersamaan: ditolak dengan REFRESH_RACE tanpa mencabut sesi, karena pemenangnya
+ * sudah memasang cookie baru di browser yang sama. Lewat dari jendela ini tetap dianggap token curian.
+ * Jendela dibuat pendek supaya celah deteksi pencurian sekecil mungkin (Auth0 dan Okta memakai pola serupa).
+ */
+export const REFRESH_ROTATION_GRACE_MS = 10_000;
+
+/** 401 khusus balapan refresh: controller tidak menghapus cookie, frontend cukup mengulang permintaannya. */
+export class RefreshRaceError extends AppError {
+  constructor() {
+    super(401, 'REFRESH_RACE', 'Sesi baru saja diperbarui di tab lain');
+  }
+}
+
 /** Token email 256 bit acak; SHA-256 tanpa kunci sudah cukup (tidak bisa ditebak dari hash). */
 export function hashEmailToken(raw: string): string {
   return createHash('sha256').update(raw).digest('hex');
@@ -100,6 +115,9 @@ export class AuthService {
       if (!token) return { kind: 'invalid' } as const;
 
       if (token.isRevoked) {
+        if (token.rotatedAt && this.now().getTime() - token.rotatedAt.getTime() <= REFRESH_ROTATION_GRACE_MS) {
+          return { kind: 'race' } as const;
+        }
         await tx.revokeAllUserTokens(token.userId);
         return { kind: 'reuse', userId: token.userId, familyId: token.familyId } as const;
       }
@@ -112,11 +130,12 @@ export class AuthService {
       const user = await tx.findUserById(token.userId);
       if (!user) return { kind: 'invalid' } as const;
 
-      await tx.revokeRefreshToken(token.id);
+      await tx.markRefreshTokenRotated(token.id, this.now());
       const refreshToken = await this.storeNewRefreshToken(tx, user.id, token.familyId);
       return { kind: 'ok', user, refreshToken } as const;
     });
 
+    if (outcome.kind === 'race') throw new RefreshRaceError();
     // Throw only after the transaction committed, so the revocation on reuse sticks.
     if (outcome.kind === 'reuse') {
       this.deps.onSecurityEvent?.('REFRESH_TOKEN_REUSE', { userId: outcome.userId, familyId: outcome.familyId });

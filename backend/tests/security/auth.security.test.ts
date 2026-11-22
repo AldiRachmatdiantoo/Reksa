@@ -2,6 +2,7 @@ import { SignJWT } from 'jose';
 import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { ACCESS_COOKIE, REFRESH_COOKIE } from '../../src/common/utils/authCookies.js';
+import { REFRESH_ROTATION_GRACE_MS } from '../../src/features/auth/auth.service.js';
 import {
   CONSENT,
   cookieHeader,
@@ -65,6 +66,11 @@ describe('Token replay', () => {
       .post('/api/v1/auth/refresh')
       .set('Cookie', cookieHeader({ [REFRESH_COOKIE]: original }));
     const latest = parseSetCookies(rotated.headers['set-cookie'])[REFRESH_COOKIE]?.value ?? '';
+    // Replay dilakukan setelah masa tenggang balapan antartab lewat.
+    await ctx.owner.refreshToken.updateMany({
+      where: { rotatedAt: { not: null } },
+      data: { rotatedAt: new Date(Date.now() - REFRESH_ROTATION_GRACE_MS - 1_000) },
+    });
 
     const replay = await request(ctx.app)
       .post('/api/v1/auth/refresh')
@@ -79,6 +85,38 @@ describe('Token replay', () => {
 
     const active = await ctx.owner.refreshToken.count({ where: { isRevoked: false } });
     expect(active).toBe(0);
+  });
+
+  it('two tabs refreshing at once: one rotates, the other gets REFRESH_RACE and nothing is revoked', async () => {
+    const { cookies } = await registerStudent();
+    const original = cookieHeader({ [REFRESH_COOKIE]: cookies[REFRESH_COOKIE]?.value ?? '' });
+
+    const [a, b] = await Promise.all([
+      request(ctx.app).post('/api/v1/auth/refresh').set('Cookie', original),
+      request(ctx.app).post('/api/v1/auth/refresh').set('Cookie', original),
+    ]);
+    const winner = a.status === 200 ? a : b;
+    const loser = a.status === 200 ? b : a;
+    expect(winner.status).toBe(200);
+    expect(loser.status).toBe(401);
+    expect(loser.body.error.code).toBe('REFRESH_RACE');
+    // Respons yang kalah tidak boleh menghapus cookie baru yang dipasang pemenang.
+    expect(loser.headers['set-cookie']).toBeUndefined();
+
+    const latest = parseSetCookies(winner.headers['set-cookie'])[REFRESH_COOKIE]?.value ?? '';
+    const next = await request(ctx.app)
+      .post('/api/v1/auth/refresh')
+      .set('Cookie', cookieHeader({ [REFRESH_COOKIE]: latest }));
+    expect(next.status).toBe(200);
+    expect(await ctx.owner.refreshToken.count({ where: { isRevoked: false } })).toBe(1);
+  });
+
+  it('a made-up refresh token still clears the cookies', async () => {
+    const res = await request(ctx.app)
+      .post('/api/v1/auth/refresh')
+      .set('Cookie', cookieHeader({ [REFRESH_COOKIE]: 'bukan-token' }));
+    expect(res.status).toBe(401);
+    expect(String(res.headers['set-cookie'])).toContain(`${REFRESH_COOKIE}=;`);
   });
 
   it('stores refresh tokens hashed: a raw database value cannot be used as a cookie', async () => {
@@ -191,7 +229,7 @@ describe('Input validation: SQLi payloads and unknown fields (Zod .strict())', (
 });
 
 describe('Rate limiting (Redis sliding window)', () => {
-  it('blocks the 6th login attempt per minute from one IP with 429 + Retry-After', async () => {
+  it('blocks the 6th login attempt per minute for one account from one IP with 429 + Retry-After', async () => {
     const attempt = () =>
       request(ctx.app)
         .post('/api/v1/auth/login')
@@ -218,5 +256,54 @@ describe('Rate limiting (Redis sliding window)', () => {
       .set('X-Forwarded-For', '203.0.113.9')
       .send({ email: 'siapa@reksa.id', password: 'SalahBanget123' });
     expect(otherIp.status).toBe(401);
+  });
+
+  it('one student hitting the login limit does not block classmates behind the same school IP', async () => {
+    const schoolIp = '198.51.100.20';
+    for (let i = 0; i < 6; i++) {
+      await request(ctx.app)
+        .post('/api/v1/auth/login')
+        .set('X-Forwarded-For', schoolIp)
+        .send({ email: 'salah.ketik@reksa.id', password: 'SalahBanget123' });
+    }
+    const classmate = await request(ctx.app)
+      .post('/api/v1/auth/login')
+      .set('X-Forwarded-For', schoolIp)
+      .send({ email: 'teman.sekelas@reksa.id', password: 'SalahBanget123' });
+    expect(classmate.status).toBe(401);
+  });
+
+  it('still caps one IP at 100 login attempts per minute across accounts', async () => {
+    // Body tanpa password ditolak validasi (400) sesudah limiter, jadi tidak menjalankan Argon2.
+    const attempt = (i: number) =>
+      request(ctx.app).post('/api/v1/auth/login').set('X-Forwarded-For', '198.51.100.21').send({ email: `akun${i}@reksa.id` });
+    for (let i = 0; i < 100; i++) expect((await attempt(i)).status).toBe(400);
+    expect((await attempt(100)).status).toBe(429);
+  });
+
+  it('limits refresh per token, so one IP can carry a whole class', async () => {
+    const schoolIp = '198.51.100.22';
+    const refreshWith = (token: string) =>
+      request(ctx.app)
+        .post('/api/v1/auth/refresh')
+        .set('X-Forwarded-For', schoolIp)
+        .set('Cookie', cookieHeader({ [REFRESH_COOKIE]: token }));
+
+    for (let i = 0; i < 10; i++) expect((await refreshWith('token-ngawur')).status).toBe(401);
+    expect((await refreshWith('token-ngawur')).status).toBe(429);
+    // Siswa lain di IP yang sama (token berbeda) dan pengunjung tanpa cookie tidak ikut terblokir.
+    expect((await refreshWith('token-ngawur-lain')).status).toBe(401);
+    const anonymous = await request(ctx.app).post('/api/v1/auth/refresh').set('X-Forwarded-For', schoolIp);
+    expect(anonymous.status).toBe(401);
+  });
+
+  it.each([
+    ['post', '/api/v1/auth/register', 100],
+    ['post', '/api/v1/auth/verify-email', 200],
+    ['post', '/api/v1/auth/password/reset', 60],
+    ['delete', '/api/v1/auth/refresh', 300],
+  ] as const)('per-IP limit on %s %s is roomy enough for a class behind one IP (%i)', async (method, path, limit) => {
+    const res = await request(ctx.app)[method](path).set('X-Forwarded-For', '198.51.100.23').send({});
+    expect(res.headers['ratelimit-limit']).toBe(String(limit));
   });
 });
