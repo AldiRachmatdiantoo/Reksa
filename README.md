@@ -92,7 +92,7 @@ Landasan ilmiah: *retrieval practice*, *generation effect*, *dual-coding*, *judg
 | Database | PostgreSQL (UUID PK, RLS, role *least-privilege*) |
 | Cache & token sementara | Redis |
 | Frontend | Vite, React, TypeScript, Tailwind CSS, Shadcn/UI, Zustand, TanStack Query, Axios |
-| AI | `IAiService` → `MockAiProvider` (Fase 1–2) / `GeminiAiProvider` (Fase 3: `gemini-2.5-flash`, `gemini-2.5-pro`) |
+| AI | `IAiService` → `MockAiProvider` (Fase 1–2) / `GeminiAiProvider` (Fase 3: daftar model per tahap dengan cadangan, lihat `GEMINI_*_MODEL`) |
 | File | `file-type` (magic bytes), `sharp` (strip EXIF, kompresi), bucket S3 privat (Supabase Storage di produksi, SeaweedFS di lokal) |
 | Auth | JWT di cookie `HttpOnly`, Argon2id, *refresh token rotation* |
 | Infra | Docker multi-stage, docker compose, Nginx |
@@ -259,8 +259,8 @@ Variabel yang dibaca backend divalidasi Zod di [`backend/src/config/env.ts`](bac
 | `AI_PROVIDER_MODE` | backend | `mock` (contoh tetap, tanpa API) atau `gemini` (Gemini asli) |
 | `MOCK_AI_LATENCY_MS` | backend | Simulasi latensi `MockAiProvider` (default 300) |
 | `GEMINI_API_KEY` | backend | Wajib hanya di mode `gemini` |
-| `GEMINI_TEXT_MODEL` | backend | Model Stage 1 (rubrik) dan Stage 3 (saran kelas), default `gemini-2.5-flash` |
-| `GEMINI_VISION_MODEL` | backend | Model Stage 2 (foto catatan), default `gemini-2.5-flash` |
+| `GEMINI_TEXT_MODEL` | backend | Model Stage 1 (rubrik) dan Stage 3 (saran kelas), daftar dipisah koma; berikutnya dipakai saat kuota harian habis. Default `gemini-2.5-flash-lite,gemini-3.5-flash-lite` |
+| `GEMINI_VISION_MODEL` | backend | Model Stage 2 (foto catatan), aturan sama. Default `gemini-3.5-flash-lite,gemini-2.5-flash-lite` |
 | `PORT`, `LOG_LEVEL`, `NODE_ENV` | backend | Default `3000`, `info`, `development` |
 | `STORAGE_ENDPOINT` | backend | Endpoint S3 yang dipakai backend (compose: `http://storage:8333`) |
 | `STORAGE_PUBLIC_ENDPOINT` | backend, compose | Host di dalam *signed URL* yang dibuka browser (lokal: `http://localhost:8333`). Kosongkan jika sama dengan `STORAGE_ENDPOINT` |

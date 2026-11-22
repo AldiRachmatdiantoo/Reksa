@@ -233,7 +233,7 @@ Untuk memisahkan pembangunan fondasi infrastruktur, database, keamanan, dan alur
    * Memungkinkan seluruh pengujian *Unit*, *Integration*, *E2E*, dan *Penetration Testing* berjalan tanpa biaya token API dan tanpa mengganti satu baris pun kode di `Controller`, `Repository`, PostgreSQL, maupun `React`.
 2. **`GeminiAiProvider` (Diaktifkan pada Fase 3):**
    * Diaktifkan melalui `AI_PROVIDER_MODE=gemini` setelah seluruh alur sistem dan keamanan terverifikasi.
-   * Menghubungkan sistem ke **Google Gemini Multimodal API** (`gemini-2.5-flash` untuk ekstraksi rubrik & audit esai; `gemini-2.5-pro` untuk sintesis analitik kelas) dengan fitur **Structured JSON Output** yang divalidasi ulang oleh **Zod**.
+   * Menghubungkan sistem ke **Google Gemini Multimodal API** (rencana awal: `gemini-2.5-flash` dan `gemini-2.5-pro`; **per 22 Nov 2026, free tier:** Stage 2 `gemini-3.5-flash-lite`, Stage 1 dan 3 `gemini-2.5-flash-lite`, masing-masing dengan model cadangan saat kuota harian habis) dengan fitur **Structured JSON Output** yang divalidasi ulang oleh **Zod**.
 
 ```typescript
 // backend/src/common/ai/ai.provider.interface.ts

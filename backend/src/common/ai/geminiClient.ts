@@ -46,6 +46,16 @@ type GenerateContentResponse = {
 };
 
 const MODEL_PATTERN = /^[a-z0-9.-]{1,64}$/;
+/** Isi error 429 dibaca sebatas ini, hanya untuk mengenali kuota harian. */
+const ERROR_BODY_MAX_CHARS = 16_384;
+
+/**
+ * 429 karena kuota HARIAN (quotaId `...PerDay...`) tidak pulih dalam hitungan detik, beda dengan batas per menit.
+ * Hanya pola quotaId yang diperiksa; isi respons tidak pernah dimasukkan ke pesan error atau log.
+ */
+export function isDailyQuotaBody(body: string): boolean {
+  return /"quotaId"\s*:\s*"[A-Za-z]*PerDay/.test(body.slice(0, ERROR_BODY_MAX_CHARS));
+}
 
 export class GeminiClient {
   private readonly fetchImpl: typeof fetch;
@@ -93,8 +103,14 @@ export class GeminiClient {
 
     if (!res.ok) {
       // Isi respons error tidak dibaca ke pesan: bisa memuat potongan permintaan.
+      if (res.status === 402) throw new AiProviderError('QUOTA_EXHAUSTED', 'Saldo prabayar Gemini habis (HTTP 402)');
+      if (res.status === 429) {
+        const body = await res.text().catch(() => '');
+        if (isDailyQuotaBody(body)) throw new AiProviderError('QUOTA_EXHAUSTED', 'Kuota harian Gemini habis (HTTP 429)');
+        throw new AiProviderError('TRANSIENT', 'Gemini menjawab HTTP 429');
+      }
       await res.body?.cancel().catch(() => {});
-      const retryable = res.status === 408 || res.status === 429 || res.status >= 500;
+      const retryable = res.status === 408 || res.status >= 500;
       throw new AiProviderError(retryable ? 'TRANSIENT' : 'FATAL', `Gemini menjawab HTTP ${res.status}`);
     }
 

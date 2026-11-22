@@ -95,6 +95,8 @@ export function uploadErrorMessage(err: unknown): string {
 /** Penjelasan kode gagal audit (backend AuditErrorCode). */
 export function auditFailureText(code: string | null): string {
   switch (code) {
+    case 'AI_QUOTA_EXHAUSTED':
+      return 'Jatah pemeriksa otomatis untuk hari ini sudah habis. Jatah cekmu dikembalikan, coba cek ulang besok.';
     case 'AI_INVALID_OUTPUT':
       return 'Pemeriksa otomatis memberi jawaban yang tidak bisa dipakai.';
     case 'MATERIAL_UNAVAILABLE':

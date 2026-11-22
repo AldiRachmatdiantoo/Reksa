@@ -40,3 +40,6 @@ Thumbs.db
 
 # Prisma generated client (dibuat ulang lewat `npx prisma generate`)
 backend/src/generated/
+
+# Foto dan PDF uji Gemini milik Aldi (data pribadi, jangan di-commit)
+uji-c3/

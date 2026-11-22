@@ -59,7 +59,7 @@ describe('POST /materials (text)', () => {
   // Kuota Gemini habis atau server Gemini sibuk: 503 dengan pesan yang bisa ditampilkan, tanpa detail teknis.
   it('answers 503 AI_UNAVAILABLE when the AI cannot build the rubric, and saves nothing', async () => {
     const { cookie } = await login();
-    vi.spyOn(ctx.ai, 'extractRubric').mockRejectedValueOnce(new AiProviderError('TRANSIENT', 'Gemini menjawab HTTP 429'));
+    vi.spyOn(ctx.ai, 'extractRubric').mockRejectedValue(new AiProviderError('TRANSIENT', 'Gemini menjawab HTTP 429'));
     const res = await request(ctx.app).post('/api/v1/materials').set('Cookie', cookie).send(text);
 
     expect(res.status).toBe(503);

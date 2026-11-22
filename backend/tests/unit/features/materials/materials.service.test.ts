@@ -16,6 +16,7 @@ import type { CreateMaterialData, MaterialRecord, MaterialsRepository } from '..
 import {
   AI_BUSY_MESSAGE,
   AI_DOWN_MESSAGE,
+  AI_QUOTA_MESSAGE,
   MaterialsService,
   normalizeMaterialText,
   sha256Hex,
@@ -109,7 +110,7 @@ describe('MaterialsService', () => {
     vi.spyOn(ai, 'extractRubric');
     store = fakeStorage();
     pdf = { extract: vi.fn(async () => ({ text: SAMPLE_PDF_TEXT, pages: 1 })) };
-    service = new MaterialsService({ repo, ai, cache, storage: store.storage, pdf });
+    service = new MaterialsService({ repo, ai, cache, storage: store.storage, pdf, transientRetryDelayMs: 0 });
   });
 
   describe('createFromText', () => {
@@ -171,21 +172,39 @@ describe('MaterialsService', () => {
       expect(material.rubric.keyConcepts.length).toBeGreaterThan(0);
     });
 
-    // Kuota per menit habis (429), server Gemini sibuk, atau batas waktu: pengguna sedang menunggu, jadi tidak
-    // dicoba ulang di server. Detail error masuk log, bukan ke respons.
-    it('answers 503 with a friendly message on a temporary AI failure, without retrying or caching', async () => {
+    it('retries once after a short pause when the AI is busy, then saves the material', async () => {
+      vi.mocked(ai.extractRubric).mockRejectedValueOnce(new AiProviderError('TRANSIENT', 'Gemini menjawab HTTP 503'));
+      const { material } = await service.createFromText(user, textInput);
+      expect(ai.extractRubric).toHaveBeenCalledTimes(2);
+      expect(material.rubric.keyConcepts.length).toBeGreaterThan(0);
+    });
+
+    // Masih sibuk setelah satu kali coba ulang: pengguna sedang menunggu, jadi berhenti di sini.
+    // Detail error masuk log, bukan ke respons.
+    it('answers 503 with a friendly message when the AI stays busy, without caching', async () => {
       const onWarning = vi.fn();
-      service = new MaterialsService({ repo, ai, cache, storage: store.storage, pdf, onWarning });
+      service = new MaterialsService({ repo, ai, cache, storage: store.storage, pdf, onWarning, transientRetryDelayMs: 0 });
+      vi.mocked(ai.extractRubric).mockRejectedValueOnce(new AiProviderError('TRANSIENT', 'Gemini menjawab HTTP 429'));
       vi.mocked(ai.extractRubric).mockRejectedValueOnce(new AiProviderError('TRANSIENT', 'Gemini menjawab HTTP 429'));
 
       const err = await service.createFromText(user, textInput).catch((e: unknown) => e);
       expect(err).toBeInstanceOf(ServiceUnavailableError);
       expect(err).toMatchObject({ code: 'AI_UNAVAILABLE', message: AI_BUSY_MESSAGE });
       expect((err as Error).message).not.toContain('429');
-      expect(ai.extractRubric).toHaveBeenCalledOnce();
-      expect(onWarning).toHaveBeenCalledWith('Rubrik gagal dibuat AI', expect.objectContaining({ kind: 'TRANSIENT', attempt: 1 }));
+      expect(ai.extractRubric).toHaveBeenCalledTimes(2);
+      expect(onWarning).toHaveBeenCalledWith('Rubrik gagal dibuat AI', expect.objectContaining({ kind: 'TRANSIENT', attempt: 2 }));
       expect(repo.rows).toHaveLength(0);
       expect(cache.map.size).toBe(0);
+    });
+
+    it('tells the user to come back tomorrow when the daily AI quota is used up', async () => {
+      vi.mocked(ai.extractRubric).mockRejectedValueOnce(new AiProviderError('QUOTA_EXHAUSTED', 'Kuota harian Gemini habis (HTTP 429)'));
+      await expect(service.createFromText(user, textInput)).rejects.toMatchObject({
+        statusCode: 503,
+        code: 'AI_UNAVAILABLE',
+        message: AI_QUOTA_MESSAGE,
+      });
+      expect(ai.extractRubric).toHaveBeenCalledOnce();
     });
 
     it('tells the user the feature is down on a configuration error (bad key or model)', async () => {
@@ -203,7 +222,7 @@ describe('MaterialsService', () => {
     };
 
     it('does not store the PDF when the rubric cannot be made', async () => {
-      vi.mocked(ai.extractRubric).mockRejectedValueOnce(new AiProviderError('TRANSIENT', 'timeout'));
+      vi.mocked(ai.extractRubric).mockRejectedValue(new AiProviderError('TRANSIENT', 'timeout'));
       await expect(service.createFromPdf(user, fields, realPdf())).rejects.toBeInstanceOf(ServiceUnavailableError);
       expect(store.storage.putObject).not.toHaveBeenCalled();
       expect(repo.rows).toHaveLength(0);

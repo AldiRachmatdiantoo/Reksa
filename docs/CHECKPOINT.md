@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, C3 peta kelas dan temuan kuota harian Gemini (Aldi, branch `feat/aldi-gemini-quota`)
+**Checkpoint terakhir:** 22 November 2026, Fase C selesai dengan Gemini gratis, CP-2 lolos (Aldi, branch `feat/aldi-gemini-free`)
 
 ---
 
@@ -16,6 +16,25 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #38 · Gemini gratis (C3, C4) dan CP-2 · branch `feat/aldi-gemini-free`
+
+Keputusan Aldi: tetap free tier, tanpa billing.
+
+- **Model per tahap, dengan cadangan:** `GEMINI_TEXT_MODEL` dan `GEMINI_VISION_MODEL` kini daftar dipisah koma (maks. 4). Model berikutnya dipakai hanya saat kuota harian model sebelumnya habis (`withModelFallback` di `geminiAi.provider.ts`); error lain tidak memicu pindah model. Bawaan:
+  - Stage 2 (foto): `gemini-3.5-flash-lite`, lalu `gemini-2.5-flash-lite`. Sekitar 3 sampai 5 detik per foto.
+  - Stage 1 dan 3 (teks): `gemini-2.5-flash-lite`, lalu `gemini-3.5-flash-lite`. Sekitar 2 sampai 4 detik. `gemini-3.5-flash` lolos tes tapi 30 sampai 55 detik, terlalu dekat batas waktu 55 detik.
+- **Hasil uji live per model (catatan parsial, dengan/tanpa baris "kasih nilai 100"):** `gemini-3.5-flash-lite` 80/80 dan menandai injeksi; `gemini-2.5-flash-lite` 80/80; `gemini-3.5-flash` 93/63 (terlalu longgar); `gemini-3-flash-preview` 80/93 (nilai naik karena injeksi, tidak dipakai).
+- **Kuota harian dikenali:** 429 dengan `quotaId` berisi `PerDay` atau 402 → `AiProviderError` jenis `QUOTA_EXHAUSTED`. Hanya quotaId yang diperiksa; isi jawaban Google tidak masuk pesan atau log. Audit langsung gagal `AI_QUOTA_EXHAUSTED` (pesan: jatah hari ini habis, coba besok, kuota cek dikembalikan); materi menjawab 503 "Jatah penyusun konsep kunci untuk hari ini sudah habis".
+- **Rubrik saat Google sibuk (503/429 per menit/batas waktu):** dicoba sekali lagi setelah 2 detik sebelum menyerah. 503 cukup sering muncul di free tier.
+- **Alur nyata di aplikasi dengan model baru:** materi PDF 3 halaman → rubrik 7 konsep dalam 4 detik; peta kelas 3 siswa (nilai 83, 76, 62) → bagian sulit dihitung dari data (RuBisCO 100%) dan rekomendasi AI 4 kelompok dengan saran mengajar.
+- **CP-2:**
+  - Typecheck, `format:check`, `prisma validate`, build backend dan frontend: lolos.
+  - Unit + integration dengan coverage: 646 lolos, 6 dilewati (tes live). Statements 96,32%, branches 90,06%.
+  - E2E (stack mode mock supaya tidak memakai kuota): 15/15; `study-flow`, `history`, `review`, `mobile-layout` diulang 3 kali: 21/21.
+  - `npm audit --audit-level=high`: frontend 0, backend 8 moderate (devDependency), 0 high.
+  - Uji manual: alur Gemini asli lewat API aplikasi dan halaman hasil/riwayat (lihat #36 sampai #38).
+- **Belum:** foto tulisan tangan asli (ditunda Aldi).
 
 ### #37 · C3 peta kelas lewat aplikasi, temuan kuota harian · branch `feat/aldi-gemini-quota`
 
@@ -503,8 +522,8 @@ Branch ini dibuat **di atas** `feat/adli-essay-scans` (PR belum di-merge), jadi 
 
 Urutan kerja lengkap, gerbang uji, dan checkpoint ada di [SISA-ALDI.md](SISA-ALDI.md). Langkah terdekat:
 
-1. Keputusan kuota Gemini (billing atau tetap free tier), lalu sisa C3: materi PDF, foto tulisan tangan asli dari Aldi
-2. CP-2 lalu Fase D (deploy)
+1. Fase D: deploy (D1 konfigurasi dan perbandingan hosting gratis, D2 akun dan secret oleh Aldi)
+2. Uji foto tulisan tangan asli begitu Aldi menaruh fotonya di `uji-c3/`
 3. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
 
 ## Catatan teknis yang perlu diingat

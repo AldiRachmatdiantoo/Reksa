@@ -149,6 +149,7 @@ describe('scansApi', () => {
     expect(quotaText({ tier: 'PRO', used: 9, limit: null, remaining: null, resetAt: '' })).toMatch(/tanpa batas/);
     expect(auditFailureText('AUDIT_STALLED')).toMatch(/terlalu lama/);
     expect(auditFailureText(null)).toMatch(/tidak tersedia/);
+    expect(auditFailureText('AI_QUOTA_EXHAUSTED')).toMatch(/hari ini sudah habis.*besok/);
   });
 });
 

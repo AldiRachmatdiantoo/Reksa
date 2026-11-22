@@ -70,8 +70,11 @@ export function focusRubric(rubric: AiRubricOutput, targets: unknown): { rubric:
 
 type AiCallResult = { ok: true; audit: AiEssayAuditOutput } | { ok: false; code: AuditErrorCode };
 
-/** INVALID_OUTPUT: Zod/strukturnya salah. FATAL: konfigurasi. Selain itu (429/5xx/timeout/jaringan) sementara. */
-export function classifyAiError(err: unknown): 'TRANSIENT' | 'INVALID_OUTPUT' | 'FATAL' {
+/**
+ * INVALID_OUTPUT: Zod/strukturnya salah. FATAL: konfigurasi. QUOTA_EXHAUSTED: kuota harian habis.
+ * Selain itu (429 per menit/5xx/timeout/jaringan) sementara.
+ */
+export function classifyAiError(err: unknown): 'TRANSIENT' | 'INVALID_OUTPUT' | 'FATAL' | 'QUOTA_EXHAUSTED' {
   if (err instanceof AiProviderError) return err.kind;
   if (err instanceof ZodError) return 'INVALID_OUTPUT';
   return 'TRANSIENT';
@@ -244,6 +247,8 @@ export class AuditService {
       } catch (err) {
         const kind = classifyAiError(err);
         if (kind === 'FATAL') return { ok: false, code: 'AI_UNAVAILABLE' };
+        // Kuota harian tidak pulih dalam jeda 10 + 40 detik: langsung gagal, kuota cek pelajar dikembalikan.
+        if (kind === 'QUOTA_EXHAUSTED') return { ok: false, code: 'AI_QUOTA_EXHAUSTED' };
         if (kind === 'INVALID_OUTPUT') {
           if (invalidRetries++ < AI_INVALID_OUTPUT_RETRIES) continue;
           return { ok: false, code: 'AI_INVALID_OUTPUT' };

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AiProviderError } from '../../../../src/common/ai/ai.errors.js';
-import { GeminiClient, type GenerateJsonRequest } from '../../../../src/common/ai/geminiClient.js';
+import { GeminiClient, isDailyQuotaBody, type GenerateJsonRequest } from '../../../../src/common/ai/geminiClient.js';
 
 const API_KEY = 'test-key-SECRET-123';
 
@@ -74,6 +74,52 @@ describe('GeminiClient error mapping', () => {
     const err = await errorOf(clientWith(fetchImpl).generateJson(request));
     expect(err.kind).toBe(kind);
     expect(err.message).not.toContain(API_KEY);
+  });
+
+  // Bentuk jawaban 429 Google (google.rpc.QuotaFailure), dipangkas.
+  const quota429 = (quotaId: string) =>
+    jsonResponse(
+      {
+        error: {
+          code: 429,
+          message: `You exceeded your current quota. key ${API_KEY}`,
+          details: [{ '@type': 'type.googleapis.com/google.rpc.QuotaFailure', violations: [{ quotaId, quotaValue: '20' }] }],
+        },
+      },
+      429,
+    );
+
+  it('a 429 for the DAILY quota is QUOTA_EXHAUSTED, a per-minute 429 stays TRANSIENT', async () => {
+    const daily = await errorOf(
+      clientWith(vi.fn<typeof fetch>(async () => quota429('GenerateRequestsPerDayPerProjectPerModel-FreeTier'))).generateJson(request),
+    );
+    expect(daily.kind).toBe('QUOTA_EXHAUSTED');
+    expect(daily.message).not.toContain(API_KEY);
+    expect(daily.message).not.toMatch(/exceeded/);
+
+    const perMinute = await errorOf(
+      clientWith(vi.fn<typeof fetch>(async () => quota429('GenerateRequestsPerMinutePerProjectPerModel-FreeTier'))).generateJson(request),
+    );
+    expect(perMinute.kind).toBe('TRANSIENT');
+
+    const noBody = await errorOf(clientWith(vi.fn<typeof fetch>(async () => new Response('', { status: 429 }))).generateJson(request));
+    expect(noBody.kind).toBe('TRANSIENT');
+  });
+
+  it('a 402 (prepaid balance used up) is QUOTA_EXHAUSTED', async () => {
+    const err = await errorOf(
+      clientWith(vi.fn<typeof fetch>(async () => jsonResponse({ error: { message: API_KEY } }, 402))).generateJson(request),
+    );
+    expect(err.kind).toBe('QUOTA_EXHAUSTED');
+    expect(err.message).not.toContain(API_KEY);
+  });
+
+  it('isDailyQuotaBody only matches a daily quotaId', () => {
+    expect(isDailyQuotaBody('{"quotaId": "GenerateRequestsPerDayPerProjectPerModel-FreeTier"}')).toBe(true);
+    expect(isDailyQuotaBody('{"quotaId":"GenerateContentInputTokensPerModelPerDay-FreeTier"}')).toBe(true);
+    expect(isDailyQuotaBody('{"quotaId":"GenerateContentInputTokensPerModelPerMinute-FreeTier"}')).toBe(false);
+    expect(isDailyQuotaBody('{"message":"PerDay"}')).toBe(false);
+    expect(isDailyQuotaBody('')).toBe(false);
   });
 
   it('network failures and timeouts are TRANSIENT', async () => {
