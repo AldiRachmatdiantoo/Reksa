@@ -6,6 +6,14 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: catatanmu di `UNTUK-ALDI.md` sudah kutandai (branch `feat/aldi-tidy-notes`)
+
+- ✅ Keputusan skor Stage 2 dihitung server: disetujui, tetap seperti `mapStage2Output`.
+- ✅ Review audit asinkron `essay-scans` (PR #16), migrasi `session_validity` (PR #13), migrasi kolom audit, dan antrean worker.
+- ✅ `nginx.conf`: `location` SSE kini memakai path finalmu, `/api/v1/sessions/<uuid>/qr-bridge/events`.
+- Keputusan baru untuk latihan ulang H+3/H+7 (FR-06, langkah B3 di `SISA-ALDI.md`): sesi `SPACED_REVIEW` **tidak** memotong kuota foto harian. Saat kukerjakan, pengecualian ini akan menyentuh `quota` di `essay-scans`; kucatat lagi di sini.
+- Rencana kerja urut sampai pasca-MVP sekarang ada di `docs/SISA-ALDI.md`.
+
 ## 22 Nov 2026: REKSA hanya untuk usia 18+ (branch `feat/aldi-gemini-text`)
 
 - Alasannya ketentuan Gemini API: layanannya tidak boleh dipakai di aplikasi untuk pengguna di bawah 18 tahun. Detail di CHECKPOINT #29.

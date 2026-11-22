@@ -39,10 +39,10 @@ Daftar ini urut: kerjakan dari atas. Centang `[x]` saat PR-nya sudah masuk `main
 ## Fase A · Beres-beres
 
 - [x] **A1. Tips foto tanpa nama** (`feat/aldi-photo-privacy-tip`): konflik dengan `main` diselesaikan, contoh "NIS" diganti "NIM" karena pengguna 18+.
-- [ ] **A2. Rapikan catatan dan konfigurasi:**
+- [x] **A2. Rapikan catatan dan konfigurasi** (`feat/aldi-tidy-notes`):
   - Tandai catatan ⏳ dari Adli yang sudah beres menjadi ✅: review audit asinkron `essay-scans`, review migrasi `session_validity`, dan keputusan skor Stage 2 dihitung server (sudah begitu di kode).
   - Ganti `location` SSE QR bridge lama di `frontend/nginx.conf` dengan path final `/api/v1/sessions/<uuid>/qr-bridge/events`.
-  - Hapus header `X-Content-Type-Options` ganda (helmet dan `nginx.conf`).
+  - Header `X-Content-Type-Options` ganda (helmet dan `nginx.conf`): ternyata sudah beres lewat `map` di `nginx.conf` (respons `/api/` hanya membawa header dari helmet), dicek dengan `curl`.
 
 ## Fase B · Fitur MVP yang belum ada
 
@@ -57,7 +57,7 @@ Daftar ini urut: kerjakan dari atas. Centang `[x]` saat PR-nya sudah masuk `main
 - [ ] **B3. Latihan ulang H+3/H+7 yang dinilai AI** (FR-06):
   - Dari kartu jadwal, mulai sesi `SPACED_REVIEW` 3 sampai 5 menit dengan rubrik yang hanya berisi konsep yang terlewat.
   - Tebak nilai, foto (langsung dari HP atau lewat QR), dicek Stage 2. Jadwal ditandai selesai saat hasilnya `DONE`.
-  - **Keputusan Aldi sebelum mulai:** apakah latihan ulang memotong kuota foto harian.
+  - **Diputuskan (22 November 2026):** latihan ulang tidak memotong kuota foto harian. Jumlahnya sudah terbatas: paling banyak 2 latihan per sesi utama yang selesai dicek, dan sesi utama sendiri dibatasi kuota.
   - Menyentuh `study-sessions` dan `essay-scans` (area Adli); dicatat di `UNTUK-ADLI.md`.
 - [ ] **CP-1 · Gerbang Lengkap** poin 1 sampai 6 dan 8.
 
