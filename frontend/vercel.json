@@ -5,7 +5,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://reksa-api.onrender.com/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://reksa-api.salmondesert-4d070d6d.indonesiacentral.azurecontainerapps.io/api/:path*" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "headers": [
