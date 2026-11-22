@@ -200,7 +200,9 @@ model StudyMaterial {
 
   uploader        User             @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
   class           Class?           @relation(fields: [classId], references: [id], onDelete: SetNull)
-  sessions        StudySession[]
+  sessions        StudySession[]   @relation("SessionMaterial")
+  /// F3: sesi interleaving yang memakai materi ini sebagai materi kedua.
+  secondSessions  StudySession[]   @relation("SessionSecondMaterial")
   spacedSchedules SpacedSchedule[]
 
   @@index([contentHash], map: "idx_materials_content_hash")
@@ -226,15 +228,19 @@ model StudySession {
   completedAt        DateTime?        @map("completed_at") @db.Timestamptz(6)
   // Sesi SPACED_REVIEW: jadwal H+3/H+7 yang sedang dilatih (migrasi spaced_review_session).
   spacedScheduleId   String?          @map("spaced_schedule_id") @db.Uuid
+  // F3 interleaving: materi kedua yang dicampur dalam sesi ini (CHECK di migrasi interleaved_session).
+  secondMaterialId   String?          @map("second_material_id") @db.Uuid
 
   user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  material       StudyMaterial    @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  material       StudyMaterial    @relation("SessionMaterial", fields: [materialId], references: [id], onDelete: Restrict)
+  secondMaterial StudyMaterial?   @relation("SessionSecondMaterial", fields: [secondMaterialId], references: [id], onDelete: Restrict)
   class          Class?           @relation(fields: [classId], references: [id], onDelete: SetNull)
   spacedSchedule SpacedSchedule?  @relation(fields: [spacedScheduleId], references: [id], onDelete: SetNull)
   submission     EssaySubmission?
 
   @@index([userId, startedAt(sort: Desc)], map: "idx_sessions_user_started")
   @@index([spacedScheduleId], map: "idx_sessions_spaced_schedule")
+  @@index([secondMaterialId], map: "idx_sessions_second_material")
   @@map("study_sessions")
 }
 
@@ -285,8 +291,8 @@ model SpacedSchedule {
   material         StudyMaterial   @relation(fields: [materialId], references: [id], onDelete: Restrict)
   reviewSessions   StudySession[]
 
-  // Satu submission hanya boleh punya satu jadwal H+3 dan satu H+7.
-  @@unique([originSubmissionId, intervalDay], map: "idx_spaced_origin_interval")
+  // Satu jadwal H+3 dan satu H+7 per materi per submission (sesi interleaving punya dua materi).
+  @@unique([originSubmissionId, materialId, intervalDay], map: "idx_spaced_origin_material_interval")
   @@map("spaced_schedules")
 }
 

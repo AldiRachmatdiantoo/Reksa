@@ -18,6 +18,7 @@ function historyRow(i: number, extra: Partial<HistoryRow> = {}): HistoryRow {
     session: {
       sessionType: 'INITIAL_BLURTING',
       materialId: 'm1',
+      secondMaterialId: null,
       startedAt: new Date(NOW.getTime() - i * DAY),
       actualDurationSec: 900,
       validity: 'VALID',

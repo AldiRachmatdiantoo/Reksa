@@ -7,6 +7,9 @@ export type SessionRecord = {
   userId: string;
   materialId: string;
   materialTitle: string | null;
+  /** F3 interleaving: materi kedua, null untuk sesi satu materi. */
+  secondMaterialId: string | null;
+  secondMaterialTitle: string | null;
   classId: string | null;
   sessionType: 'INITIAL_BLURTING' | 'SPACED_REVIEW';
   plannedDurationSec: number;
@@ -26,6 +29,8 @@ export type SessionRecord = {
 export type CreateSessionData = {
   userId: string;
   materialId: string;
+  /** F3: hanya untuk INITIAL_BLURTING (CHECK study_sessions_second_material_check). */
+  secondMaterialId?: string | null;
   classId: string | null;
   plannedDurationSec: number;
   startedAt: Date;
@@ -79,6 +84,7 @@ const sessionSelect = {
   id: true,
   userId: true,
   materialId: true,
+  secondMaterialId: true,
   classId: true,
   sessionType: true,
   plannedDurationSec: true,
@@ -141,6 +147,7 @@ export class PrismaSessionsRepository implements SessionsRepository {
           data: {
             userId: data.userId,
             materialId: data.materialId,
+            secondMaterialId: data.secondMaterialId ?? null,
             classId: data.classId,
             plannedDurationSec: data.plannedDurationSec,
             startedAt: data.startedAt,
@@ -224,13 +231,17 @@ async function toRecord(tx: TxClient, userId: string, row: SessionRow | null): P
 async function toRecords(tx: TxClient, userId: string, rows: SessionRow[]): Promise<SessionRecord[]> {
   if (rows.length === 0) return [];
   const materials = await tx.studyMaterial.findMany({
-    where: { id: { in: [...new Set(rows.map((r) => r.materialId))] }, ...materialAccessibleBy(userId) },
+    where: {
+      id: { in: [...new Set(rows.flatMap((r) => (r.secondMaterialId ? [r.materialId, r.secondMaterialId] : [r.materialId])))] },
+      ...materialAccessibleBy(userId),
+    },
     select: { id: true, title: true },
   });
   const titles = new Map(materials.map((m) => [m.id, m.title]));
   return rows.map(({ submission, ...row }) => ({
     ...row,
     materialTitle: titles.get(row.materialId) ?? null,
+    secondMaterialTitle: row.secondMaterialId ? (titles.get(row.secondMaterialId) ?? null) : null,
     hasSubmission: submission !== null,
     submissionId: submission?.id ?? null,
     submissionAuditStatus: submission?.auditStatus ?? null,

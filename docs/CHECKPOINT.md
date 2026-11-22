@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, F2 offline-first PWA (Aldi, branch `feat/aldi-offline-pwa`)
+**Checkpoint terakhir:** 22 November 2026, CP-5 dan F3 interleaving (Aldi, branch `feat/aldi-interleaving`)
 
 ---
 
@@ -16,6 +16,27 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #41 · CP-5 Gerbang Lengkap dan F3 interleaving · branch `feat/aldi-interleaving`
+
+**CP-5** (di `main` setelah PR #41, sebelum F3):
+
+1. Statis: typecheck backend dan frontend, `prisma validate`, `format:check` kedua paket bersih.
+2. Coverage backend 96,37% statement, 89,95% branch (batas 96/89 terpenuhi); 666 test lulus, 6 dilewati (live AI). Frontend 88 unit lulus.
+3. Integration + security ikut di `test:coverage` (Testcontainers), lulus.
+4. Build backend dan frontend tanpa peringatan; image dibangun ulang untuk E2E.
+5. E2E lengkap 18/18; spec baru (`offline.spec.ts`, `email-change.spec.ts`) diulang 3 kali, 9/9.
+6. `npm audit --audit-level=high`: frontend 0 temuan; backend 8 moderate di dependensi dev (`testcontainers` lewat `archiver`/`glob`), tidak ada high. Perbaikannya menurunkan testcontainers ke 10.10 (breaking), jadi dibiarkan sampai rilis baru.
+7. Live AI tidak diulang (kuota free tier); 8 lewat E2E + screenshot.
+
+**F3 interleaving:** dua materi dalam satu sesi fokus.
+
+- **Alur:** di Ruang Belajar, sebelum timer mulai, ada bagian "Campur dengan materi lain" (pilih materi kedua dari daftar materimu). Bacaan kedua tampil di bawah yang pertama dan ikut ditutup saat fokus. Halaman Tebak & Foto, Hasil, dan Riwayat menampilkan "A + B". Satu sesi tetap satu foto dan satu jatah cek.
+- **Backend:** `POST /sessions` menerima `secondMaterialId` (wajib berbeda, `400`; materi orang lain `404`, tanpa sesi tercipta). Kolom `study_sessions.second_material_id` (FK RESTRICT, CHECK berbeda dan hanya `INITIAL_BLURTING`). Materi yang dipakai sebagai materi kedua tidak bisa dihapus (`409`, sama dengan materi utama).
+- **Audit:** `essay-scans/interleave.ts` menggabungkan rubrik (id konsep diganti `m1-c0`/`m2-c0`; maks. 50 konsep dibagi rata dengan konsep berbobot tertinggi lebih dulu; relasi dipertahankan bila kedua ujungnya terpilih). Bagian yang terlewat dibagi ke materi asal lewat nama konsep; yang tidak dikenali masuk materi pertama. Jadwal H+3/H+7 dibuat per materi yang punya bagian terlewat; unique index kini `(origin_submission_id, material_id, interval_day)`. Rubrik kedua tidak terbaca → `MATERIAL_UNAVAILABLE` (kuota dikembalikan).
+- **Ledger:** `secondMaterialId` ditambahkan di ujung isi hash hanya bila ada, jadi semua hash lama tetap valid. `ledger_lookup` dibuat ulang dengan kolom `second_material_id`. Ledger kelas menampilkan judul "A + B".
+- **Belum:** peta bagian sulit kelas (Stage 3) memfilter per materi lewat materi utama saja.
+- **Tes:** unit `interleave.test.ts` (gabungan rubrik, batas 50 konsep, batas judul/ringkasan, pembagian bagian terlewat, hash lama tidak berubah), `audit.service.test.ts` +3, `sessions.service.test.ts` +2; frontend `interleave.test.ts`. Integration `sessions.test.ts` +5 (alur, IDOR materi kedua, materi sama, CHECK database, hapus materi 409) dan `scans.test.ts` +1 (unggah → audit → verifikasi publik → jadwal hanya di materi sesi). E2E `interleave.spec.ts` (2 test, axe).
 
 ### #40 · F2 offline-first PWA · branch `feat/aldi-offline-pwa`
 

@@ -6,6 +6,15 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: sesi dua materi (interleaving) menyentuh study-sessions dan essay-scans (branch `feat/aldi-interleaving`)
+
+Detail di `CHECKPOINT.md` #41. Yang berubah di areamu:
+
+- **`study-sessions`:** `StartSessionSchema` punya `secondMaterialId?` (refine: berbeda dari `materialId`); `SessionView`/`SessionRecord` punya `secondMaterialId` dan `secondMaterialTitle`; `start()` mengecek akses materi kedua.
+- **`essay-scans`:** `interleave.ts` (baru: `mergeRubrics`, `splitBlindSpots`); `audit.service.ts` memakai rubrik gabungan dan membuat jadwal per materi; `SessionForScan.secondMaterialId`; `ledgerHash.ts` punya field opsional `secondMaterialId` (hash lama tidak berubah).
+- **`tests/unit/`:** `fakeScansRepository.ts` (field baru dan unique jadwal per materi), `sessions.service.test.ts`, `audit.service.test.ts`, `interleave.test.ts` (baru).
+- **Frontend:** `studySession.tsx` (`secondMaterial`, `setSecondMaterial`, `sessionTitle`), `StudioPage.tsx` (bagian "Campur dengan materi lain"), judul "A + B" di `CalibratePage.tsx` dan `ResultPage.tsx`, E2E `interleave.spec.ts`.
+
 ## 22 Nov 2026: mode offline (PWA) menyentuh studio, scanner, shared (branch `feat/aldi-offline-pwa`)
 
 Detail di `CHECKPOINT.md` #40. Yang berubah di areamu:

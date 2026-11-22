@@ -14,7 +14,7 @@ import { Icon } from '@/shared/ui/Icon';
 import { LoadingBlock, StateBlock } from '@/shared/ui/StateBlock';
 import { StepIndicator } from './StepIndicator';
 import { sessionErrorMessage } from './sessionsApi';
-import { ActiveSessionConflict, formatDuration, useStudySession } from './studySession';
+import { ActiveSessionConflict, formatDuration, useStudySession, type StudySession } from './studySession';
 
 const PRESETS = [
   { minutes: 25, label: 'Biasa' },
@@ -23,6 +23,7 @@ const PRESETS = [
 ];
 
 const TWO_DIGITS = { minimumIntegerDigits: 2 } as const;
+const SELECT_CLASS = 'min-h-12 w-full rounded-[12px] border border-line bg-card px-4 text-body-lg text-ink';
 
 export function StudioPage() {
   const { session, clear, syncing } = useStudySession();
@@ -223,7 +224,7 @@ function FocusSession({ material }: { material: Material }) {
         <Reveal className="ruled-sheet flex flex-col gap-4 rounded-lg border border-line-soft p-6 pl-12 sm:p-8 sm:pl-14">
           <h1 className="font-headline text-headline-md text-ink">Waktu fokus sudah tercatat</h1>
           <p className="text-body-lg text-ink-muted">
-            Kamu fokus menulis <strong className="text-ink">{material.title}</strong> selama{' '}
+            Kamu fokus menulis <MaterialNames material={material} second={session?.secondMaterial} /> selama{' '}
             <strong className="text-ink">{formatDuration(session!.focusSeconds!)}</strong>. Lanjutkan dengan menebak nilaimu lalu memotret
             catatan.
           </p>
@@ -283,39 +284,24 @@ function FocusSession({ material }: { material: Material }) {
                     </>
                   ) : (
                     <p className="max-w-sm text-body-md text-ink-muted">
-                      Tulis semua yang kamu ingat tentang <strong className="text-ink">{material.title}</strong> di kertas. Bacaan terbuka
-                      lagi kalau kamu menekan Ulangi.
+                      Tulis semua yang kamu ingat tentang <MaterialNames material={material} second={session?.secondMaterial} /> di kertas.{' '}
+                      {session?.secondMaterial ? 'Tulis bergantian atau campur, asal jelas konsep mana milik materi mana. ' : ''}
+                      Bacaan terbuka lagi kalau kamu menekan Ulangi.
                     </p>
                   )}
                 </motion.div>
               ) : (
-                <motion.article
+                <motion.div
                   key="open"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: 0.2 }}
-                  className="flex flex-col gap-5 rounded-lg border border-line-soft bg-card p-5 sm:p-6"
+                  className="flex flex-col gap-4"
                 >
-                  <header className="flex flex-col gap-2">
-                    <h2 className="font-title text-title-lg text-ink">{material.title}</h2>
-                    <p className="text-body-md text-ink-muted text-pretty">{material.rubric.summary}</p>
-                  </header>
-                  <Stagger
-                    as="dl"
-                    trigger="mount"
-                    gap={0.06}
-                    delay={0.15}
-                    className="flex flex-col divide-y divide-line-soft border-t border-line-soft"
-                  >
-                    {material.rubric.keyConcepts.map((c) => (
-                      <StaggerItem key={c.id} className="grid gap-1 py-3 sm:grid-cols-[10rem_1fr] sm:gap-4">
-                        <dt className="text-title-md text-teal">{c.concept}</dt>
-                        <dd className="text-body-md text-ink">{c.definition}</dd>
-                      </StaggerItem>
-                    ))}
-                  </Stagger>
-                </motion.article>
+                  <MaterialArticle material={material} />
+                  {!isReview && session && <InterleavePicker session={session} />}
+                </motion.div>
               )}
             </AnimatePresence>
           </section>
@@ -504,6 +490,103 @@ function FocusSession({ material }: { material: Material }) {
       >
         Kamu punya sesi belajar lain yang masih berjalan, mungkin dari tab atau perangkat lain. Satu akun hanya boleh punya satu sesi aktif.
       </ConfirmDialog>
+    </>
+  );
+}
+
+/** "A" atau "A dan B" dengan penekanan, untuk kalimat di layar fokus. */
+function MaterialNames({ material, second }: { material: Material; second?: StudySession['secondMaterial'] }) {
+  return (
+    <>
+      <strong className="text-ink">{material.title}</strong>
+      {second && (
+        <>
+          {' '}
+          dan <strong className="text-ink">{second.title}</strong>
+        </>
+      )}
+    </>
+  );
+}
+
+function MaterialArticle({ material }: { material: Material }) {
+  return (
+    <article className="flex flex-col gap-5 rounded-lg border border-line-soft bg-card p-5 sm:p-6">
+      <header className="flex flex-col gap-2">
+        <h2 className="font-title text-title-lg text-ink">{material.title}</h2>
+        <p className="text-body-md text-ink-muted text-pretty">{material.rubric.summary}</p>
+      </header>
+      <Stagger
+        as="dl"
+        trigger="mount"
+        gap={0.06}
+        delay={0.15}
+        className="flex flex-col divide-y divide-line-soft border-t border-line-soft"
+      >
+        {material.rubric.keyConcepts.map((c) => (
+          <StaggerItem key={c.id} className="grid gap-1 py-3 sm:grid-cols-[10rem_1fr] sm:gap-4">
+            <dt className="text-title-md text-teal">{c.concept}</dt>
+            <dd className="text-body-md text-ink">{c.definition}</dd>
+          </StaggerItem>
+        ))}
+      </Stagger>
+    </article>
+  );
+}
+
+/**
+ * F3 interleaving: sebelum waktu fokus dimulai, pelajar boleh mencampur satu materi lain. Bacaan kedua tampil
+ * di bawah bacaan pertama, keduanya ditutup bersama, dan hasil cek menilai konsep dari kedua materi.
+ */
+function InterleavePicker({ session }: { session: StudySession }) {
+  const { setSecondMaterial } = useStudySession();
+  const { state } = useMaterials();
+  const secondId = session.secondMaterial?.id ?? null;
+  const second = useMaterial(secondId);
+  const others = state.status === 'ready' ? state.data.filter((m) => m.id !== session.materialId) : [];
+
+  // Materi kedua yang sudah dihapus atau tidak terbaca lagi dilepas, supaya sesi tetap bisa dimulai.
+  const secondGone = second.state.status === 'error';
+  useEffect(() => {
+    if (secondGone) setSecondMaterial(null);
+  }, [secondGone, setSecondMaterial]);
+
+  if (state.status !== 'ready' || others.length === 0) return null;
+
+  return (
+    <>
+      <section aria-labelledby="interleave-title" className="flex flex-col gap-3 rounded-lg border border-line-soft bg-wash p-5 sm:p-6">
+        <div className="flex flex-col gap-1">
+          <h2 id="interleave-title" className="font-title text-title-md text-ink">
+            Campur dengan materi lain
+          </h2>
+          <p className="text-body-md text-ink-muted text-pretty">
+            Belajar dua topik sekaligus melatihmu membedakan konsep yang mirip. Catatanmu dicek terhadap konsep kedua materi, dan bagian
+            yang terlewat dijadwalkan ulang di materinya masing-masing.
+          </p>
+        </div>
+        <label htmlFor="second-material" className="text-label-lg text-ink">
+          Materi kedua
+        </label>
+        <select
+          id="second-material"
+          value={secondId ?? ''}
+          onChange={(e) => {
+            const picked = others.find((m) => m.id === e.target.value);
+            setSecondMaterial(picked ? { id: picked.id, title: picked.title } : null);
+          }}
+          className={SELECT_CLASS}
+        >
+          <option value="">Tidak, satu materi saja</option>
+          {others.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.title}
+            </option>
+          ))}
+        </select>
+      </section>
+      {secondId && second.state.status === 'loading' && <LoadingBlock label="Memuat materi kedua..." />}
+      {second.state.status === 'ready' && second.state.data && <MaterialArticle material={second.state.data} />}
     </>
   );
 }

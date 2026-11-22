@@ -215,7 +215,7 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
 
 ### 4.5 Peta Jalan Pengembangan Fitur (Pasca-MVP)
 * **Mode Audio-First Feynman:** Lawan bicara AI berbasis *Speech-to-Text* dan *Text-to-Speech* di mana AI berperan sebagai murid awam yang menginterogasi penjelasan lisan pelajar (aksesibilitas utama untuk tunanetra).
-* **Interleaving Engine:** Penggabungan dua topik materi berbeda secara otomatis dalam satu sesi evaluasi esai.
+* ~~**Interleaving Engine:** Penggabungan dua topik materi berbeda secara otomatis dalam satu sesi evaluasi esai.~~ Selesai 22 Nov 2026: pelajar memilih materi kedua sebelum timer mulai (`secondMaterialId` di `POST /sessions`); audit memakai gabungan rubrik keduanya dan bagian yang terlewat dijadwalkan ulang di materi asalnya.
 * ~~**Offline-First PWA:** Penyimpanan lokal (*IndexedDB*) untuk timer Pomodoro dan antrean foto tulisan tangan saat perangkat kehilangan koneksi internet.~~ Selesai 22 Nov 2026: service worker menyimpan file aplikasi (tanpa respons `/api/`), tebakan dan foto menunggu di IndexedDB lalu terkirim otomatis saat online. Memulai sesi tetap butuh koneksi.
 * ~~**Ganti email** dengan verifikasi ke alamat baru (lanjutan FR-14).~~ Selesai 22 Nov 2026 (lihat FR-14).
 * **Pengguna di bawah 18 tahun**, hanya setelah ada penyedia AI yang ketentuannya mengizinkan, lengkap dengan konfirmasi izin orang tua lewat email.
@@ -338,6 +338,7 @@ Seluruh tabel menggunakan tipe primary key `UUID` (`gen_random_uuid()`) untuk me
 * **`activation_codes`** (FR-11): `id (UUID PK)`, `code_hash (VARCHAR(64) UNIQUE)`, `institution_id (UUID FK nullable)`, `duration_days (INT)`, `max_redemptions (INT)`, `redeemed_count (INT DEFAULT 0)`, `expires_at (TIMESTAMPTZ)`, `created_at (TIMESTAMPTZ)`.
 * **`activation_redemptions`** (FR-11): `id (UUID PK)`, `code_id (UUID FK)`, `user_id (UUID FK)`, `redeemed_at (TIMESTAMPTZ)`, `UNIQUE (code_id, user_id)`.
 * **`auth_tokens`** (v1.3, FR-14, sudah dimigrasi): `id (UUID PK)`, `user_id (UUID FK)`, `purpose (ENUM: EMAIL_VERIFY, PASSWORD_RESET, EMAIL_CHANGE)`, `token_hash (VARCHAR(64) UNIQUE)`, `expires_at (TIMESTAMPTZ)`, `used_at (TIMESTAMPTZ nullable)`, `new_email (VARCHAR(254) nullable)`: alamat tujuan, wajib untuk `EMAIL_CHANGE` dan kosong untuk tujuan lain (CHECK).
+* *(F3, migrasi `interleaved_session`)* **`study_sessions`** ditambah `second_material_id (UUID FK nullable, ON DELETE RESTRICT)` dengan CHECK: berbeda dari `material_id` dan hanya untuk `INITIAL_BLURTING`. `ledger_hash` sesi interleaving ikut mengunci materi kedua (ditambahkan di ujung isi yang di-hash, jadi hash sesi satu materi tidak berubah).
 * *(v1.3, sudah dimigrasi: `session_validity`, plus `focus_ended_at`)* **`study_sessions`** ditambah `validity (ENUM: VALID, SHORT_FOCUS)` dan *partial unique index* `(user_id) WHERE status IN ('FOCUS_ACTIVE','AWAITING_SCAN')` untuk menjamin satu sesi aktif (FR-02).
 * *(v1.3, sudah dimigrasi: `essay_audit_async`)* **`essay_submissions`** ditambah `audit_status (ENUM: PENDING, PROCESSING, DONE, FAILED)`, `audit_attempts (INT DEFAULT 0, maks. 3)`, `audit_error_code (VARCHAR nullable)`, `audit_started_at`, `audited_at`, `quota_charged_at`, `encouraging_summary (TEXT)`; kolom hasil (`actual_ai_score`, `*_json`, `ledger_hash`) nullable sampai `DONE`. Tabel tidak lagi append-only murni: UPDATE diizinkan sampai `DONE`, trigger `essay_submissions_guard` mengunci baris `DONE` dan kolom bukti, DELETE tetap dicabut.
 * **`educator_invites`** (FR-10): `id (UUID PK)`, `institution_id (UUID FK)`, `token_hash (VARCHAR(64) UNIQUE)`, `created_by (UUID FK)`, `expires_at (TIMESTAMPTZ)`, `revoked_at (TIMESTAMPTZ nullable)`.
@@ -348,7 +349,7 @@ Seluruh tabel menggunakan tipe primary key `UUID` (`gen_random_uuid()`) untuk me
 * `CREATE UNIQUE INDEX idx_users_email ON users(email);` — Lookup autentikasi instan $O(\log n)$.
 * `CREATE UNIQUE INDEX idx_refresh_tokens_hash ON refresh_tokens(token_hash);` — Validasi *refresh token rotation* tanpa *table scan*.
 * `CREATE INDEX idx_refresh_tokens_family ON refresh_tokens(family_id);` dan `idx_refresh_tokens_user ON refresh_tokens(user_id)` — Pencabutan seluruh *token family* / seluruh sesi user saat *reuse* terdeteksi.
-* `CREATE UNIQUE INDEX idx_spaced_origin_interval ON spaced_schedules(origin_submission_id, interval_day);` — Mencegah jadwal H+3/H+7 ganda untuk satu submission.
+* `CREATE UNIQUE INDEX idx_spaced_origin_material_interval ON spaced_schedules(origin_submission_id, material_id, interval_day);` — Mencegah jadwal H+3/H+7 ganda untuk satu submission per materi (sejak F3, sesi interleaving bisa menjadwalkan dua materi).
 * `CREATE INDEX idx_materials_content_hash ON study_materials(content_hash);` — Pencarian cepat rubrik yang sudah pernah diekstrak.
 * `CREATE INDEX idx_sessions_user_started ON study_sessions(user_id, started_at DESC);` — Paginasi riwayat sesi belajar pelajar.
 * `CREATE INDEX idx_class_members_student ON class_members(student_id);` — Daftar kelas milik seorang siswa (lookup `(class_id, student_id)` sudah dicakup oleh constraint `UNIQUE`).
@@ -471,7 +472,7 @@ Sumber kebenarannya adalah file `*.schema.ts`. Tabel ini ringkasan agar frontend
 * PDF: `multipart/form-data`, file di field `file` (maks 10 MB, dicek *magic bytes*), field teks `title`, `classId?`.
 
 **`study-sessions`** (`features/study-sessions/sessions.schema.ts`)
-* `POST /sessions`: `{ materialId, preset, classId? }`. `preset` salah satu dari `CLASSIC_25_5`, `DEEP_45_10`, `FOCUS_SPRINT_15_3`. Durasi ditentukan server dari preset, bukan dikirim klien.
+* `POST /sessions`: `{ materialId, preset, classId?, secondMaterialId? }`. `secondMaterialId` (F3 interleaving) wajib berbeda dari `materialId` dan harus bisa dibaca pelajar (selain itu `404`); respons sesi membawa `secondMaterialId` dan `secondMaterialTitle`. `preset` salah satu dari `CLASSIC_25_5`, `DEEP_45_10`, `FOCUS_SPRINT_15_3`. Durasi ditentukan server dari preset, bukan dikirim klien.
 * `PATCH /sessions/:id/jol`: `{ predictedJolScore: int 0..100 }`. Disimpan di `study_sessions.predicted_jol_score` sebelum foto boleh diunggah.
 
 **`essay-scans`** (`features/essay-scans/scans.schema.ts`)

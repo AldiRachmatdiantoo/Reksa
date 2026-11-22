@@ -11,7 +11,7 @@ import { Button, ButtonLink } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { StateBlock } from '@/shared/ui/StateBlock';
 import { StepIndicator } from '@/features/studio/StepIndicator';
-import { formatDuration, isNetworkError, useStudySession } from '@/features/studio/studySession';
+import { formatDuration, isNetworkError, sessionTitle, useStudySession } from '@/features/studio/studySession';
 import { QrBridgePanel } from './QrBridgePanel';
 import { PHOTO_PRIVACY_TIP, photoProblem, quotaText, SCAN_ACCEPT, scansApi, uploadErrorMessage } from './scansApi';
 
@@ -211,7 +211,7 @@ export function CalibratePage() {
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border border-line-soft bg-card px-5 py-4">
           <span className="flex items-center gap-2 text-body-md text-ink">
             <Icon name="menu_book" className="text-teal" />
-            {session.materialTitle}
+            {sessionTitle(session)}
           </span>
           {session.focusSeconds != null && (
             <span className="flex items-center gap-2 text-body-md text-ink-muted">

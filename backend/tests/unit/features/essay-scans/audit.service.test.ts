@@ -3,8 +3,14 @@ import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { z } from 'zod';
 import { AiProviderError } from '../../../../src/common/ai/ai.errors.js';
 import type { IAiService } from '../../../../src/common/ai/ai.provider.interface.js';
-import { MOCK_ESSAY_AUDIT, MOCK_ESSAY_AUDIT_HIGH, MOCK_RUBRIC } from '../../../../src/common/ai/mockAi.fixtures.js';
+import {
+  MOCK_ESSAY_AUDIT,
+  MOCK_ESSAY_AUDIT_HIGH,
+  MOCK_RUBRIC,
+  MOCK_RUBRIC_FOTOSINTESIS,
+} from '../../../../src/common/ai/mockAi.fixtures.js';
 import { AuditService, classifyAiError, focusRubric } from '../../../../src/features/essay-scans/audit.service.js';
+import { mergeRubrics } from '../../../../src/features/essay-scans/interleave.js';
 import { computeLedgerHash } from '../../../../src/features/essay-scans/ledgerHash.js';
 import {
   AI_CALL_TIMEOUT_MS,
@@ -270,6 +276,74 @@ describe('AuditService.run: spaced review (FR-06)', () => {
     expect(repo.submissions.get(submission.id)!.auditStatus).toBe('FAILED');
     expect(repo.reviewSchedules.get(scheduleId)!.completed).toBe(false);
     expect(repo.quota.dailyScanCount).toBe(2);
+  });
+});
+
+describe('AuditService.run: interleaving (F3)', () => {
+  function mixed() {
+    const secondMaterialId = randomUUID();
+    const session = repo.addSession({ secondMaterialId });
+    repo.rubrics.set(session.materialId, MOCK_RUBRIC);
+    repo.rubrics.set(secondMaterialId, MOCK_RUBRIC_FOTOSINTESIS);
+    const submission = repo.addSubmission(session.id);
+    return { session, secondMaterialId, submission, job: { submissionId: submission.id, userId: USER } };
+  }
+
+  it('grades against both rubrics, locks the second material in the ledger, and schedules each missed concept under its own material', async () => {
+    const { session, secondMaterialId, submission, job } = mixed();
+    const homeostasisSpot = MOCK_ESSAY_AUDIT.blindSpots[0]!;
+    ai.evaluateHandwritingEssay.mockResolvedValue({
+      ...structuredClone(MOCK_ESSAY_AUDIT),
+      blindSpots: [homeostasisSpot, { concept: 'Klorofil', importanceLevel: 'MEDIUM', explanation: 'Belum disebut.' }],
+    });
+
+    await expect(service().run(job)).resolves.toBe('DONE');
+
+    expect(ai.evaluateHandwritingEssay).toHaveBeenCalledWith(
+      expect.any(Buffer),
+      'image/webp',
+      mergeRubrics(MOCK_RUBRIC, MOCK_RUBRIC_FOTOSINTESIS),
+    );
+    const stored = repo.submissions.get(submission.id)!;
+    const base = {
+      submissionId: submission.id,
+      sessionId: session.id,
+      userId: USER,
+      materialId: session.materialId,
+      startedAt: session.startedAt,
+      focusEndedAt: session.focusEndedAt,
+      actualDurationSec: session.actualDurationSec,
+      validity: session.validity,
+      predictedJolScore: submission.predictedJolScore,
+      actualScore: MOCK_ESSAY_AUDIT.actualScore,
+      imageStorageKey: submission.imageStorageKey,
+      submittedAt: submission.createdAt,
+      auditedAt: NOW,
+    };
+    expect(stored.ledgerHash).toBe(computeLedgerHash({ ...base, secondMaterialId }));
+    expect(stored.ledgerHash).not.toBe(computeLedgerHash(base));
+
+    const concepts = (s: { targetBlindSpots: unknown }) => (s.targetBlindSpots as { concept: string }[]).map((b) => b.concept);
+    expect(repo.schedules.map((s) => [s.materialId, s.intervalDay, concepts(s)])).toEqual([
+      [session.materialId, 3, [homeostasisSpot.concept]],
+      [session.materialId, 7, [homeostasisSpot.concept]],
+      [secondMaterialId, 3, ['Klorofil']],
+      [secondMaterialId, 7, ['Klorofil']],
+    ]);
+  });
+
+  it('schedules only the material that actually has missed concepts', async () => {
+    const { session, job } = mixed();
+    await service().run(job);
+    expect(new Set(repo.schedules.map((s) => s.materialId))).toEqual(new Set([session.materialId]));
+  });
+
+  it('fails with MATERIAL_UNAVAILABLE when the second rubric cannot be read', async () => {
+    const { secondMaterialId, submission, job } = mixed();
+    repo.rubrics.delete(secondMaterialId);
+    await expect(service().run(job)).resolves.toBe('FAILED');
+    expect(repo.submissions.get(submission.id)!.auditErrorCode).toBe('MATERIAL_UNAVAILABLE');
+    expect(ai.evaluateHandwritingEssay).not.toHaveBeenCalled();
   });
 });
 

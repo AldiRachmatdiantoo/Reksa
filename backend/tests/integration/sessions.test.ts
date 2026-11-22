@@ -171,6 +171,71 @@ describe('POST /sessions', () => {
   });
 });
 
+describe('POST /sessions with two materials (F3 interleaving)', () => {
+  const FOTOSINTESIS = { title: 'Fotosintesis', content: 'Fotosintesis mengubah cahaya menjadi energi kimia di klorofil.' };
+
+  it('starts one session that mixes two of the student materials, and returns both titles', async () => {
+    const siswa = await register('siswa@reksa.id');
+    const materialId = await createMaterial(siswa.cookie);
+    const secondMaterialId = await createMaterial(siswa.cookie, FOTOSINTESIS);
+
+    const res = await start(siswa.cookie, { materialId, secondMaterialId, preset: 'CLASSIC_25_5' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.session).toMatchObject({
+      materialId,
+      materialTitle: 'Homeostasis',
+      secondMaterialId,
+      secondMaterialTitle: 'Fotosintesis',
+      sessionType: 'INITIAL_BLURTING',
+    });
+    const active = await request(ctx.app).get('/api/v1/sessions/active').set('Cookie', siswa.cookie);
+    expect(active.body.session).toMatchObject({ secondMaterialId, secondMaterialTitle: 'Fotosintesis' });
+  });
+
+  it("answers 404 when the second material is another student's private material, and starts nothing", async () => {
+    const siswa = await register('siswa@reksa.id');
+    const lain = await register('lain@reksa.id');
+    const materialId = await createMaterial(siswa.cookie);
+    const foreign = await createMaterial(lain.cookie, FOTOSINTESIS);
+
+    const res = await start(siswa.cookie, { materialId, secondMaterialId: foreign, preset: 'CLASSIC_25_5' });
+
+    expect(res.status).toBe(404);
+    expect(await ctx.owner.studySession.count({ where: { userId: siswa.userId } })).toBe(0);
+  });
+
+  it('rejects the same material twice (400)', async () => {
+    const siswa = await register('siswa@reksa.id');
+    const materialId = await createMaterial(siswa.cookie);
+    const res = await start(siswa.cookie, { materialId, secondMaterialId: materialId, preset: 'CLASSIC_25_5' });
+    expect(res.status).toBe(400);
+  });
+
+  it('the database refuses a repeated material or a second material on a spaced review, even outside the API', async () => {
+    const siswa = await register('siswa@reksa.id');
+    const materialId = await createMaterial(siswa.cookie);
+    const secondMaterialId = await createMaterial(siswa.cookie, FOTOSINTESIS);
+    const res = await start(siswa.cookie, { materialId, preset: 'CLASSIC_25_5' });
+    const id = res.body.session.id as string;
+
+    await expect(ctx.owner.studySession.update({ where: { id }, data: { secondMaterialId: materialId } })).rejects.toThrow();
+    await expect(
+      ctx.owner.studySession.update({ where: { id }, data: { secondMaterialId, sessionType: 'SPACED_REVIEW' } }),
+    ).rejects.toThrow();
+  });
+
+  it('keeps a material that is used as the second material from being deleted (409)', async () => {
+    const siswa = await register('siswa@reksa.id');
+    const materialId = await createMaterial(siswa.cookie);
+    const secondMaterialId = await createMaterial(siswa.cookie, FOTOSINTESIS);
+    await start(siswa.cookie, { materialId, secondMaterialId, preset: 'CLASSIC_25_5' });
+
+    const res = await request(ctx.app).delete(`/api/v1/materials/${secondMaterialId}`).set('Cookie', siswa.cookie);
+    expect(res.status).toBe(409);
+  });
+});
+
 describe('PATCH /sessions/:id/jol', () => {
   it('stores JOL, ends focus with server time, and sets validity', async () => {
     const siswa = await register('siswa@reksa.id');

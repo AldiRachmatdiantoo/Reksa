@@ -96,6 +96,9 @@ export class SessionsService {
     if (!(await this.deps.repo.isMaterialAccessible(userId, input.materialId))) {
       throw new NotFoundError(MATERIAL_NOT_FOUND);
     }
+    if (input.secondMaterialId !== undefined && !(await this.deps.repo.isMaterialAccessible(userId, input.secondMaterialId))) {
+      throw new NotFoundError(MATERIAL_NOT_FOUND);
+    }
     if (input.classId !== undefined && !(await this.deps.repo.isClassMember(userId, input.classId))) {
       throw new NotFoundError(CLASS_NOT_FOUND);
     }
@@ -105,6 +108,7 @@ export class SessionsService {
       {
         userId,
         materialId: input.materialId,
+        secondMaterialId: input.secondMaterialId ?? null,
         classId: input.classId ?? null,
         plannedDurationSec: POMODORO_PRESETS[input.preset].focusSec,
         startedAt: now,
@@ -248,6 +252,8 @@ export function toView(s: SessionRecord): SessionView {
     id: s.id,
     materialId: s.materialId,
     materialTitle: s.materialTitle,
+    secondMaterialId: s.secondMaterialId,
+    secondMaterialTitle: s.secondMaterialTitle,
     classId: s.classId,
     sessionType: s.sessionType,
     preset: presetOf(s.plannedDurationSec),

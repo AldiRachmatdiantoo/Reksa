@@ -43,12 +43,14 @@ class FakeSessionsRepository implements SessionsRepository {
       if (!isStale({ ...s })) return { activeSessionId: s.id };
       s.status = 'EXPIRED';
     }
-    const { sessionType = 'INITIAL_BLURTING', spacedScheduleId: _schedule, ...rest } = data;
+    const { sessionType = 'INITIAL_BLURTING', spacedScheduleId: _schedule, secondMaterialId = null, ...rest } = data;
     void _schedule;
     const created: SessionRecord = {
       id: randomUUID(),
       ...rest,
       materialTitle: 'Homeostasis',
+      secondMaterialId,
+      secondMaterialTitle: secondMaterialId ? 'Metabolisme' : null,
       sessionType,
       actualDurationSec: null,
       predictedJolScore: null,
@@ -158,6 +160,25 @@ describe('start', () => {
     await expect(service.start(OTHER, { materialId: MATERIAL, preset: 'CLASSIC_25_5', classId: CLASS })).rejects.toMatchObject({
       statusCode: 404,
     });
+  });
+
+  it('mixes a second material the student can read into one session (F3 interleaving)', async () => {
+    const second = randomUUID();
+    repo.accessibleMaterials.add(`${USER}:${second}`);
+    const view = await service.start(USER, { materialId: MATERIAL, preset: 'CLASSIC_25_5', secondMaterialId: second });
+    expect(view).toMatchObject({ materialId: MATERIAL, secondMaterialId: second, secondMaterialTitle: 'Metabolisme' });
+
+    const single = await service.start(OTHER, { materialId: randomUUID(), preset: 'CLASSIC_25_5' }).catch(() => null);
+    expect(single).toBeNull();
+  });
+
+  it('answers 404 when the second material belongs to someone else, and starts nothing', async () => {
+    const foreign = randomUUID();
+    repo.accessibleMaterials.add(`${OTHER}:${foreign}`);
+    await expect(service.start(USER, { materialId: MATERIAL, preset: 'CLASSIC_25_5', secondMaterialId: foreign })).rejects.toMatchObject({
+      statusCode: 404,
+    });
+    expect(repo.sessions.size).toBe(0);
   });
 
   it('refuses a second active session with 409 and the active id', async () => {

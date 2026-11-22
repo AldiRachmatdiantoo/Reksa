@@ -23,6 +23,8 @@ export type StudySession = {
    * kelas itu (FR-07, FR-08). null untuk materi pribadi. Opsional karena cache lama belum punya.
    */
   classId?: string | null;
+  /** F3 interleaving: materi kedua yang dicampur dalam sesi ini. Opsional karena cache lama belum punya. */
+  secondMaterial?: { id: string; title: string } | null;
   presetMinutes: number;
   /** Id sesi di server; null sebelum waktu fokus dimulai. */
   serverId: string | null;
@@ -101,6 +103,9 @@ export function fromServer(s: ServerSession, previous?: StudySession | null): St
     materialId: s.materialId,
     materialTitle: s.materialTitle ?? previous?.materialTitle ?? 'Materi',
     classId: s.classId,
+    secondMaterial: s.secondMaterialId
+      ? { id: s.secondMaterialId, title: s.secondMaterialTitle ?? previous?.secondMaterial?.title ?? 'Materi kedua' }
+      : null,
     presetMinutes: minutesOf(s),
     serverId: s.id,
     status: s.status,
@@ -163,6 +168,8 @@ type Ctx = {
   /** Batalkan sesi aktif lain lalu mulai sesi baru. */
   replaceActive: (sessionId: string) => Promise<void>;
   setPreset: (minutes: number) => void;
+  /** F3: campur materi kedua sebelum waktu fokus dimulai; null = kembali ke satu materi. */
+  setSecondMaterial: (material: { id: string; title: string } | null) => void;
   finishFocus: (seconds: number) => void;
   /** Batalkan sesi di server dan buka bacaan lagi; materi tetap terpilih. */
   resetTimer: () => Promise<void>;
@@ -314,7 +321,12 @@ export function StudySessionProvider({ children, store = defaultOutbox }: { chil
     const current = sessionRef.current;
     if (!current) return;
     try {
-      const s = await sessionsApi.start(current.materialId, current.presetMinutes, current.classId ?? null);
+      const s = await sessionsApi.start(
+        current.materialId,
+        current.presetMinutes,
+        current.classId ?? null,
+        current.secondMaterial?.id ?? null,
+      );
       resetPhoto();
       setSession({ ...fromServer(s, current), materialTitle: current.materialTitle, focusSeconds: null });
     } catch (err) {
@@ -347,12 +359,16 @@ export function StudySessionProvider({ children, store = defaultOutbox }: { chil
       await start();
     },
     setPreset: (minutes) => update((s) => ({ ...s, presetMinutes: minutes })),
+    setSecondMaterial: (material) => update((s) => (s.serverId ? s : { ...s, secondMaterial: material })),
     finishFocus: (seconds) => update((s) => ({ ...s, focusSeconds: seconds })),
     resetTimer: async () => {
       const current = sessionRef.current;
       if (current?.serverId) await sessionsApi.cancel(current.serverId);
       await dropQueued(current?.serverId);
-      update((s) => ({ ...emptySession(s.materialId, s.materialTitle, s.presetMinutes, s.classId ?? null) }));
+      update((s) => ({
+        ...emptySession(s.materialId, s.materialTitle, s.presetMinutes, s.classId ?? null),
+        secondMaterial: s.secondMaterial ?? null,
+      }));
     },
     saveJol: async (score) => {
       const current = sessionRef.current;
@@ -425,6 +441,11 @@ export function useStudySession() {
   const ctx = useContext(StudySessionContext);
   if (!ctx) throw new Error('useStudySession harus di dalam StudySessionProvider');
   return ctx;
+}
+
+/** Judul sesi untuk tampilan: "A + B" untuk sesi interleaving (F3). */
+export function sessionTitle(s: Pick<StudySession, 'materialTitle' | 'secondMaterial'>): string {
+  return s.secondMaterial ? `${s.materialTitle} + ${s.secondMaterial.title}` : s.materialTitle;
 }
 
 export function formatDuration(totalSeconds: number): string {
