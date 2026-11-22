@@ -69,11 +69,10 @@ export function AppHeader({ subtitle }: { subtitle: string }) {
 
   const logout = async () => {
     setLeaving(true);
-    // Pindah ke beranda dulu; kalau state auth berubah duluan, guard halaman
-    // terproteksi akan mengarahkan ke /masuk.
-    navigate('/', { replace: true });
-    // Gagal di server pun, state lokal tetap dikosongkan oleh AuthProvider.
-    await auth.logout().catch(() => undefined);
+    // Pindah ke beranda setelah server menghapus cookie. Kalau pindah duluan, membuka halaman lain saat request
+    // masih jalan memotongnya: cookie tetap ada dan pengguna masih login (berbahaya di komputer bersama).
+    // Gagal di server pun, status lokal tetap dikosongkan oleh AuthProvider.
+    await auth.logout(() => navigate('/', { replace: true })).catch(() => undefined);
   };
 
   return (

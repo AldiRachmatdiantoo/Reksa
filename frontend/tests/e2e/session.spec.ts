@@ -41,6 +41,12 @@ test('a signed-in student stays signed in after a reload, and stays out after lo
   await expect(page.getByRole('heading', { level: 1, name: 'Kelasmu' })).toBeVisible();
   expect(calls.filter((c) => c.startsWith('GET /api/v1/auth/me'))).toEqual(['GET /api/v1/auth/me 200', 'GET /api/v1/auth/me 200']);
 
+  // Request logout sengaja diperlambat. Dulu tombol Keluar pindah ke beranda sebelum request selesai, jadi
+  // membuka halaman lain saat itu memotong request: cookie tidak terhapus dan pengguna masih login (gagal di CI).
+  await page.route('**/api/v1/auth/refresh', async (route) => {
+    if (route.request().method() === 'DELETE') await new Promise((resolve) => setTimeout(resolve, 1000));
+    await route.continue();
+  });
   await page.getByRole('button', { name: 'Keluar dari akun' }).click();
   await expect(page).toHaveURL(/\/$/);
   calls.length = 0;

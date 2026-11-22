@@ -9,6 +9,7 @@ Branch: `fix/aldi-qa-bugs`.
 - `.oxfmtrc.json` (root) + `npm run format:check`. Semua file sudah diformat kecuali `tests/e2e/helpers.ts` (area Adli).
 - `nginx.conf`: `img-src` tanpa `https:`, `frame-src 'none'`.
 - E2E: `expectAccessible` menunggu animasi masuk selesai sebelum axe.
+- `AppHeader` + `AuthProvider.logout(then)`: pindah ke beranda setelah server menghapus cookie, bukan sebelumnya (dulu request logout bisa terpotong dan pengguna tetap login).
 
 ## #18 · 2026-11-22 · Perbaikan bug QA 5 sampai 9
 
