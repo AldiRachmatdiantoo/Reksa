@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, FR-06 daftar latihan ulang (Aldi, branch `feat/aldi-spaced-review`, ditumpuk di atas `feat/aldi-privacy-pro`)
+**Checkpoint terakhir:** 22 November 2026, FR-07 Proof of Understanding Ledger (Aldi, branch `feat/aldi-ledger`, ditumpuk di atas `feat/aldi-spaced-review`)
 
 ---
 
@@ -16,6 +16,14 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #21 · FR-07 Proof of Understanding Ledger · branch `feat/aldi-ledger`
+
+- `GET /governance/classes/:classId/ledger?cursor=&limit=&studentId=` (EDUCATOR pemilik kelas, 404 untuk kelas lain): pengumpulan DONE dari sesi yang terikat kelas, waktu mulai/selesai, fokus aktual vs rencana, validitas, tebakan vs skor AI, jumlah blind spot, signed URL foto 300 detik (inline), dan `hashValid` dari hitung ulang `ledger_hash`. Pembacaan lewat RLS pengajar (`submissions_educator_read`), jadi siswa yang sudah keluar kelas tidak tampil.
+- `GET /ledger/verify/:hash` publik, 30/menit per IP: hanya `{ valid, sessionDate }`. Migrasi `20261122000200_ledger_verify` menambah indeks `ledger_hash` dan fungsi `SECURITY DEFINER ledger_lookup` (RLS tetap tertutup untuk app role).
+- **Bug ditemukan:** frontend tidak pernah mengirim `classId` saat `POST /sessions`, jadi sesi tidak pernah masuk ledger kelas. `studySession` kini menyimpan `classId` materi dan mengirimkannya.
+- Frontend: bagian **Bukti belajar siswa** di Portal Guru (pilih kelas, kartu per pengumpulan, muat lebih banyak) dan halaman publik `/cek-bukti/:hash`.
+- **Hasil:** 8 unit + 10 integrasi baru, `prisma migrate diff` kosong; frontend 38 unit; E2E 9/9 (baru: `governance.spec.ts`).
 
 ### #20 · FR-06 daftar latihan ulang · branch `feat/aldi-spaced-review`
 

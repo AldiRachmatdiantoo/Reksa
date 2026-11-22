@@ -2,20 +2,15 @@ import { motion } from 'motion/react';
 import { useEffect } from 'react';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { TeacherClasses } from '@/features/classes/TeacherClasses';
+import { LedgerSection } from './LedgerSection';
 import { pageTransition, Reveal, Stagger, StaggerItem } from '@/shared/motion';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Icon } from '@/shared/ui/Icon';
 import { StateBlock } from '@/shared/ui/StateBlock';
 
-// Kelola kelas sudah jalan (FR-09). Ledger bukti belajar dan peta bagian sulit
-// datang dari modul `governance`; sampai endpoint itu ada, keduanya hanya
-// dijelaskan, bukan diisi data siswa karangan.
+// Kelola kelas (FR-09) dan bukti belajar (FR-07) sudah jalan. Peta bagian sulit
+// menyusul; sampai endpoint-nya ada, hanya dijelaskan, bukan diisi data karangan.
 const UPCOMING = [
-  {
-    icon: 'verified_user',
-    title: 'Bukti belajar asli siswa',
-    body: 'Lama waktu fokus, tebakan nilai, dan foto tulisan tangan setiap siswa, terkunci dengan hash agar tidak bisa diubah.',
-  },
   {
     icon: 'analytics',
     title: 'Peta bagian sulit di kelas',
@@ -58,11 +53,17 @@ export function TeacherPage() {
           )}
         </Reveal>
 
+        {isEducator && (
+          <Reveal delay={0.15}>
+            <LedgerSection />
+          </Reveal>
+        )}
+
         <section aria-labelledby="upcoming-title" className="flex flex-col gap-4">
           <h2 id="upcoming-title" className="font-headline text-headline-md text-ink">
             Menyusul di portal ini
           </h2>
-          <Stagger as="ul" delay={0.2} className="grid gap-4 md:grid-cols-2">
+          <Stagger as="ul" delay={0.2} className="grid gap-4">
             {UPCOMING.map((item) => (
               <StaggerItem as="li" key={item.title} className="flex gap-4 rounded-md border border-line-soft bg-card p-5">
                 <Icon name={item.icon} className="text-[28px] text-teal" />

@@ -15,6 +15,9 @@ import { PrismaClassesRepository } from './features/classes/classes.repository.j
 import { createClassesRouter } from './features/classes/classes.routes.js';
 import { ClassesService } from './features/classes/classes.service.js';
 import { UnpdfTextExtractor, type PdfTextExtractor } from './common/utils/pdfText.js';
+import { PrismaGovernanceRepository } from './features/governance/governance.repository.js';
+import { createGovernanceRouter, createLedgerRouter } from './features/governance/governance.routes.js';
+import { GovernanceService } from './features/governance/governance.service.js';
 import { PrismaSpacedRepository } from './features/spaced-repetition/spaced.repository.js';
 import { createSpacedRouter } from './features/spaced-repetition/spaced.routes.js';
 import { SpacedService } from './features/spaced-repetition/spaced.service.js';
@@ -103,6 +106,12 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     onWarning: (message, data) => deps.logger.warn(data, message),
   });
 
+  const governanceService = new GovernanceService({
+    repo: new PrismaGovernanceRepository(deps.prisma),
+    storage: deps.storage,
+    onWarning: (message, data) => deps.logger.warn(data, message),
+  });
+
   const privacyService = createPrivacyService(deps, hasher);
   const proService = new ProService({ repo: new PrismaProRepository(deps.prisma) });
 
@@ -126,6 +135,8 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     // Dipasang setelah '/me' (auth). Router '/me' tidak punya GET /quota, jadi permintaan diteruskan ke sini.
     '/me/quota': createQuotaRouter({ service: quotaService, signer }),
     '/scans': createScansRouter({ service: scansService, signer, redis: deps.redis }),
+    '/governance': createGovernanceRouter({ service: governanceService, signer, redis: deps.redis }),
+    '/ledger': createLedgerRouter({ service: governanceService, redis: deps.redis }),
   };
 }
 

@@ -1,5 +1,14 @@
 # Checkpoint Frontend REKSA
 
+## #13 · 2026-11-22 · Bukti belajar untuk guru (FR-07)
+
+Branch: `feat/aldi-ledger`.
+
+- `features/governance/LedgerSection.tsx` di Portal Guru: pilih kelas, kartu per pengumpulan (waktu sesi, fokus, tebakan vs skor, validitas, hash, foto), "Tampilkan lebih banyak".
+- Halaman publik `/cek-bukti` dan `/cek-bukti/:hash` (`VerifyLedgerPage.tsx`) untuk tautan di PDF FR-12. Tidak menampilkan data pribadi.
+- **Perbaikan:** sesi dari materi kelas sekarang mengirim `classId` (`studySession.tsx`, `sessionsApi.ts`); tanpanya ledger dan peta blind spot selalu kosong.
+- Unit test `governanceApi.test.ts`, E2E `governance.spec.ts`.
+
 ## #12 · 2026-11-22 · Latihan ulang (FR-06)
 
 Branch: `feat/aldi-spaced-review`.

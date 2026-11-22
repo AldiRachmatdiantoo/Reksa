@@ -41,10 +41,11 @@ export function minutesOf(session: Pick<ServerSession, 'plannedDurationSec'>): n
 const path = (id: string) => `/sessions/${encodeURIComponent(id)}`;
 
 export const sessionsApi = {
-  start: (materialId: string, minutes: number) =>
+  /** classId untuk materi kelas: tanpa itu sesi tidak terlihat di ledger guru (FR-07). */
+  start: (materialId: string, minutes: number, classId: string | null = null) =>
     apiRequest<{ session: ServerSession }>('/sessions', {
       method: 'POST',
-      body: { materialId, preset: PRESET_BY_MINUTES[minutes] ?? 'CLASSIC_25_5' },
+      body: { materialId, preset: PRESET_BY_MINUTES[minutes] ?? 'CLASSIC_25_5', ...(classId ? { classId } : {}) },
     }).then((r) => r.session),
   active: (signal?: AbortSignal) =>
     apiRequest<{ session: ServerSession | null }>('/sessions/active', { signal }).then((r) => r.session),

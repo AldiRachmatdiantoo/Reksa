@@ -9,6 +9,8 @@ export const LedgerQuerySchema = z
   .object({
     cursor: z.uuid().optional(),
     limit: z.coerce.number().int().min(1).max(100).default(20),
+    /** Hanya pengumpulan satu siswa. */
+    studentId: z.uuid().optional(),
   })
   .strict();
 
@@ -19,5 +21,40 @@ export const BlindSpotsQuerySchema = z
   })
   .strict();
 
+/** GET /ledger/verify/:hash: hash SHA-256 heksadesimal huruf kecil. */
+export const LedgerHashParamsSchema = z
+  .object({ hash: z.string().regex(/^[0-9a-f]{64}$/, 'Hash harus 64 karakter heksadesimal') })
+  .strict();
+
 export type LedgerQuery = z.infer<typeof LedgerQuerySchema>;
 export type BlindSpotsQuery = z.infer<typeof BlindSpotsQuerySchema>;
+
+export type LedgerEntry = {
+  submissionId: string;
+  student: { id: string; fullName: string };
+  material: { id: string; title: string | null };
+  session: {
+    startedAt: string;
+    focusEndedAt: string | null;
+    plannedDurationSec: number;
+    actualDurationSec: number | null;
+    validity: 'VALID' | 'SHORT_FOCUS' | null;
+  };
+  predictedJolScore: number;
+  actualScore: number;
+  /** actualScore - predictedJolScore: positif berarti siswa meremehkan dirinya. */
+  jolDelta: number;
+  blindSpotCount: number;
+  ledgerHash: string;
+  /** Hasil hitung ulang hash dari kolom yang tersimpan sekarang. false berarti data berubah setelah dikunci. */
+  hashValid: boolean;
+  /** Signed URL foto (inline, 300 detik). null jika storage gagal membuatnya. */
+  photoUrl: string | null;
+  submittedAt: string;
+  auditedAt: string;
+};
+
+export type LedgerPage = { entries: LedgerEntry[]; nextCursor: string | null };
+
+/** Jawaban publik: tanpa nama, skor, atau foto. */
+export type LedgerVerification = { valid: true; sessionDate: string } | { valid: false };

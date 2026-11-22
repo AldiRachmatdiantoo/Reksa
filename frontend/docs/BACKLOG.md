@@ -14,7 +14,8 @@ Urutan kasar sesuai ketergantungan ke backend. Tandai `✅` saat selesai dan cat
 - [x] **Akun dasar** (FR-14): verifikasi email, lupa dan atur ulang kata sandi, halaman Akun (checkpoint #8).
 - [x] **Privasi** (FR-13): persetujuan saat daftar, `/privasi`, `/syarat`, persetujuan ulang, unduh data, hapus akun (checkpoint #11).
 - [x] **Kode aktivasi Pro** (FR-11): status paket dan form kode di halaman Akun (checkpoint #11).
-- [ ] **Portal guru** (`governance`): peta blind spot kelas, bukti pemahaman (ledger + signed URL).
+- [x] **Bukti belajar** (`governance` FR-07): ledger + signed URL + `/cek-bukti` (checkpoint #13).
+- [ ] **Peta blind spot kelas** (FR-08).
 
 ## Bisa dikerjakan sekarang
 

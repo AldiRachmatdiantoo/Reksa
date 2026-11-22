@@ -10,6 +10,7 @@ import { AuthProvider } from '@/features/auth/AuthProvider';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 import { ResultPage } from '@/features/audit-result/ResultPage';
 import { TeacherPage } from '@/features/governance/TeacherPage';
+import { VerifyLedgerPage } from '@/features/governance/VerifyLedgerPage';
 import { MaterialsPage } from '@/features/materials/MaterialsPage';
 import { StudentClassesPage } from '@/features/classes/StudentClassesPage';
 import { LegalPage } from '@/features/legal/LegalPage';
@@ -56,6 +57,9 @@ function AnimatedRoutes() {
         <Route path="/verifikasi-email" element={<VerifyEmailPage />} />
         <Route path="/privasi" element={<LegalPage doc="privasi" />} />
         <Route path="/syarat" element={<LegalPage doc="syarat" />} />
+        {/* Verifikasi publik ledger_hash (FR-07); tautan di PDF bukti belajar (FR-12). */}
+        <Route path="/cek-bukti" element={<VerifyLedgerPage />} />
+        <Route path="/cek-bukti/:hash" element={<VerifyLedgerPage />} />
         {/* Halaman HP dari QR bridge: tanpa login, token QR di fragment URL (FR-04 skenario B). */}
         <Route path="/unggah" element={<PhoneUploadPage />} />
         <Route

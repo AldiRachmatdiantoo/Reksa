@@ -6,6 +6,12 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: FR-07 ledger guru + perbaikan `classId` di studio (branch `feat/aldi-ledger`)
+
+- Frontend studio sebelumnya tidak mengirim `classId` ke `POST /sessions`, jadi tidak ada sesi yang terikat kelas. Sekarang `selectMaterial` menyimpan `classId` materi dan `sessionsApi.start` mengirimkannya (file `studySession.tsx`, `sessionsApi.ts`, `StudioPage.tsx`). Backend `study-sessions`-mu tidak diubah.
+- Ledger membaca `ledger_hash` yang dibuat `audit.service`, lalu menghitung ulang dengan `computeLedgerHash`. Kalau kamu mengubah isi `LedgerContent`, naikkan `LEDGER_HASH_VERSION`, karena hash lama akan terbaca "data berubah".
+- Migrasi baru `20261122000200_ledger_verify` (indeks `ledger_hash` + fungsi `ledger_lookup`).
+
 ## 22 Nov 2026: FR-06 daftar latihan ulang sudah ada (branch `feat/aldi-spaced-review`)
 
 - `GET /spaced/due` dan `POST /spaced/:id/complete` siap; jadwalnya tetap dibuat `audit.service`-mu.
