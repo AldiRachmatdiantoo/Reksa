@@ -24,6 +24,9 @@ const HOUR = 60 * 60_000;
  * GET  /scans/:id          STUDENT pemilik → { scan } (status audit, hasil saat DONE, signed URL foto)
  * POST /scans/:id/retry    STUDENT pemilik, setelah FAILED, maks. 2 kali → 202
  */
+/** Unggahan per IP per jam (lihat komentar di route). */
+export const SCAN_UPLOAD_IP_LIMIT_PER_HOUR = 120;
+
 export function createScansRouter({ service, signer, redis }: ScansRouterDeps): Router {
   const router = Router();
   const controller = new ScansController(service);
@@ -41,8 +44,10 @@ export function createScansRouter({ service, signer, redis }: ScansRouterDeps): 
 
   router.post(
     '/upload',
-    // Sebelum multer: batasi per IP supaya unggahan tanpa login tidak bisa membanjiri memori.
-    rateLimit({ redis, name: 'scans:upload:ip', limit: 30, windowMs: HOUR }),
+    // Sebelum multer: batasi per IP supaya unggahan tanpa login tidak bisa membanjiri memori. Satu kelas di wifi
+    // sekolah berbagi satu IP, jadi batasnya cukup longgar untuk 30+ siswa yang mengunggah dalam jam yang sama;
+    // pembatas utama tetap kuota harian per akun.
+    rateLimit({ redis, name: 'scans:upload:ip', limit: SCAN_UPLOAD_IP_LIMIT_PER_HOUR, windowMs: HOUR }),
     singleFileUpload({ field: 'image', maxBytes: SCAN_MAX_IMAGE_BYTES, maxFields: 2 }),
     validate({ body: UploadScanFieldsSchema }),
     authUnlessQr,

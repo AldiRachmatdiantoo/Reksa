@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, uji Gemini asli C2 sampai C4 (Aldi, branch `feat/aldi-gemini-live`)
+**Checkpoint terakhir:** 22 November 2026, C3 peta kelas dan temuan kuota harian Gemini (Aldi, branch `feat/aldi-gemini-quota`)
 
 ---
 
@@ -16,6 +16,14 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #37 · C3 peta kelas lewat aplikasi, temuan kuota harian · branch `feat/aldi-gemini-quota`
+
+- **Peta kelas (Stage 3 lewat aplikasi):** 1 guru, kelas, materi kelas, 3 siswa (email diverifikasi lewat Mailpit, gabung dengan kode). Peta menghitung bagian sulit dari data siswa dengan benar (Klorofil dan RuBisCO 100%, sisanya 50%). Rekomendasi AI butuh minimal 3 siswa; siswa ketiga gagal dicek karena kuota (lihat bawah), jadi rekomendasi Stage 3 lewat aplikasi belum terlihat. Stage 3 sendiri sudah lolos di test live.
+- **Catatan uji:** sesi materi kelas harus dibuat dengan `classId` (frontend sudah mengirimnya); tanpa itu sesi tidak masuk peta dan ledger guru.
+- **Batas unggah per IP** `scans:upload:ip` dari 30 ke 120 per jam: satu kelas di wifi sekolah berbagi satu IP. Tes integration baru.
+- **Temuan kuota:** Google menjawab 429 dengan `quotaId` `GenerateRequestsPerDayPerProjectPerModel-FreeTier`, nilai **20 permintaan per hari per model**. Setiap materi baru, foto yang dicek, dan peta kelas memakai 1 permintaan, jadi free tier tidak cukup untuk satu kelas. Saat kuota harian habis, audit menunggu 10 + 40 detik lalu gagal `AI_UNAVAILABLE` dengan pesan "tunggu sekitar satu menit" yang tidak tepat untuk kuota harian.
+- **Belum diuji karena kuota habis:** materi PDF (skrip uji sudah siap), siswa ketiga peta kelas.
 
 ### #36 · C2 sampai C4: uji Gemini asli · branch `feat/aldi-gemini-live`
 
@@ -495,7 +503,7 @@ Branch ini dibuat **di atas** `feat/adli-essay-scans` (PR belum di-merge), jadi 
 
 Urutan kerja lengkap, gerbang uji, dan checkpoint ada di [SISA-ALDI.md](SISA-ALDI.md). Langkah terdekat:
 
-1. Sisa C3: materi PDF sungguhan, foto tulisan tangan asli dari Aldi, peta kelas dengan beberapa siswa
+1. Keputusan kuota Gemini (billing atau tetap free tier), lalu sisa C3: materi PDF, foto tulisan tangan asli dari Aldi
 2. CP-2 lalu Fase D (deploy)
 3. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
 
