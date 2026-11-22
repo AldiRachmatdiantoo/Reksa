@@ -12,7 +12,7 @@ async function main(): Promise<void> {
   const env = loadEnv();
   const logger = createLogger(env.LOG_LEVEL);
 
-  const prisma = createPrismaClient(env.DATABASE_URL);
+  const prisma = createPrismaClient(env.DATABASE_URL, env.DATABASE_SSL_CA);
   const redis = createRedisClient(env.REDIS_URL);
   const ai = createAiService(env, {
     onSignal: (signal) => logger.warn({ aiSignal: signal }, 'Audit Stage 2: instruksi mencurigakan atau klaim tanpa bukti'),

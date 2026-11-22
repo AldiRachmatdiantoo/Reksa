@@ -20,6 +20,9 @@ export const EnvSchema = z
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+    // CA untuk TLS ke PostgreSQL. `supabase` = verifikasi penuh ke root CA Supabase (lihat dbTls.ts);
+    // `system` = URL apa adanya (lokal tanpa TLS).
+    DATABASE_SSL_CA: z.enum(['system', 'supabase']).default('system'),
     REDIS_URL: z.url({ protocol: /^rediss?$/ }),
 
     CORS_ORIGIN: z.url(),
