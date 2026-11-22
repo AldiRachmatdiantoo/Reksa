@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, FR-13 privasi dan FR-11 kode aktivasi Pro (Aldi, branch `feat/aldi-privacy-pro`)
+**Checkpoint terakhir:** 22 November 2026, FR-06 daftar latihan ulang (Aldi, branch `feat/aldi-spaced-review`, ditumpuk di atas `feat/aldi-privacy-pro`)
 
 ---
 
@@ -16,6 +16,13 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #20 · FR-06 daftar latihan ulang · branch `feat/aldi-spaced-review`
+
+- Modul `spaced-repetition` lengkap: `GET /spaced/due?limit=` (jatuh tempo, paling lama dulu, + 10 jadwal berikutnya) dan `POST /spaced/:id/complete` (404 untuk jadwal orang lain, 409 jika belum jatuh tempo, idempoten). Hanya `STUDENT`; semua query lewat RLS `withUserContext` + filter `user_id`.
+- Judul materi dibaca terpisah dan boleh `null`: materi kelas yang sudah tidak terlihat RLS (siswa keluar kelas) tidak membuat daftar gagal.
+- Frontend: halaman `/belajar/ulang` dan menu **Ulang**. Latihan: konsep yang terlewat ditampilkan, siswa menulis di kertas, membuka penjelasan, lalu menandai selesai. Belum ada foto/penilaian untuk latihan ulang (lihat catatan untuk Adli).
+- **Hasil:** 8 unit + 9 integrasi baru; frontend 35 unit; E2E 7/7 (baru: `review.spec.ts`).
 
 ### #19 · FR-13 privasi dan data anak + FR-11 kode aktivasi Pro · branch `feat/aldi-privacy-pro`
 

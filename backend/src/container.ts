@@ -15,6 +15,9 @@ import { PrismaClassesRepository } from './features/classes/classes.repository.j
 import { createClassesRouter } from './features/classes/classes.routes.js';
 import { ClassesService } from './features/classes/classes.service.js';
 import { UnpdfTextExtractor, type PdfTextExtractor } from './common/utils/pdfText.js';
+import { PrismaSpacedRepository } from './features/spaced-repetition/spaced.repository.js';
+import { createSpacedRouter } from './features/spaced-repetition/spaced.routes.js';
+import { SpacedService } from './features/spaced-repetition/spaced.service.js';
 import { PrismaMaterialsRepository } from './features/materials/materials.repository.js';
 import { createMaterialsRouter } from './features/materials/materials.routes.js';
 import { MaterialsService } from './features/materials/materials.service.js';
@@ -113,6 +116,11 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     '/auth': createAuthRouter({ service: authService, signer, redis: deps.redis }),
     '/me': me,
     '/materials': createMaterialsRouter({ service: materialsService, signer, redis: deps.redis }),
+    '/spaced': createSpacedRouter({
+      service: new SpacedService({ repo: new PrismaSpacedRepository(deps.prisma) }),
+      signer,
+      redis: deps.redis,
+    }),
     '/classes': createClassesRouter({ service: classesService, signer, redis: deps.redis }),
     '/sessions': createSessionsRouter({ service: sessionsService, signer, redis: deps.redis }),
     // Dipasang setelah '/me' (auth). Router '/me' tidak punya GET /quota, jadi permintaan diteruskan ke sini.

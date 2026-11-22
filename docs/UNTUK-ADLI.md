@@ -6,6 +6,11 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: FR-06 daftar latihan ulang sudah ada (branch `feat/aldi-spaced-review`)
+
+- `GET /spaced/due` dan `POST /spaced/:id/complete` siap; jadwalnya tetap dibuat `audit.service`-mu.
+- Latihan ulang di UI saat ini dicocokkan sendiri oleh siswa lalu ditandai selesai. Kalau nanti kamu menambah sesi `SPACED_REVIEW` (durasi 3 sampai 5 menit, rubrik khusus blind spot, foto + audit), usulanku: `POST /sessions` menerima `scheduleId`, dan saat audit sesi itu `DONE` jadwalnya ditandai `is_completed`. Kabari aku kalau setuju, halaman Ulang tinggal diganti tombolnya.
+
 ## 22 Nov 2026: FR-13 dan FR-11 menyentuh kontrak register dan kuota (branch `feat/aldi-privacy-pro`)
 
 - **`POST /auth/register` sekarang wajib `birthYear` dan `acceptTerms: true`** (plus `guardianConsent: true` jika di bawah 18 tahun). Semua test integrasi dan security yang mendaftar sudah saya tambahi `...CONSENT` (diekspor dari `tests/support/testContext.ts`). Test barumu yang mendaftar user juga perlu memakainya. Helper E2E `registerStudent` ikut diperbarui.

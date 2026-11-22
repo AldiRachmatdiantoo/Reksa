@@ -85,7 +85,7 @@ const CHAPTERS: Chapter[] = [
     title: 'Ulangi sebentar di hari ke-3 dan ke-7',
     body: [
       'Konsep yang terlewat masuk rencana latihan singkat, 3 sampai 5 menit, tiga hari dan tujuh hari setelah sesi.',
-      'Mengingat lagi dengan jeda seperti ini membantu materi bertahan lebih lama. Pengingat otomatis menyusul setelah fitur jadwal selesai.',
+      'Mengingat lagi dengan jeda seperti ini membantu materi bertahan lebih lama. Saat jatuh tempo, latihannya muncul di menu Ulang.',
     ],
     visual: () => <ReviewStrip />,
   },

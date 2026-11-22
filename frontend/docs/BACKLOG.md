@@ -9,7 +9,7 @@ Urutan kasar sesuai ketergantungan ke backend. Tandai `✅` saat selesai dan cat
 - [x] **Unggah foto** (`/scans/upload`): kirim foto, tampilkan sisa kuota harian, tangani 413/415/422/429. Input foto wajib `accept="image/jpeg,image/png,image/webp"` (HEIC tidak diterima server). ✅ Endpoint backend siap (`POST /scans/upload` 202, `GET /me/quota`); kontrak lengkap di `docs/UNTUK-ALDI.md` repo induk.
 - [x] **Hasil cek asli**: ganti `SAMPLE_AUDIT` dengan hasil scan, tambah keadaan "sedang dicek". ✅ Backend siap: poll `GET /scans/:id` tiap 2 detik (maks. 90 detik), `result.jolDelta`, `POST /scans/:id/retry` saat `FAILED`.
 - [x] **QR bridge laptop ke HP**: halaman QR + SSE, desain ada di `design-reference/qr_bridge_*`. ✅ Token + SSE backend siap (`POST /sessions/:id/qr-bridge`, `GET /sessions/:id/qr-bridge/events`, alur di `docs/UNTUK-ALDI.md`); unggah dari HP lewat `POST /scans/upload` dengan `qrToken` sudah siap.
-- [ ] **Jadwal ulang** (`spaced-repetition`): daftar sesi jatuh tempo, ganti tanggal H+3/H+7 lokal.
+- [x] **Jadwal ulang** (`spaced-repetition`): halaman Ulang, daftar jatuh tempo, tandai selesai (checkpoint #12). Belum: foto + penilaian latihan ulang.
 - [x] **Kelola kelas** (FR-09): portal guru dan halaman kelas siswa.
 - [x] **Akun dasar** (FR-14): verifikasi email, lupa dan atur ulang kata sandi, halaman Akun (checkpoint #8).
 - [x] **Privasi** (FR-13): persetujuan saat daftar, `/privasi`, `/syarat`, persetujuan ulang, unduh data, hapus akun (checkpoint #11).
