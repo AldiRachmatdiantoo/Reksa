@@ -92,7 +92,7 @@ Daftar ini urut: kerjakan dari atas. Centang `[x]` saat PR-nya sudah masuk `main
 
 ## Fase F · Pasca-MVP (PRD §4.5), dari yang paling kecil
 
-- [ ] **F1. Ganti email** dengan verifikasi ke alamat baru (lanjutan FR-14).
+- [x] **F1. Ganti email** dengan verifikasi ke alamat baru (22 November 2026, `feat/aldi-change-email`, `CHECKPOINT.md` #39).
 - [ ] **F2. Offline-first PWA:** timer dan antrean foto disimpan di IndexedDB saat koneksi putus.
 - [ ] **CP-5 · Gerbang Lengkap.**
 - [ ] **F3. Interleaving engine:** dua materi berbeda dalam satu sesi.

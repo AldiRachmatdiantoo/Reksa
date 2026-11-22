@@ -55,6 +55,10 @@ export const authApi = {
   /** Perangkat lain dikeluarkan; perangkat ini mendapat cookie sesi baru. */
   changePassword: (currentPassword: string, newPassword: string) =>
     apiRequest<UserResponse>('/me/password', { method: 'PATCH', body: { currentPassword, newPassword } }).then((r) => r.user),
+  /** Selalu 202 dengan pesan yang sama, alamat baru sudah terdaftar atau belum. Email berganti setelah tautan di alamat baru dibuka. */
+  requestEmailChange: (newEmail: string, currentPassword: string) =>
+    apiRequest<{ message: string }>('/me/email', { method: 'POST', body: { newEmail, currentPassword } }),
+  confirmEmailChange: (token: string) => apiRequest<void>('/auth/email/confirm', { method: 'POST', body: { token } }),
   recordConsent: (input: ConsentInput) => apiRequest<UserResponse>('/me/consent', { method: 'POST', body: input }).then((r) => r.user),
   activatePro: (code: string) => apiRequest<{ pro: ProStatus }>('/me/activate-pro', { method: 'POST', body: { code } }).then((r) => r.pro),
   /** Arsip zip berisi data.json dan foto tulisan. Link berlaku 5 menit, file dihapus setelah 24 jam. */

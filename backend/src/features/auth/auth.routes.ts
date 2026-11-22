@@ -9,10 +9,12 @@ import type { AccessTokenSigner } from '../../common/utils/jwt.js';
 import { AuthController } from './auth.controller.js';
 import {
   ChangePasswordSchema,
+  ConfirmEmailChangeSchema,
   ConsentSchema,
   ForgotPasswordSchema,
   LoginSchema,
   RegisterSchema,
+  RequestEmailChangeSchema,
   ResetPasswordSchema,
   UpdateProfileSchema,
   VerifyEmailSchema,
@@ -65,6 +67,7 @@ const withoutRefreshCookie = (req: Request) => readRefreshCookie(req) === undefi
  * POST   /auth/verify-email/resend     login, 3/jam per user
  * POST   /auth/password/forgot         publik, { email }; selalu 202; 60/jam per IP + 3/jam per email
  * POST   /auth/password/reset          publik, { token, newPassword }; 60/15 menit per IP
+ * POST   /auth/email/confirm           publik, { token } dari tautan di alamat baru (F1); 200/jam per IP
  */
 export function createAuthRouter({ service, signer, redis }: AuthRouterDeps): Router {
   const router = Router();
@@ -126,6 +129,13 @@ export function createAuthRouter({ service, signer, redis }: AuthRouterDeps): Ro
     controller.resetPassword,
   );
 
+  router.post(
+    '/email/confirm',
+    rateLimit({ redis, name: 'auth:email-confirm', limit: 200, windowMs: HOUR }),
+    validate({ body: ConfirmEmailChangeSchema }),
+    controller.confirmEmailChange,
+  );
+
   return router;
 }
 
@@ -133,6 +143,7 @@ export function createAuthRouter({ service, signer, redis }: AuthRouterDeps): Ro
  * PATCH /me            { fullName }
  * POST  /me/consent    { acceptTerms: true, birthYear?, adultConfirmed? }; setuju versi dokumen terbaru (FR-13)
  * PATCH /me/password   { currentPassword, newPassword }; 5/15 menit per user; perangkat lain dikeluarkan
+ * POST  /me/email      { newEmail, currentPassword }; selalu 202; 5/jam per user; tautan ke alamat baru (F1)
  */
 export function createMeRouter({ service, signer, redis }: AuthRouterDeps): Router {
   const router = Router();
@@ -147,6 +158,13 @@ export function createMeRouter({ service, signer, redis }: AuthRouterDeps): Rout
     rateLimit({ redis, name: 'me:password', limit: 5, windowMs: 15 * MINUTE, key: byUser }),
     validate({ body: ChangePasswordSchema }),
     controller.changePassword,
+  );
+  router.post(
+    '/email',
+    // Membatasi tebak kata sandi lewat sesi yang tercuri dan banyaknya email yang terkirim.
+    rateLimit({ redis, name: 'me:email', limit: 5, windowMs: HOUR, key: byUser }),
+    validate({ body: RequestEmailChangeSchema }),
+    controller.requestEmailChange,
   );
 
   return router;

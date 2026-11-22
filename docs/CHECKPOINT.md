@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, Fase C selesai dengan Gemini gratis, CP-2 lolos (Aldi, branch `feat/aldi-gemini-free`)
+**Checkpoint terakhir:** 22 November 2026, F1 ganti email (Aldi, branch `feat/aldi-change-email`)
 
 ---
 
@@ -16,6 +16,22 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #39 · F1 ganti email · branch `feat/aldi-change-email`
+
+Lanjutan FR-14. Email akun baru berganti setelah tautan yang dikirim ke alamat baru dibuka.
+
+- **Endpoint:**
+  - `POST /me/email { newEmail, currentPassword }`: login, 5 per jam per user, selalu `202` dengan pesan yang sama. Kata sandi salah `400 INVALID_CURRENT_PASSWORD`, alamat sama dengan sekarang `400 SAME_EMAIL`.
+  - `POST /auth/email/confirm { token }`: publik (tautan bisa dibuka di HP lain), 200 per jam per IP, `204`. Token salah/terpakai/kedaluwarsa `400 INVALID_TOKEN`; alamat keburu dipakai akun lain `409` (transaksi dibatalkan, token tetap belum terpakai).
+- **Email:** tautan ke alamat baru (24 jam, sekali pakai, hanya hash yang disimpan); pemberitahuan ke alamat lama dengan alamat baru disamarkan (`d***@reksa.id`) dan cara membatalkan (ganti kata sandi). Alamat yang sudah dipakai akun lain menerima email penjelasan tanpa tautan, jadi fitur ini tidak bisa dipakai mengecek alamat siapa yang terdaftar.
+- **Saat dikonfirmasi:** email dan `email_verified_at` diganti, sesi yang ada tetap berlaku (sudah disahkan kata sandi + kotak masuk baru), token reset/verifikasi yang belum dipakai dimatikan. Ganti atau reset password membatalkan permintaan yang belum dikonfirmasi.
+- **Database:** nilai enum `EMAIL_CHANGE` (migrasi terpisah karena nilai enum baru tidak bisa dipakai di transaksi yang sama) dan kolom `auth_tokens.new_email` dengan CHECK: wajib untuk `EMAIL_CHANGE`, dilarang untuk tujuan lain.
+- **Frontend:** bagian "Ganti email" di halaman Akun (email baru + kata sandi akun), halaman `/konfirmasi-email` (berhasil, tautan tidak bisa dipakai, alamat sudah dipakai, server tidak terhubung). Sesi yang terbuka langsung menampilkan email baru.
+- **Tes:**
+  - Unit `auth.service.test.ts` +9 (alur, sekali pakai, kedaluwarsa, token tujuan lain ditolak, kata sandi salah, alamat terpakai, balapan 409 dengan rollback, dibatalkan ganti/reset password) dan `authEmails.test.ts` (penyamaran alamat, escape HTML).
+  - Integration `account.test.ts` +7, termasuk tautan yang dibuka akun lain hanya mengubah akun peminta, field asing (`userId`) ditolak, batas 5 per jam, dan CHECK database.
+  - E2E `email-change.spec.ts` (form, kata sandi salah, tautan dari Mailpit, sekali pakai, axe di Akun dan halaman konfirmasi). CI kini ikut menyalakan Mailpit. E2E lengkap 16/16.
 
 ### #38 · Gemini gratis (C3, C4) dan CP-2 · branch `feat/aldi-gemini-free`
 
@@ -522,7 +538,7 @@ Branch ini dibuat **di atas** `feat/adli-essay-scans` (PR belum di-merge), jadi 
 
 Urutan kerja lengkap, gerbang uji, dan checkpoint ada di [SISA-ALDI.md](SISA-ALDI.md). Langkah terdekat:
 
-1. Fase D: deploy (D1 konfigurasi dan perbandingan hosting gratis, D2 akun dan secret oleh Aldi)
+1. Fase F sisanya (F2 offline PWA, CP-5, F3 interleaving), lalu Fase D: deploy (D1 konfigurasi dan perbandingan hosting gratis, D2 akun dan secret oleh Aldi)
 2. Uji foto tulisan tangan asli begitu Aldi menaruh fotonya di `uji-c3/`
 3. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
 

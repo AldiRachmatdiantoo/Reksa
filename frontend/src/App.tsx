@@ -28,6 +28,7 @@ const AccountPage = page(() => import('@/features/auth/AccountPage'), 'AccountPa
 const ForgotPasswordPage = page(() => import('@/features/auth/ForgotPasswordPage'), 'ForgotPasswordPage');
 const ResetPasswordPage = page(() => import('@/features/auth/ResetPasswordPage'), 'ResetPasswordPage');
 const VerifyEmailPage = page(() => import('@/features/auth/VerifyEmailPage'), 'VerifyEmailPage');
+const ConfirmEmailChangePage = page(() => import('@/features/auth/ConfirmEmailChangePage'), 'ConfirmEmailChangePage');
 const ResultPage = page(() => import('@/features/audit-result/ResultPage'), 'ResultPage');
 const TeacherPage = page(() => import('@/features/governance/TeacherPage'), 'TeacherPage');
 const VerifyLedgerPage = page(() => import('@/features/governance/VerifyLedgerPage'), 'VerifyLedgerPage');
@@ -74,6 +75,7 @@ function AnimatedRoutes() {
           <Route path="/lupa-password" element={<ForgotPasswordPage />} />
           <Route path="/atur-ulang-password" element={<ResetPasswordPage />} />
           <Route path="/verifikasi-email" element={<VerifyEmailPage />} />
+          <Route path="/konfirmasi-email" element={<ConfirmEmailChangePage />} />
           <Route path="/privasi" element={<LegalPage doc="privasi" />} />
           <Route path="/syarat" element={<LegalPage doc="syarat" />} />
           {/* Verifikasi publik ledger_hash (FR-07); tautan di PDF bukti belajar (FR-12). */}

@@ -9,7 +9,14 @@ import type { EmailMessage, IEmailService } from '../../config/email.js';
 import { maxBirthYear, needsAdultConfirmation, PRIVACY_VERSION, TERMS_VERSION } from '../../config/policies.js';
 import type { AuthRepository, AuthTokenPurpose, ConsentRecord, UserRecord } from './auth.repository.js';
 import type { AuthUserResponse, ConsentInput, LoginInput, RegisterInput } from './auth.schema.js';
-import { resetPasswordMessage, verifyEmailMessage } from './authEmails.js';
+import {
+  confirmEmailChangeMessage,
+  emailChangeRequestedNotice,
+  emailTakenNotice,
+  maskEmail,
+  resetPasswordMessage,
+  verifyEmailMessage,
+} from './authEmails.js';
 
 export type AuthResult = {
   user: AuthUserResponse;
@@ -17,7 +24,13 @@ export type AuthResult = {
   refreshToken: string;
 };
 
-export type SecurityEvent = 'REFRESH_TOKEN_REUSE' | 'LOGIN_FAILED' | 'PASSWORD_RESET' | 'PASSWORD_CHANGED';
+export type SecurityEvent =
+  | 'REFRESH_TOKEN_REUSE'
+  | 'LOGIN_FAILED'
+  | 'PASSWORD_RESET'
+  | 'PASSWORD_CHANGED'
+  | 'EMAIL_CHANGE_REQUESTED'
+  | 'EMAIL_CHANGED';
 
 export type AuthServiceDeps = {
   repo: AuthRepository;
@@ -39,6 +52,11 @@ const INVALID_LINK = 'Tautan tidak valid, sudah dipakai, atau sudah kedaluwarsa.
 /** PRD FR-14: verifikasi 24 jam, reset password 30 menit. */
 export const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60_000;
 export const PASSWORD_RESET_TTL_MS = 30 * 60_000;
+/** F1: tautan ganti email ke alamat baru, sama dengan tautan verifikasi. */
+export const EMAIL_CHANGE_TTL_MS = EMAIL_VERIFY_TTL_MS;
+
+/** Kata sandi salah saat ganti password atau ganti email. 400, bukan 401: 401 membuat frontend mencoba refresh token. */
+export const INVALID_CURRENT_PASSWORD = 'INVALID_CURRENT_PASSWORD';
 
 /**
  * Token yang sudah dirotasi lalu muncul lagi dalam jendela ini adalah dua tab (atau permintaan ulang
@@ -222,6 +240,8 @@ export class AuthService {
       // Bisa membuka tautan dari email = pemilik email itu.
       await tx.markEmailVerified(id, now);
       await tx.deleteUnusedAuthTokens(id, 'PASSWORD_RESET');
+      // Pemilik yang mereset password membatalkan permintaan ganti email yang mungkin dibuat orang lain.
+      await tx.deleteUnusedAuthTokens(id, 'EMAIL_CHANGE');
       await tx.deleteAllRefreshTokens(id);
       return id;
     });
@@ -244,7 +264,7 @@ export class AuthService {
   async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<AuthResult> {
     const user = await this.requireUser(userId);
     if (!(await this.deps.hasher.verify(user.passwordHash, currentPassword))) {
-      throw new AppError(400, 'INVALID_CURRENT_PASSWORD', 'Kata sandi lama salah');
+      throw new AppError(400, INVALID_CURRENT_PASSWORD, 'Kata sandi lama salah');
     }
     if (currentPassword === newPassword) {
       throw new BadRequestError('Kata sandi baru harus berbeda dari kata sandi lama');
@@ -253,10 +273,78 @@ export class AuthService {
     await this.deps.repo.withTransaction(async (tx) => {
       await tx.updatePasswordHash(user.id, passwordHash);
       await tx.deleteUnusedAuthTokens(user.id, 'PASSWORD_RESET');
+      // Email pemberitahuan ganti email menyuruh pemilik mengganti kata sandi untuk membatalkannya.
+      await tx.deleteUnusedAuthTokens(user.id, 'EMAIL_CHANGE');
       await tx.deleteAllRefreshTokens(user.id);
     });
     this.deps.onSecurityEvent?.('PASSWORD_CHANGED', { userId: user.id });
     return this.issueSession(user);
+  }
+
+  // ---------- F1: ganti email (lanjutan FR-14) ----------
+
+  /**
+   * Email akun belum berubah di sini. Tautan dikirim ke alamat baru; email berganti saat tautan itu dibuka.
+   * Alamat lama mendapat pemberitahuan, dan mengganti kata sandi membatalkan permintaannya.
+   *
+   * Jawaban ke pemanggil selalu sama, alamat baru sudah dipakai akun lain atau belum, supaya fitur ini tidak
+   * bisa dipakai mengecek alamat siapa yang terdaftar. Alamat yang sudah dipakai mendapat email penjelasan.
+   */
+  async requestEmailChange(userId: string, newEmail: string, currentPassword: string): Promise<void> {
+    const user = await this.requireUser(userId);
+    if (!(await this.deps.hasher.verify(user.passwordHash, currentPassword))) {
+      throw new AppError(400, INVALID_CURRENT_PASSWORD, 'Kata sandi salah');
+    }
+    if (newEmail === user.email) {
+      throw new AppError(400, 'SAME_EMAIL', 'Itu sudah email akunmu sekarang');
+    }
+
+    const owner = await this.deps.repo.findUserByEmail(newEmail);
+    if (owner) {
+      this.deliver(emailTakenNotice(newEmail, `${this.deps.appUrl}/masuk`), { userId: user.id, purpose: 'EMAIL_CHANGE_TAKEN' });
+    } else {
+      const raw = generateOpaqueToken();
+      await this.deps.repo.withTransaction(async (tx) => {
+        await tx.deleteUnusedAuthTokens(user.id, 'EMAIL_CHANGE');
+        await tx.createAuthToken({
+          userId: user.id,
+          purpose: 'EMAIL_CHANGE',
+          tokenHash: hashEmailToken(raw),
+          expiresAt: new Date(this.now().getTime() + EMAIL_CHANGE_TTL_MS),
+          newEmail,
+        });
+      });
+      this.deliver(confirmEmailChangeMessage(newEmail, user.fullName, `${this.deps.appUrl}/konfirmasi-email?token=${raw}`), {
+        userId: user.id,
+        purpose: 'EMAIL_CHANGE',
+      });
+    }
+    this.deliver(emailChangeRequestedNotice(user.email, user.fullName, maskEmail(newEmail), `${this.deps.appUrl}/akun`), {
+      userId: user.id,
+      purpose: 'EMAIL_CHANGE_NOTICE',
+    });
+    this.deps.onSecurityEvent?.('EMAIL_CHANGE_REQUESTED', { userId: user.id });
+  }
+
+  /**
+   * Dibuka dari tautan di alamat baru, boleh tanpa login (bisa dibuka di perangkat lain). Sesi yang ada
+   * tetap berlaku: perubahan sudah disahkan kata sandi dan kotak masuk alamat baru. Tautan reset dan
+   * verifikasi yang terkirim ke alamat lama ikut dimatikan.
+   */
+  async confirmEmailChange(rawToken: string): Promise<void> {
+    const now = this.now();
+    const userId = await this.deps.repo.withTransaction(async (tx) => {
+      const token = await tx.consumeEmailChangeToken(hashEmailToken(rawToken), now);
+      if (!token) return null;
+      // ConflictError (alamat keburu dipakai akun lain) membatalkan transaksi, termasuk pemakaian token.
+      await tx.updateEmail(token.userId, token.newEmail, now);
+      for (const purpose of ['EMAIL_CHANGE', 'EMAIL_VERIFY', 'PASSWORD_RESET'] as const) {
+        await tx.deleteUnusedAuthTokens(token.userId, purpose);
+      }
+      return token.userId;
+    });
+    if (!userId) throw invalidLink();
+    this.deps.onSecurityEvent?.('EMAIL_CHANGED', { userId });
   }
 
   // ---------- internal ----------

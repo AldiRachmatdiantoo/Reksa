@@ -210,13 +210,14 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
   * **Lupa password:** `POST /auth/password/forgot { email }` selalu menjawab `202` dengan pesan yang sama, baik email terdaftar maupun tidak, supaya keberadaan akun tidak bocor. Rate limit 3 per jam per email dan 60 per jam per IP. `POST /auth/password/reset { token, newPassword }` memakai aturan password yang sama dengan register dan mencabut seluruh refresh token user.
   * **Ganti password** saat login: wajib password lama, lalu semua sesi di perangkat lain dicabut.
   * *(Implementasi)* Saat ganti atau reset password, refresh token lama dihapus, bukan ditandai dicabut. Kalau ditandai, refresh dari perangkat lain terbaca sebagai *reuse* dan ikut mencabut sesi baru. Password lama yang salah dijawab `400 INVALID_CURRENT_PASSWORD`, bukan `401`, supaya klien tidak mengira sesinya habis.
-  * **Ubah nama:** `PATCH /me { fullName }`. Ganti email ditunda ke pasca-MVP karena butuh verifikasi ke alamat baru.
+  * **Ubah nama:** `PATCH /me { fullName }`.
+  * *(F1, 22 Nov 2026)* **Ganti email:** `POST /me/email { newEmail, currentPassword }` (5 per jam per user) selalu menjawab `202` dengan pesan yang sama, alamat baru sudah terdaftar atau belum. Tautan sekali pakai (24 jam) dikirim ke alamat baru; alamat lama mendapat pemberitahuan dengan alamat baru yang disamarkan (`n***@domain`). Alamat yang ternyata sudah dipakai akun lain menerima email penjelasan, bukan tautan. `POST /auth/email/confirm { token }` (publik, bisa dibuka di perangkat lain) mengganti email dan menandainya terverifikasi; sesi yang ada tetap berlaku, tautan reset dan verifikasi yang belum dipakai ikut dimatikan. Ganti atau reset password membatalkan permintaan ganti email yang belum dikonfirmasi. Alamat yang keburu dipakai akun lain sebelum dikonfirmasi dijawab `409`.
 
 ### 4.5 Peta Jalan Pengembangan Fitur (Pasca-MVP)
 * **Mode Audio-First Feynman:** Lawan bicara AI berbasis *Speech-to-Text* dan *Text-to-Speech* di mana AI berperan sebagai murid awam yang menginterogasi penjelasan lisan pelajar (aksesibilitas utama untuk tunanetra).
 * **Interleaving Engine:** Penggabungan dua topik materi berbeda secara otomatis dalam satu sesi evaluasi esai.
 * **Offline-First PWA:** Penyimpanan lokal (*IndexedDB*) untuk timer Pomodoro dan antrean foto tulisan tangan saat perangkat kehilangan koneksi internet.
-* **Ganti email** dengan verifikasi ke alamat baru (lanjutan FR-14).
+* ~~**Ganti email** dengan verifikasi ke alamat baru (lanjutan FR-14).~~ Selesai 22 Nov 2026 (lihat FR-14).
 * **Pengguna di bawah 18 tahun**, hanya setelah ada penyedia AI yang ketentuannya mengizinkan, lengkap dengan konfirmasi izin orang tua lewat email.
 * **Pembayaran Pro langsung:** integrasi payment gateway (misal Midtrans atau Xendit) dengan webhook bertanda tangan, menggantikan kode aktivasi manual dari FR-11.
 
@@ -336,7 +337,7 @@ Seluruh tabel menggunakan tipe primary key `UUID` (`gen_random_uuid()`) untuk me
 *Tabel baru v1.2 (belum dimigrasi):*
 * **`activation_codes`** (FR-11): `id (UUID PK)`, `code_hash (VARCHAR(64) UNIQUE)`, `institution_id (UUID FK nullable)`, `duration_days (INT)`, `max_redemptions (INT)`, `redeemed_count (INT DEFAULT 0)`, `expires_at (TIMESTAMPTZ)`, `created_at (TIMESTAMPTZ)`.
 * **`activation_redemptions`** (FR-11): `id (UUID PK)`, `code_id (UUID FK)`, `user_id (UUID FK)`, `redeemed_at (TIMESTAMPTZ)`, `UNIQUE (code_id, user_id)`.
-* **`auth_tokens`** (v1.3, FR-14, sudah dimigrasi): `id (UUID PK)`, `user_id (UUID FK)`, `purpose (ENUM: EMAIL_VERIFY, PASSWORD_RESET)`, `token_hash (VARCHAR(64) UNIQUE)`, `expires_at (TIMESTAMPTZ)`, `used_at (TIMESTAMPTZ nullable)`.
+* **`auth_tokens`** (v1.3, FR-14, sudah dimigrasi): `id (UUID PK)`, `user_id (UUID FK)`, `purpose (ENUM: EMAIL_VERIFY, PASSWORD_RESET, EMAIL_CHANGE)`, `token_hash (VARCHAR(64) UNIQUE)`, `expires_at (TIMESTAMPTZ)`, `used_at (TIMESTAMPTZ nullable)`, `new_email (VARCHAR(254) nullable)`: alamat tujuan, wajib untuk `EMAIL_CHANGE` dan kosong untuk tujuan lain (CHECK).
 * *(v1.3, sudah dimigrasi: `session_validity`, plus `focus_ended_at`)* **`study_sessions`** ditambah `validity (ENUM: VALID, SHORT_FOCUS)` dan *partial unique index* `(user_id) WHERE status IN ('FOCUS_ACTIVE','AWAITING_SCAN')` untuk menjamin satu sesi aktif (FR-02).
 * *(v1.3, sudah dimigrasi: `essay_audit_async`)* **`essay_submissions`** ditambah `audit_status (ENUM: PENDING, PROCESSING, DONE, FAILED)`, `audit_attempts (INT DEFAULT 0, maks. 3)`, `audit_error_code (VARCHAR nullable)`, `audit_started_at`, `audited_at`, `quota_charged_at`, `encouraging_summary (TEXT)`; kolom hasil (`actual_ai_score`, `*_json`, `ledger_hash`) nullable sampai `DONE`. Tabel tidak lagi append-only murni: UPDATE diizinkan sampai `DONE`, trigger `essay_submissions_guard` mengunci baris `DONE` dan kolom bukti, DELETE tetap dicabut.
 * **`educator_invites`** (FR-10): `id (UUID PK)`, `institution_id (UUID FK)`, `token_hash (VARCHAR(64) UNIQUE)`, `created_by (UUID FK)`, `expires_at (TIMESTAMPTZ)`, `revoked_at (TIMESTAMPTZ nullable)`.
@@ -413,6 +414,7 @@ Seluruh endpoint berada di bawah prefix `/api/v1` dan menggunakan middleware val
 | `POST` | `/auth/verify-email` & `/auth/verify-email/resend` | Public / Authenticated (Rate-Limited) | Verifikasi email dengan token; kirim ulang tautan (FR-14). |
 | `POST` | `/auth/password/forgot` & `/auth/password/reset` | Public (Rate-Limited) | Lupa password; jawaban selalu sama untuk mencegah enumerasi akun. |
 | `PATCH` | `/me` & `/me/password` | Authenticated | Ubah nama; ganti password (wajib password lama). |
+| `POST` | `/me/email` & `/auth/email/confirm` | Authenticated / Public (Rate-Limited) | Minta ganti email (wajib password, selalu `202`); konfirmasi dengan token dari alamat baru (F1). |
 | `POST` | `/me/consent` | Authenticated | Menyetujui versi baru Kebijakan Privasi & Syarat Layanan (FR-13). |
 | `POST` | `/me/export` | Authenticated (1×/hari) | Menyiapkan arsip data pribadi lewat *Signed URL*. |
 | `DELETE` | `/me` | Authenticated | Hapus akun dan seluruh datanya (konfirmasi password). |

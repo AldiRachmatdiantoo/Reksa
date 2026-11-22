@@ -35,6 +35,7 @@ export function AccountPage() {
         <PlanSection user={auth.user} onChanged={auth.updateUser} />
         {auth.user.role === 'STUDENT' && <LedgerPdfSection isPro={isEffectivePro(auth.user)} />}
         {auth.user.role === 'EDUCATOR' && <InstitutionJoinSection />}
+        <EmailSection currentEmail={auth.user.email} />
         <PasswordSection onChanged={auth.updateUser} />
         <DataSection
           user={auth.user}
@@ -133,6 +134,95 @@ function ProfileSection({ user, onSaved }: { user: AuthUser; onSaved: (user: Aut
         />
         <Button type="submit" variant="primary" disabled={saving || fullName.trim() === user.fullName} className="sm:mt-7">
           {saving ? 'Menyimpan...' : 'Simpan nama'}
+        </Button>
+      </form>
+    </section>
+  );
+}
+
+/** F1: email akun berganti setelah tautan di alamat baru dibuka, jadi di sini hanya mengirim permintaan. */
+function EmailSection({ currentEmail }: { currentEmail: string }) {
+  const [newEmail, setNewEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
+  const [saving, setSaving] = useState(false);
+  const [sentTo, setSentTo] = useState('');
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    const target = newEmail.trim().toLowerCase();
+    const found: typeof errors = {};
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target)) found.email = 'Tulis alamat email yang lengkap, misalnya nama@kampus.ac.id.';
+    else if (target === currentEmail.toLowerCase()) found.email = 'Itu sudah email akunmu sekarang.';
+    if (!password) found.password = 'Tulis kata sandimu untuk memastikan ini kamu.';
+    setErrors(found);
+    setSentTo('');
+    if (Object.keys(found).length > 0) return;
+
+    setSaving(true);
+    try {
+      await authApi.requestEmailChange(target, password);
+      setSentTo(target);
+      setNewEmail('');
+      setPassword('');
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'INVALID_CURRENT_PASSWORD') setErrors({ password: 'Kata sandi salah.' });
+      else if (err instanceof ApiError && err.code === 'SAME_EMAIL') setErrors({ email: 'Itu sudah email akunmu sekarang.' });
+      else if (err instanceof ApiError && err.status === 429) setErrors({ form: 'Sudah 5 kali dalam satu jam terakhir. Coba lagi nanti.' });
+      else setErrors({ form: 'Permintaan gagal dikirim. Coba lagi.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section aria-labelledby="email-title" className="flex flex-col gap-5 rounded-lg border border-line-soft bg-card p-5 sm:p-6">
+      <div className="flex flex-col gap-1">
+        <h2 id="email-title" className="font-title text-title-lg text-ink">
+          Ganti email
+        </h2>
+        <p className="text-body-md text-ink-muted">
+          Kami kirim tautan ke alamat baru. Emailmu baru berganti setelah tautan itu dibuka, dan alamat lama dapat pemberitahuan.
+        </p>
+      </div>
+      <form noValidate onSubmit={onSubmit} aria-busy={saving} className="flex flex-col gap-5">
+        <TextField
+          id="new-email"
+          label="Email baru"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          maxLength={254}
+          value={newEmail}
+          onChange={(e) => setNewEmail(e.target.value)}
+          error={errors.email}
+        />
+        <TextField
+          id="email-change-password"
+          label="Kata sandi akun"
+          type="password"
+          autoComplete="current-password"
+          maxLength={128}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          error={errors.password}
+        />
+        {errors.form && (
+          <p role="alert" className="rounded-md bg-danger-wash px-4 py-3 text-body-md text-on-danger-wash">
+            {errors.form}
+          </p>
+        )}
+        {sentTo && (
+          <p role="status" className="flex items-start gap-2 rounded-md bg-teal-wash px-4 py-3 text-body-md text-ink">
+            <Icon name="mark_email_read" className="mt-px text-[20px] text-teal" />
+            <span>
+              Cek kotak masuk <span className="font-semibold [overflow-wrap:anywhere]">{sentTo}</span> dan buka tautannya dalam 24 jam.
+              Sampai saat itu, masuk tetap pakai email yang sekarang. Tidak ada email? Cek folder spam.
+            </span>
+          </p>
+        )}
+        <Button type="submit" variant="primary" disabled={saving} className="self-start">
+          {saving ? 'Mengirim...' : 'Kirim tautan konfirmasi'}
         </Button>
       </form>
     </section>

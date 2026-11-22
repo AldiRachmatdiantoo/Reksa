@@ -4,10 +4,12 @@ import { getValidated } from '../../common/middlewares/validate.middleware.js';
 import { clearAuthCookies, readRefreshCookie, setAuthCookies } from '../../common/utils/authCookies.js';
 import {
   ChangePasswordSchema,
+  ConfirmEmailChangeSchema,
   ConsentSchema,
   ForgotPasswordSchema,
   LoginSchema,
   RegisterSchema,
+  RequestEmailChangeSchema,
   ResetPasswordSchema,
   UpdateProfileSchema,
   VerifyEmailSchema,
@@ -16,6 +18,10 @@ import { RefreshRaceError, type AuthService } from './auth.service.js';
 
 /** Satu pesan untuk semua permintaan reset, terdaftar atau tidak (anti enumerasi akun). */
 const FORGOT_MESSAGE = 'Kalau email itu terdaftar, tautan untuk mengatur ulang kata sandi sudah dikirim. Cek kotak masuk dan folder spam.';
+
+/** Sama untuk alamat yang sudah terdaftar maupun belum (anti enumerasi akun). */
+export const EMAIL_CHANGE_MESSAGE =
+  'Buka tautan yang kami kirim ke alamat baru dalam 24 jam. Email akunmu berganti setelah tautan itu dibuka. Cek juga folder spam.';
 
 export class AuthController {
   constructor(private readonly service: AuthService) {}
@@ -88,6 +94,18 @@ export class AuthController {
   recordConsent = async (_req: Request, res: Response): Promise<void> => {
     const { body } = getValidated(res, { body: ConsentSchema });
     res.json({ user: await this.service.recordConsent(getAuth(res).userId, body) });
+  };
+
+  requestEmailChange = async (_req: Request, res: Response): Promise<void> => {
+    const { body } = getValidated(res, { body: RequestEmailChangeSchema });
+    await this.service.requestEmailChange(getAuth(res).userId, body.newEmail, body.currentPassword);
+    res.status(202).json({ message: EMAIL_CHANGE_MESSAGE });
+  };
+
+  confirmEmailChange = async (_req: Request, res: Response): Promise<void> => {
+    const { body } = getValidated(res, { body: ConfirmEmailChangeSchema });
+    await this.service.confirmEmailChange(body.token);
+    res.status(204).end();
   };
 
   changePassword = async (_req: Request, res: Response): Promise<void> => {

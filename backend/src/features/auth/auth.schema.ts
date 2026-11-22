@@ -53,6 +53,12 @@ export const ResetPasswordSchema = z.object({ token: EmailTokenSchema, newPasswo
 /** PATCH /me */
 export const UpdateProfileSchema = z.object({ fullName: FullNameSchema }).strict();
 
+/** POST /auth/email/confirm: token dari tautan di alamat baru (F1). */
+export const ConfirmEmailChangeSchema = z.object({ token: EmailTokenSchema }).strict();
+
+/** POST /me/email: minta ganti email (F1). Kata sandi wajib supaya sesi yang tercuri tidak cukup untuk mengambil alih akun. */
+export const RequestEmailChangeSchema = z.object({ newEmail: EmailSchema, currentPassword: z.string().min(1).max(128) }).strict();
+
 /** PATCH /me/password */
 export const ChangePasswordSchema = z.object({ currentPassword: z.string().min(1).max(128), newPassword: StrongPasswordSchema }).strict();
 
