@@ -1,0 +1,49 @@
+# Image backend untuk produksi (Azure Container Apps, docs/DEPLOY.md langkah 4c).
+#
+# Setiap merge ke main yang menyentuh backend membangun target `runner` dan mengirimnya ke GitHub Container
+# Registry (gratis). Tag: SHA commit (dipakai saat membuat revisi baru di Azure) dan `latest`.
+# Tidak ada secret Azure di sini: revisi baru dibuat Aldi sendiri di portal.
+name: Backend image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-image.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: backend-image
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build & push ghcr.io image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set image name
+        # Nama image di GHCR wajib huruf kecil.
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/reksa-backend" >> "$GITHUB_ENV"
+
+      - name: Build runner image
+        run: docker build --target runner -t "$IMAGE:${GITHUB_SHA::12}" -t "$IMAGE:latest" backend
+
+      - name: Verify image runs as non-root
+        run: test "$(docker run --rm --entrypoint id "$IMAGE:latest" -u)" != "0"
+
+      - name: Push to GitHub Container Registry
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker push "$IMAGE:${GITHUB_SHA::12}"
+          docker push "$IMAGE:latest"
+          echo "Image: $IMAGE:${GITHUB_SHA::12}" >> "$GITHUB_STEP_SUMMARY"
