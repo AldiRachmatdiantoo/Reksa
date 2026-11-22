@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, D1 persiapan deploy (Aldi, branch `feat/aldi-deploy-prep`)
+**Checkpoint terakhir:** 23 November 2026, D2 backend hidup di Azure Container Apps (Aldi, PR #47)
 
 ---
 
@@ -16,6 +16,15 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #45 · D2 backend hidup di Azure · PR #47 `fix/aldi-db-tls`
+
+- **Alamat API:** `https://reksa-api.salmondesert-4d070d6d.indonesiacentral.azurecontainerapps.io` (Container App `reksa-api`, grup `reksa`, environment `reksa-env`, region **Indonesia Central**). Kebijakan langganan Azure for Students menolak Southeast Asia (`RequestDisallowedByAzure`).
+- **Layanan:** Supabase (Postgres lewat Session pooler sebagai `app_service_user`, Storage S3), Upstash Redis, Brevo SMTP, Gemini. Semua nilai rahasia disimpan sebagai Secret di Container App dan dirujuk dari variabel lingkungan.
+- **Perbaikan TLS (PR #47):** pg memperlakukan `sslmode=require` sebagai verify-full, sedangkan pooler Supabase memakai root CA sendiri, jadi setiap query gagal `self-signed certificate in certificate chain`. Env baru `DATABASE_SSL_CA=supabase` memasang root CA Supabase 2021 dengan verifikasi penuh (rantai dan nama host).
+- **Bukti di produksi (image `bd4bb5996fde`):** `/api/v1/health` 200; login akun karangan 401 (database tersambung); header `ratelimit-remaining` berkurang (Redis tersambung, limiter gagal-tertutup); HSTS dan `nosniff` terkirim.
+- **Biaya:** replika 0 sampai 1, tanpa Log Analytics (log dibaca lewat Aliran log di portal). Anggaran `reksa-bulanan` $10/bulan dengan peringatan di 50% dan 100%.
+- **Belum:** proyek Vercel (rewrite pertama `frontend/vercel.json` ke alamat API di atas), lalu `CORS_ORIGIN` dan `APP_URL` diganti dari placeholder `https://reksa.vercel.app` ke URL Vercel asli (revisi baru). Uji D4: unggah foto dan PDF lewat rewrite Vercel, SSE QR bridge, email verifikasi dari Brevo, audit Gemini end-to-end.
 
 ### #44 · Jalur deploy Azure Container Apps · branch `feat/aldi-azure-deploy`
 
