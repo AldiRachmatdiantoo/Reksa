@@ -32,6 +32,9 @@ services:
       # Session pooler Supabase sebagai app_service_user (lihat docs/DEPLOY.md langkah 2).
       - key: DATABASE_URL
         sync: false
+      # Pooler Supabase memakai CA sendiri; tanpa ini koneksi gagal "self-signed certificate in certificate chain".
+      - key: DATABASE_SSL_CA
+        value: supabase
       - key: CORS_ORIGIN
         sync: false
       - key: APP_URL

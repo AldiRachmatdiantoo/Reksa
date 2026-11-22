@@ -1,14 +1,15 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { z } from 'zod';
 import { PrismaClient, type Prisma } from '../generated/prisma/client.js';
+import { buildPgPoolConfig, type DatabaseSslCa } from './dbTls.js';
 
 export type { PrismaClient };
 export type TxClient = Prisma.TransactionClient;
 
 /** The app connects as app_service_user (least privilege, subject to RLS). */
-export function createPrismaClient(databaseUrl: string): PrismaClient {
+export function createPrismaClient(databaseUrl: string, sslCa: DatabaseSslCa = 'system'): PrismaClient {
   return new PrismaClient({
-    adapter: new PrismaPg({ connectionString: databaseUrl }),
+    adapter: new PrismaPg(buildPgPoolConfig(databaseUrl, sslCa)),
     log: [
       { level: 'warn', emit: 'stdout' },
       { level: 'error', emit: 'stdout' },
