@@ -12,7 +12,7 @@ import { StateBlock } from '@/shared/ui/StateBlock';
 import { StepIndicator } from '@/features/studio/StepIndicator';
 import { formatDuration, useStudySession } from '@/features/studio/studySession';
 import { QrBridgePanel } from './QrBridgePanel';
-import { photoProblem, quotaText, SCAN_ACCEPT, scansApi, uploadErrorMessage } from './scansApi';
+import { PHOTO_PRIVACY_TIP, photoProblem, quotaText, SCAN_ACCEPT, scansApi, uploadErrorMessage } from './scansApi';
 
 function confidenceLabel(v: number) {
   if (v < 40) return 'Masih ragu';
@@ -263,6 +263,12 @@ export function CalibratePage() {
                     ? 'Pastikan seluruh tulisan dan panahmu terlihat jelas dalam satu foto.'
                     : 'Simpan tebakan nilaimu dulu. Foto dibuka setelah itu supaya tebakan tidak dipengaruhi hasil.'}
                 </p>
+                {jolLocked && (
+                  <p className="flex items-start gap-2 text-body-sm text-ink-muted">
+                    <Icon name="person_off" className="text-[18px]" />
+                    {PHOTO_PRIVACY_TIP}
+                  </p>
+                )}
               </header>
 
               <input

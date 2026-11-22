@@ -38,7 +38,7 @@ Daftar ini urut: kerjakan dari atas. Centang `[x]` saat PR-nya sudah masuk `main
 
 ## Fase A · Beres-beres
 
-- [ ] **A1. Tips foto tanpa nama** (`feat/aldi-photo-privacy-tip`): selesaikan konflik dengan `main` di `CalibratePage.tsx` dan `frontend/docs/CHECKPOINT.md`, lalu PR.
+- [x] **A1. Tips foto tanpa nama** (`feat/aldi-photo-privacy-tip`): konflik dengan `main` diselesaikan, contoh "NIS" diganti "NIM" karena pengguna 18+.
 - [x] **A2. Rapikan catatan dan konfigurasi** (`feat/aldi-tidy-notes`):
   - Tandai catatan ⏳ dari Adli yang sudah beres menjadi ✅: review audit asinkron `essay-scans`, review migrasi `session_validity`, dan keputusan skor Stage 2 dihitung server (sudah begitu di kode).
   - Ganti `location` SSE QR bridge lama di `frontend/nginx.conf` dengan path final `/api/v1/sessions/<uuid>/qr-bridge/events`.
