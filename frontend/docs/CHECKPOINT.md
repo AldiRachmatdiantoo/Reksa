@@ -1,5 +1,12 @@
 # Checkpoint Frontend REKSA
 
+## #20 · 2026-11-22 · Pengingat privasi di langkah foto
+
+Branch: `feat/aldi-photo-privacy-tip`.
+
+- `CalibratePage` (setelah tebakan disimpan) dan `PhoneUploadPage` menampilkan `PHOTO_PRIVACY_TIP` dari `scansApi.ts`: tidak perlu menulis nama atau NIS di kertas, dan usahakan wajah serta barang pribadi tidak ikut terfoto. Seluruh isi foto ikut dikirim untuk dinilai (ke Gemini setelah Fase 3), jadi identitas sebaiknya tidak ada di gambar.
+- Dicek: E2E `study-flow` 3/3 (axe lolos di kedua halaman), tangkapan layar laptop dan HP.
+
 ## #19 · 2026-11-22 · Catatan kualitas: code splitting, token URL, formatter, CSP
 
 Branch: `fix/aldi-qa-bugs`.

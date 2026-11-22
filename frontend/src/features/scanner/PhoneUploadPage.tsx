@@ -7,7 +7,7 @@ import { Brand } from '@/shared/ui/Brand';
 import { Button } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { StateBlock } from '@/shared/ui/StateBlock';
-import { photoProblem, SCAN_ACCEPT, scansApi, uploadErrorMessage } from './scansApi';
+import { PHOTO_PRIVACY_TIP, photoProblem, SCAN_ACCEPT, scansApi, uploadErrorMessage } from './scansApi';
 
 const TOKEN_RE = /^[A-Za-z0-9_-]{43}$/;
 /** Kode error yang tidak tertolong dengan memilih foto lain. */
@@ -66,6 +66,10 @@ export function PhoneUploadPage() {
           </h1>
           <p className="text-body-md text-ink-muted text-pretty">
             Pastikan seluruh tulisan dan panahmu terlihat jelas dalam satu foto. Lokasi dan info kamera dihapus sebelum foto disimpan.
+          </p>
+          <p className="flex items-start gap-2 text-body-sm text-ink-muted">
+            <Icon name="person_off" className="text-[18px]" />
+            {PHOTO_PRIVACY_TIP}
           </p>
 
           <input
