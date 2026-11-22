@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, CP-5 dan F3 interleaving (Aldi, branch `feat/aldi-interleaving`)
+**Checkpoint terakhir:** 22 November 2026, D1 persiapan deploy (Aldi, branch `feat/aldi-deploy-prep`)
 
 ---
 
@@ -16,6 +16,17 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #42 · D1 persiapan deploy · branch `feat/aldi-deploy-prep`
+
+Semua yang bisa disiapkan tanpa akun. Langkah berikutnya (D2) butuh Aldi membuat akun Supabase, Render, Vercel, dan Brevo. Panduan langkah demi langkah dan perbandingan hosting gratis ada di `docs/DEPLOY.md`.
+
+- **`frontend/vercel.json`:** rewrite `/api/*` ke Render (cookie tetap satu origin), fallback SPA, header keamanan sama dengan `nginx.conf` (CSP `img-src` ke `*.supabase.co`), `sw.js` tanpa cache, manifest, `/assets/` immutable.
+- **`render.yaml`:** blueprint `reksa-api` (Docker, free, Singapore, health check `/api/v1/health`, secret `sync: false`, JWT dibuat Render) dan `reksa-redis` (Key Value free, `volatile-lru`).
+- **`TRUST_PROXY_HOPS`** (bawaan 1, produksi 2): `trust proxy` kini dari env. Integration test membuktikan IP klien yang dipakai rate limit tidak bisa dipalsukan lewat `X-Forwarded-For` di rantai dua proxy.
+- **Migrasi `supabase_data_api_lockdown`:** mencabut hak `anon`/`authenticated` atas tabel, sequence, dan fungsi public (termasuk yang dibuat nanti); dilewati di Postgres tanpa role itu. Integration test membuat kedua role dengan hak bawaan ala Supabase lalu memastikan semuanya tercabut dan `app_service_user` tidak terpengaruh.
+- **Keputusan:** Redis di Render Key Value, bukan Upstash: antrean audit memeriksa Redis sekitar 10 juta kali/bulan, jauh di atas 500 ribu perintah gratis Upstash. Email lewat Brevo (300/hari).
+- **Risiko yang diuji di D4:** batas body request rewrite Vercel untuk foto 5 MB dan PDF 10 MB (tidak terdokumentasi jelas), SSE QR bridge lewat rewrite, rantai proxy untuk IP klien.
 
 ### #41 · CP-5 Gerbang Lengkap dan F3 interleaving · branch `feat/aldi-interleaving`
 

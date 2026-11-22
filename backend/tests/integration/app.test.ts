@@ -1,3 +1,4 @@
+import { Router } from 'express';
 import { pino } from 'pino';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
@@ -47,5 +48,26 @@ describe('app skeleton', () => {
   it('only allows the configured CORS origin', async () => {
     const res = await request(app).get('/api/v1/health').set('Origin', 'https://evil.example');
     expect(res.headers['access-control-allow-origin']).not.toBe('https://evil.example');
+  });
+});
+
+describe('client IP behind proxies (TRUST_PROXY_HOPS)', () => {
+  const echo = Router().get('/', (req, res) => void res.json({ ip: req.ip }));
+  const behind = (hops: number) =>
+    createApp({
+      env: { CORS_ORIGIN: 'http://localhost:8080', NODE_ENV: 'test', TRUST_PROXY_HOPS: hops },
+      logger: pino({ level: 'silent' }),
+      routes: { '/ip': echo },
+    });
+
+  it('takes the client address added by the first of two proxies, ignoring anything the client wrote before it', async () => {
+    // Klien memalsukan 6.6.6.6; rewrite Vercel menambahkan IP klien asli (198.51.100.7), lalu IP-nya sendiri ditambahkan sebelum Render.
+    const res = await request(behind(2)).get('/api/v1/ip').set('X-Forwarded-For', '6.6.6.6, 198.51.100.7, 203.0.113.1');
+    expect(res.body.ip).toBe('198.51.100.7');
+  });
+
+  it('with one hop (local Nginx) uses the last forwarded address', async () => {
+    const res = await request(behind(1)).get('/api/v1/ip').set('X-Forwarded-For', '6.6.6.6, 198.51.100.7');
+    expect(res.body.ip).toBe('198.51.100.7');
   });
 });

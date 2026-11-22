@@ -8,7 +8,7 @@ import { errorHandler, notFoundHandler } from './common/errors/errorHandler.js';
 import type { Env } from './config/env.js';
 
 export type AppDeps = {
-  env: Pick<Env, 'CORS_ORIGIN' | 'NODE_ENV'>;
+  env: Pick<Env, 'CORS_ORIGIN' | 'NODE_ENV'> & Partial<Pick<Env, 'TRUST_PROXY_HOPS'>>;
   logger: Logger;
   /** Router fitur yang dipasang di bawah /api/v1, mis. { '/auth': authRouter }. */
   routes?: Record<string, Router>;
@@ -17,9 +17,10 @@ export type AppDeps = {
 export function createApp({ env, logger, routes = {} }: AppDeps): Express {
   const app = express();
 
-  // Backend hanya diakses lewat satu reverse proxy (Nginx). Dibutuhkan agar
-  // req.ip berisi IP klien asli untuk rate limiting.
-  app.set('trust proxy', 1);
+  // Backend hanya diakses lewat reverse proxy (lokal: Nginx; produksi: rewrite Vercel lalu load balancer
+  // Render). Jumlah hop harus tepat agar req.ip berisi IP klien asli untuk rate limiting, dan header
+  // X-Forwarded-For kiriman klien tidak bisa dipakai memalsukan IP.
+  app.set('trust proxy', env.TRUST_PROXY_HOPS ?? 1);
 
   // Satu-satunya sumber header keamanan untuk respons API (nginx mengosongkan
   // header yang sama untuk /api/). Nilainya disamakan dengan header halaman di nginx.

@@ -1,0 +1,72 @@
+# Blueprint Render untuk backend REKSA (D1). Panduan lengkap: docs/DEPLOY.md.
+#
+# Free tier: layanan tidur setelah 15 menit tanpa request dan butuh sekitar 1 menit untuk bangun.
+# Secret (sync: false) diisi sendiri di dashboard Render saat blueprint pertama kali dibuat,
+# tidak pernah ditulis di file ini.
+services:
+  - type: web
+    name: reksa-api
+    runtime: docker
+    plan: free
+    region: singapore
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: '3000'
+      # Rewrite Vercel + load balancer Render.
+      - key: TRUST_PROXY_HOPS
+        value: '2'
+      - key: AI_PROVIDER_MODE
+        value: gemini
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: reksa-redis
+          property: connectionString
+      # Session pooler Supabase sebagai app_service_user (lihat docs/DEPLOY.md langkah 2).
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: STORAGE_ENDPOINT
+        sync: false
+      - key: STORAGE_PUBLIC_ENDPOINT
+        sync: false
+      - key: STORAGE_REGION
+        sync: false
+      - key: STORAGE_BUCKET
+        value: reksa-private
+      - key: STORAGE_ACCESS_KEY_ID
+        sync: false
+      - key: STORAGE_SECRET_ACCESS_KEY
+        sync: false
+      - key: STORAGE_FORCE_PATH_STYLE
+        value: 'true'
+      - key: SMTP_URL
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+
+  # Antrean audit dan rate limit. Free: hanya di memori, bisa di-restart kapan saja. Job yang hilang
+  # dinyatakan tertahan (AUDIT_STALLED) saat hasilnya dibuka, kuota dikembalikan, dan pelajar bisa coba lagi.
+  - type: keyvalue
+    name: reksa-redis
+    plan: free
+    region: singapore
+    # Sama dengan lokal: hanya kunci ber-TTL (rate limit) yang boleh dibuang, antrean tidak.
+    maxmemoryPolicy: volatile-lru
+    ipAllowList: []
