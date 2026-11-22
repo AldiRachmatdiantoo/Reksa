@@ -198,19 +198,23 @@ function createAuditService(deps: Pick<ContainerDeps, 'prisma' | 'storage' | 'ai
   });
 }
 
+export const AUDIT_QUEUE_WAIT_SECONDS = 30;
+
 /**
  * Worker audit AI (FR-05). Dijalankan server.ts di proses yang sama dengan API; berhenti saat shutdown.
  * Test integrasi memakai `drain()` untuk menjalankan antrean secara deterministik.
  */
 export function buildAuditWorker(
   deps: Pick<ContainerDeps, 'prisma' | 'redis' | 'storage' | 'ai' | 'logger'>,
-  options: { concurrency?: number; auditService?: AuditService } = {},
+  options: { concurrency?: number; auditService?: AuditService; blockingRedis?: Redis } = {},
 ): AuditWorker {
   const audit = options.auditService ?? createAuditService(deps);
   return new AuditWorker({
-    queue: new RedisAuditQueue(deps.redis),
+    queue: new RedisAuditQueue(deps.redis, options.blockingRedis),
     handle: (job) => audit.run(job),
     concurrency: options.concurrency ?? 2,
+    // Dengan koneksi blocking, loop yang menganggur mengirim satu BRPOP per 30 detik.
+    waitSeconds: options.blockingRedis ? AUDIT_QUEUE_WAIT_SECONDS : 0,
     onError: (err, job) => deps.logger.error({ err, job }, 'Audit job gagal'),
   });
 }

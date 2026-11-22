@@ -17,6 +17,15 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 
 ## Riwayat checkpoint
 
+### #43 · Antrean audit pakai BRPOP, jalur cadangan Koyeb + Upstash · branch `feat/aldi-redis-brpop`
+
+Jatah gratis Render Aldi habis sampai Desember, jadi disiapkan jalur hosting kedua.
+
+- **Worker audit menunggu job dengan `BRPOP` 30 detik** di koneksi Redis tersendiri (`redis.duplicate()` di `server.ts`), bukan `RPOP` tiap 0,5 detik. Saat sepi: sekitar 175 ribu perintah/bulan, bukan sekitar 10 juta, jadi Upstash Free (500 ribu/bulan) kini muat. Job tetap diambil seketika saat masuk.
+- **Shutdown:** `stop()` memutus koneksi blocking sehingga `BRPOP` berhenti saat itu juga; galat dari pemutusan itu tidak dilaporkan. Di Docker lokal `docker compose stop backend` selesai dalam 1,2 detik dengan log "Server berhenti dengan bersih".
+- **Test:** unit (BRPOP vs RPOP, `interrupt`, `waitSeconds` diteruskan, stop tanpa galat palsu) dan integration dengan Redis asli (`auditQueue.test.ts`: job diambil kurang dari 1 detik walau worker sedang menunggu 30 detik, koneksi utama tetap bebas, stop kurang dari 2 detik). Stack lokal: 10 perintah Redis dalam 20 detik saat idle, termasuk healthcheck.
+- **`docs/DEPLOY.md` langkah 4b:** Koyeb (Docker, instance Free) + Upstash (Singapore, `rediss://`). `TRUST_PROXY_HOPS` untuk Koyeb belum terbukti, dicek di D4.
+
 ### #42 · D1 persiapan deploy · branch `feat/aldi-deploy-prep`
 
 Semua yang bisa disiapkan tanpa akun. Langkah berikutnya (D2) butuh Aldi membuat akun Supabase, Render, Vercel, dan Brevo. Panduan langkah demi langkah dan perbandingan hosting gratis ada di `docs/DEPLOY.md`.

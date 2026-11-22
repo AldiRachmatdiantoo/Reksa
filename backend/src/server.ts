@@ -28,7 +28,10 @@ async function main(): Promise<void> {
 
   const routes = buildRoutes({ env, logger, prisma, redis, ai, storage, email });
   // Worker audit AI (FR-05) di proses yang sama; berhenti sebelum koneksi DB/Redis ditutup.
-  const auditWorker = buildAuditWorker({ prisma, redis, storage, ai, logger });
+  // BRPOP menahan koneksinya, jadi worker memakai koneksi Redis sendiri.
+  const queueRedis = redis.duplicate();
+  await queueRedis.connect();
+  const auditWorker = buildAuditWorker({ prisma, redis, storage, ai, logger }, { blockingRedis: queueRedis });
   auditWorker.start();
   // File ekspor (FR-12, FR-13) dihapus setelah 24 jam. Tanpa cron: dicek tiap 15 menit di proses ini.
   const privacy = createPrivacyService({ prisma, storage, logger });
