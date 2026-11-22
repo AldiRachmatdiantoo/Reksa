@@ -9,8 +9,8 @@ Susunan yang direkomendasikan, semuanya tanpa kartu kredit:
 | Bagian | Pilihan utama | Batas gratis yang relevan | Alternatif |
 | :--- | :--- | :--- | :--- |
 | Frontend | **Vercel Hobby** | Untuk proyek non-komersial. Rewrite `/api` ke backend menjaga cookie `SameSite=Strict` tetap satu origin. | Netlify (rewrite proxy serupa), Cloudflare Pages (proxy lewat Functions, perlu kode tambahan) |
-| Backend | **Render Free** (Docker) | 750 jam/bulan, tidur setelah 15 menit tanpa request, bangun sekitar 1 menit. Disk sementara (aman: file disimpan di Supabase Storage). | Koyeb Free (1 instance 512 MB, tidur setelah 1 jam, bangun dalam detik; syarat daftar sejak akuisisi Mistral Feb 2026 belum jelas, ada laporan butuh kartu) |
-| Redis | **Render Key Value Free** | Hanya di memori, bisa di-restart kapan saja. Tidak ada batas jumlah perintah. | Upstash Free (500 ribu perintah/bulan). Sekarang muat: worker audit menunggu job dengan `BRPOP` 30 detik, jadi saat sepi hanya sekitar 175 ribu perintah/bulan. Lihat jalur cadangan di langkah 4b. |
+| Backend | **Render Free** (Docker) | 750 jam/bulan, tidur setelah 15 menit tanpa request, bangun sekitar 1 menit. Disk sementara (aman: file disimpan di Supabase Storage). | Lihat langkah 4b: belum ada pengganti yang gratis tanpa kartu (Koyeb tidak lagi gratis sejak 2026) |
+| Redis | **Render Key Value Free** | Hanya di memori, bisa di-restart kapan saja. Tidak ada batas jumlah perintah. | Upstash Free (500 ribu perintah/bulan). Sekarang muat: worker audit menunggu job dengan `BRPOP` 30 detik, jadi saat sepi hanya sekitar 175 ribu perintah/bulan. Lihat langkah 4b. |
 | Database + file | **Supabase Free** | DB 500 MB, Storage 1 GB, proyek dijeda setelah 1 minggu tanpa aktivitas (bisa dibangunkan dari dashboard). | Neon (DB saja; file tetap butuh storage S3 lain) |
 | Email | **Brevo Free** | 300 email/hari lewat SMTP, ada branding Brevo di email. | Resend Free (3.000/bulan, maks. 100/hari, satu domain sendiri) |
 | AI | **Gemini free tier** | Kuota harian per model; REKSA pindah ke model cadangan saat habis (CHECKPOINT #38). | - |
@@ -60,23 +60,29 @@ Konsekuensi yang perlu diterima di versi gratis:
 3. Setelah deploy, buka `https://<nama>.onrender.com/api/v1/health` → `{"status":"ok"}`.
 4. Kalau URL-nya **bukan** `https://reksa-api.onrender.com` (nama sudah dipakai orang), ganti tujuan rewrite pertama di `frontend/vercel.json`, commit lewat PR.
 
-## 4b. Jalur cadangan: Koyeb + Upstash (kalau Render belum bisa dipakai)
+## 4b. Kalau Render belum bisa dipakai: host Docker lain + Upstash
 
-Dipakai kalau jatah gratis Render habis atau akun belum bisa dibuat. Bedanya dengan Render: tidur setelah 1 jam sepi (bukan 15 menit) dan bangun dalam hitungan detik, tetapi Redis harus dari Upstash. Cek dulu di halaman harga Koyeb apakah daftar masih tanpa kartu kredit.
+**Koyeb tidak lagi gratis** (dicek di halaman harganya 23 November 2026: paket termurah Pro $29/bulan). Belum ada pengganti Render yang gratis, tanpa kartu kredit, dan menyediakan backend sekaligus Redis. Pilihan yang tersisa:
 
-1. **Upstash:** buat database Redis, region **ap-southeast-1 (Singapore)**, eviction **mati**. Salin URL `rediss://...` (TLS). Itu `REDIS_URL`.
-2. **Koyeb:** Create Service → Web Service → GitHub, pilih repo ini.
-   - Builder **Dockerfile**, work directory `backend`, Dockerfile `Dockerfile`.
-   - Instance **Free**, port **3000**, health check HTTP `/api/v1/health`.
-   - Variabel: sama dengan daftar di `render.yaml` (`NODE_ENV=production`, `PORT=3000`, `AI_PROVIDER_MODE=gemini`, `STORAGE_BUCKET=reksa-private`, `STORAGE_FORCE_PATH_STYLE=true`, plus semua secret), ditambah `REDIS_URL` dari Upstash. `JWT_ACCESS_SECRET` dan `JWT_REFRESH_SECRET` dibuat sendiri, masing-masing minimal 32 karakter acak (mis. `node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"`), simpan di password manager.
-   - `TRUST_PROXY_HOPS`: mulai dari `2`, lalu buktikan di D4 (lihat bagian 7). Rantai proxy Koyeb belum diuji.
-3. Ganti tujuan rewrite pertama di `frontend/vercel.json` ke URL Koyeb (`https://<app>-<org>.koyeb.app/api/:path*`), commit lewat PR.
-4. Kuota Upstash: worker yang menganggur memakai sekitar 175 ribu perintah/bulan, sisanya untuk rate limit dan antrean saat ada pengguna. Pantau grafik perintah di dashboard Upstash minggu pertama.
+| Opsi | Biaya | Catatan |
+| :--- | :--- | :--- |
+| Tunggu jatah Render | Gratis | Jatah bulanan Render reset tiap awal bulan. Paling sederhana: blueprint di langkah 4 sudah siap. |
+| Azure for Students (lewat GitHub Student Developer Pack) | Kredit $100, tanpa kartu, usia 18+ | Backend di App Service atau Container Apps; kredit habis dalam beberapa bulan untuk mesin yang menyala 24 jam. |
+| Heroku untuk pelajar (GitHub Student Developer Pack) | Kredit $13/bulan selama 24 bulan | Kemungkinan tetap minta kartu untuk verifikasi. |
+| Google Cloud Run, Oracle Always Free | Ada jatah gratis | Wajib akun billing atau verifikasi kartu. Cloud Run juga perlu CPU selalu aktif agar worker audit jalan di latar. |
+
+Di host mana pun selain Render, Redis bisa dari **Upstash Free**:
+
+1. Buat database Redis di region yang sama dengan backend, eviction **mati**. Salin URL `rediss://...` (TLS), itu `REDIS_URL`.
+2. Variabel lain sama dengan daftar di `render.yaml`. `JWT_ACCESS_SECRET` dan `JWT_REFRESH_SECRET` dibuat sendiri, masing-masing minimal 32 karakter acak (mis. `node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"`), simpan di password manager.
+3. Taruh backend, Supabase, dan Upstash di **region yang sama**. Setiap request memanggil database beberapa kali, jadi beda benua membuat halaman lambat.
+4. Ganti tujuan rewrite pertama di `frontend/vercel.json` ke URL backend baru, dan buktikan `TRUST_PROXY_HOPS` di D4 (bagian 7).
+5. Kuota Upstash 500 ribu perintah/bulan: worker audit yang menganggur memakai sekitar 175 ribu (`BRPOP` 30 detik), sisanya untuk rate limit dan antrean. Pantau grafiknya minggu pertama.
 
 ## 5. Vercel (frontend)
 
 1. Add New → Project → repo ini, **Root Directory: `frontend`**. Framework dan perintah build dibaca dari `frontend/vercel.json`.
-2. Setelah deploy, isi `CORS_ORIGIN` dan `APP_URL` di Render (atau Koyeb) dengan URL Vercel (mis. `https://reksa.vercel.app`), lalu Render akan deploy ulang.
+2. Setelah deploy, isi `CORS_ORIGIN` dan `APP_URL` di Render (atau host backend lain) dengan URL Vercel (mis. `https://reksa.vercel.app`), lalu Render akan deploy ulang.
 3. `vercel.json` sudah membawa header keamanan yang sama dengan `nginx.conf` lokal (CSP dengan `img-src` ke `*.supabase.co` untuk signed URL), `sw.js` tanpa cache, dan aset `/assets/` di-cache setahun.
 
 ## 6. Data awal (D3)
