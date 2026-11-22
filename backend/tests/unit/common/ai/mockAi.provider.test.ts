@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createAiService } from '../../../../src/common/ai/ai.factory.js';
+import { GeminiAiProvider } from '../../../../src/common/ai/geminiAi.provider.js';
 import {
   AiCohortClusterOutputSchema,
   AiEssayAuditOutputSchema,
@@ -171,7 +172,12 @@ describe('createAiService', () => {
     expect(createAiService({ AI_PROVIDER_MODE: 'mock', MOCK_AI_LATENCY_MS: 0 })).toBeInstanceOf(MockAiProvider);
   });
 
-  it('fails loudly in gemini mode until Phase 3', () => {
-    expect(() => createAiService({ AI_PROVIDER_MODE: 'gemini', MOCK_AI_LATENCY_MS: 0 })).toThrow(/Fase 3/);
+  it('returns GeminiAiProvider in gemini mode', () => {
+    const ai = createAiService({ AI_PROVIDER_MODE: 'gemini', MOCK_AI_LATENCY_MS: 0, GEMINI_API_KEY: 'test-key' });
+    expect(ai).toBeInstanceOf(GeminiAiProvider);
+  });
+
+  it('refuses gemini mode without an API key instead of falling back to fake data', () => {
+    expect(() => createAiService({ AI_PROVIDER_MODE: 'gemini', MOCK_AI_LATENCY_MS: 0 })).toThrow(/GEMINI_API_KEY/);
   });
 });

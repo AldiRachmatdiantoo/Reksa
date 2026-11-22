@@ -1,37 +1,37 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { isPossiblyMinor } from '@/features/legal/policyVersions';
+import { MIN_USER_AGE, needsAdultConfirmation } from '@/features/legal/policyVersions';
 import { TextField } from '@/shared/ui/TextField';
 import type { ConsentErrors } from './consent';
 
 type Props = {
   /** false di layar persetujuan ulang untuk akun yang sudah punya tahun lahir. */
   showBirthYear?: boolean;
-  /** Tahun lahir sudah tersimpan dan masih di bawah 18: tampilkan centang wali tanpa input tahun. */
-  showGuardianAlways?: boolean;
+  /** Tahun lahir sudah tersimpan dan tepat 18 tahun lalu: tampilkan centang "sudah 18" tanpa input tahun. */
+  showAdultAlways?: boolean;
   birthYear: string;
   onBirthYear: (value: string) => void;
   acceptTerms: boolean;
   onAcceptTerms: (value: boolean) => void;
-  guardianConsent: boolean;
-  onGuardianConsent: (value: boolean) => void;
+  adultConfirmed: boolean;
+  onAdultConfirmed: (value: boolean) => void;
   errors: ConsentErrors;
 };
 
-/** Tahun lahir, centang izin wali (jika mungkin di bawah 18), dan persetujuan dokumen (FR-13). */
+/** Tahun lahir, centang "sudah 18" (untuk yang lahir tepat 18 tahun lalu), dan persetujuan dokumen (FR-13). */
 export function ConsentFields({
   showBirthYear = true,
-  showGuardianAlways = false,
+  showAdultAlways = false,
   birthYear,
   onBirthYear,
   acceptTerms,
   onAcceptTerms,
-  guardianConsent,
-  onGuardianConsent,
+  adultConfirmed,
+  onAdultConfirmed,
   errors,
 }: Props) {
   const year = Number(birthYear);
-  const showGuardian = showGuardianAlways || (showBirthYear && /^\d{4}$/.test(birthYear.trim()) && isPossiblyMinor(year));
+  const showAdult = showAdultAlways || (showBirthYear && /^\d{4}$/.test(birthYear.trim()) && needsAdultConfirmation(year));
 
   return (
     <div className="flex flex-col gap-4">
@@ -41,18 +41,18 @@ export function ConsentFields({
           label="Tahun lahir"
           inputMode="numeric"
           autoComplete="bday-year"
-          placeholder="mis. 2009"
+          placeholder="mis. 2004"
           maxLength={4}
           value={birthYear}
           onChange={(e) => onBirthYear(e.target.value.replace(/\D/g, ''))}
           error={errors.birthYear}
-          hint="Dipakai untuk tahu apakah kamu perlu izin orang tua atau wali."
+          hint={`Dipakai untuk memeriksa batas usia ${MIN_USER_AGE} tahun.`}
           className="sm:max-w-56"
         />
       )}
-      {showGuardian && (
-        <Checkbox id="guardianConsent" checked={guardianConsent} onChange={onGuardianConsent} error={errors.guardianConsent}>
-          Umurku di bawah 18 tahun dan orang tua atau waliku sudah mengizinkan aku memakai REKSA.
+      {showAdult && (
+        <Checkbox id="adultConfirmed" checked={adultConfirmed} onChange={onAdultConfirmed} error={errors.adultConfirmed}>
+          Aku sudah berumur {MIN_USER_AGE} tahun.
         </Checkbox>
       )}
       <Checkbox id="acceptTerms" checked={acceptTerms} onChange={onAcceptTerms} error={errors.acceptTerms}>

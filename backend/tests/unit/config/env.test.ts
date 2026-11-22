@@ -40,6 +40,15 @@ describe('loadEnv', () => {
     expect(() => loadEnv({ ...validEnv, AI_PROVIDER_MODE: 'gemini' })).toThrow(/GEMINI_API_KEY/);
   });
 
+  it('defaults both Gemini models to gemini-2.5-flash and rejects model names that could change the URL path', () => {
+    const env = loadEnv(validEnv);
+    expect(env.GEMINI_TEXT_MODEL).toBe('gemini-2.5-flash');
+    expect(env.GEMINI_VISION_MODEL).toBe('gemini-2.5-flash');
+    expect(loadEnv({ ...validEnv, GEMINI_TEXT_MODEL: 'gemini-2.5-flash-lite' }).GEMINI_TEXT_MODEL).toBe('gemini-2.5-flash-lite');
+    expect(() => loadEnv({ ...validEnv, GEMINI_TEXT_MODEL: '../files' })).toThrow(/GEMINI_TEXT_MODEL/);
+    expect(() => loadEnv({ ...validEnv, GEMINI_VISION_MODEL: 'Gemini Flash' })).toThrow(/GEMINI_VISION_MODEL/);
+  });
+
   it('rejects short JWT secrets', () => {
     expect(() => loadEnv({ ...validEnv, JWT_ACCESS_SECRET: 'short' })).toThrow(/JWT_ACCESS_SECRET/);
   });

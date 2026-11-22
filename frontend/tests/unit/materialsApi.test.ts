@@ -22,6 +22,12 @@ describe('uploadErrorMessage', () => {
 
   it('tidak membocorkan pesan server untuk 5xx', () => {
     expect(uploadErrorMessage(new ApiError(500, 'INTERNAL', 'stack trace'))).toMatch(/Server sedang bermasalah/);
+    expect(uploadErrorMessage(new ApiError(503, 'HTTP_ERROR', 'Service Unavailable'))).toMatch(/Server sedang bermasalah/);
+  });
+
+  it('memakai pesan backend saat penyusun konsep kunci (AI) sibuk atau mati', () => {
+    const msg = 'Penyusun konsep kunci sedang sibuk. Tunggu sebentar, lalu kirim lagi.';
+    expect(uploadErrorMessage(new ApiError(503, 'AI_UNAVAILABLE', msg))).toBe(msg);
   });
 
   it('punya pesan umum untuk error non-API', () => {

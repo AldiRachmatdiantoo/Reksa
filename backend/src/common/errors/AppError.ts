@@ -66,3 +66,10 @@ export class TooManyRequestsError extends AppError {
     super(429, 'TOO_MANY_REQUESTS', message);
   }
 }
+
+/** Layanan pihak ketiga (mis. penyedia AI) sedang tidak bisa dipakai. Pesannya aman ditampilkan ke pengguna. */
+export class ServiceUnavailableError extends AppError {
+  constructor(message = 'Layanan sedang tidak tersedia, coba lagi nanti', code = 'SERVICE_UNAVAILABLE') {
+    super(503, code, message);
+  }
+}

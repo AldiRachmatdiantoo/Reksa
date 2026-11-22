@@ -7,7 +7,7 @@ import type { EssayAudit } from '@/features/audit-result/sampleAudit';
 export const SCAN_ACCEPT = ['image/jpeg', 'image/png', 'image/webp'] as const;
 export const SCAN_MAX_BYTES = 5 * 1024 * 1024;
 /** Ditampilkan sebelum memotret: seluruh isi foto ikut dikirim untuk dinilai, jadi identitas tidak perlu ada di kertas. */
-export const PHOTO_PRIVACY_TIP = 'Tidak perlu menulis nama atau NIS di kertas. Usahakan wajah dan barang pribadi juga tidak ikut terfoto.';
+export const PHOTO_PRIVACY_TIP = 'Tidak perlu menulis nama atau NIM di kertas. Usahakan wajah dan barang pribadi juga tidak ikut terfoto.';
 
 export type Quota = { tier: 'FREE' | 'PRO'; used: number; limit: number | null; remaining: number | null; resetAt: string };
 

@@ -360,8 +360,8 @@ export function CalibratePage() {
 
               <p className="flex items-start gap-2 text-body-sm text-ink-muted">
                 <Icon name="info" className="text-[18px]" />
-                Foto dikirim ke server REKSA untuk dicek. Lokasi dan info kamera dihapus sebelum foto disimpan, dan hanya kamu serta guru
-                kelasmu yang bisa melihatnya.
+                Foto dikirim ke server REKSA, lalu ke Google Gemini untuk dinilai. Lokasi dan info kamera dihapus lebih dulu. Di REKSA,
+                hanya kamu serta guru kelasmu yang bisa melihat fotonya.
               </p>
             </motion.section>
           </StaggerItem>

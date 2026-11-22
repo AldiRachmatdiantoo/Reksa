@@ -1,12 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { ApiError } from '@/core/apiClient';
-import { formatVersion, isPossiblyMinor, PRIVACY_VERSION } from '@/features/legal/policyVersions';
+import { formatVersion, needsAdultConfirmation, PRIVACY_VERSION } from '@/features/legal/policyVersions';
 import { Button } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { useAuth } from './AuthProvider';
 import { AuthCardLayout } from './AuthCardLayout';
 import { authApi, type AuthUser } from './authApi';
-import { GUARDIAN_MESSAGE, validateConsent, type ConsentErrors } from './consent';
+import { ADULT_MESSAGE, AGE_RESTRICTED_MESSAGE, validateConsent, type ConsentErrors } from './consent';
 import { ConsentFields } from './ConsentFields';
 
 /**
@@ -18,7 +18,7 @@ export function ConsentGate({ user }: { user: AuthUser }) {
   const needsBirthYear = user.birthYear === null;
   const [birthYear, setBirthYear] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [guardianConsent, setGuardianConsent] = useState(false);
+  const [adultConfirmed, setAdultConfirmed] = useState(false);
   const [errors, setErrors] = useState<ConsentErrors & { form?: string }>({});
   const [saving, setSaving] = useState(false);
 
@@ -26,13 +26,13 @@ export function ConsentGate({ user }: { user: AuthUser }) {
     document.title = 'Persetujuan · REKSA';
   }, []);
 
-  // Akun lama yang tahun lahirnya sudah tersimpan tetap perlu centang wali kalau masih di bawah 18.
-  const storedMinor = !needsBirthYear && user.birthYear !== null && isPossiblyMinor(user.birthYear);
+  // Tahun lahir tersimpan tepat 18 tahun lalu: tetap perlu centang "sudah 18" walau tahunnya tidak diisi ulang.
+  const storedBorderline = !needsBirthYear && user.birthYear !== null && needsAdultConfirmation(user.birthYear);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const found = validateConsent({ birthYear, acceptTerms, guardianConsent, needsBirthYear });
-    if (storedMinor && !guardianConsent) found.guardianConsent = GUARDIAN_MESSAGE;
+    const found = validateConsent({ birthYear, acceptTerms, adultConfirmed, needsBirthYear });
+    if (storedBorderline && !adultConfirmed) found.adultConfirmed = ADULT_MESSAGE;
     setErrors(found);
     if (Object.keys(found).length > 0) return;
 
@@ -40,12 +40,15 @@ export function ConsentGate({ user }: { user: AuthUser }) {
     try {
       const updated = await authApi.recordConsent({
         acceptTerms: true,
-        guardianConsent,
+        adultConfirmed,
         ...(needsBirthYear ? { birthYear: Number(birthYear) } : {}),
       });
       auth.updateUser(updated);
     } catch (err) {
-      if (err instanceof ApiError && err.code === 'GUARDIAN_CONSENT_REQUIRED') setErrors({ guardianConsent: GUARDIAN_MESSAGE });
+      if (err instanceof ApiError && err.code === 'ADULT_CONFIRMATION_REQUIRED') setErrors({ adultConfirmed: ADULT_MESSAGE });
+      // Tahun lahir yang tersimpan di bawah 18 tidak bisa diubah dari sini; akun itu tidak bisa lanjut.
+      else if (err instanceof ApiError && err.code === 'AGE_RESTRICTED')
+        setErrors(needsBirthYear ? { birthYear: AGE_RESTRICTED_MESSAGE } : { form: AGE_RESTRICTED_MESSAGE });
       else if (err instanceof ApiError && err.issues.some((i) => i.path === 'birthYear'))
         setErrors({ birthYear: err.issues.find((i) => i.path === 'birthYear')?.message });
       else setErrors({ form: err instanceof ApiError && err.status !== 500 ? err.message : 'Persetujuan gagal disimpan. Coba lagi.' });
@@ -66,9 +69,9 @@ export function ConsentGate({ user }: { user: AuthUser }) {
           onBirthYear={setBirthYear}
           acceptTerms={acceptTerms}
           onAcceptTerms={setAcceptTerms}
-          guardianConsent={guardianConsent}
-          onGuardianConsent={setGuardianConsent}
-          showGuardianAlways={storedMinor}
+          adultConfirmed={adultConfirmed}
+          onAdultConfirmed={setAdultConfirmed}
+          showAdultAlways={storedBorderline}
           errors={errors}
         />
         {errors.form && (

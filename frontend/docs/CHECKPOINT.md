@@ -1,10 +1,26 @@
 # Checkpoint Frontend REKSA
 
+## #22 · 2026-11-22 · Batas usia 18+
+
+Branch: `feat/aldi-gemini-text`.
+
+- `policyVersions.ts`: `MIN_USER_AGE = 18`, `maxBirthYear()`, `needsAdultConfirmation()`. `isPossiblyMinor` dan `MIN_AGE` dihapus.
+- `consent.ts` + `ConsentFields`: tahun lahir setelah `tahun ini - 18` ditolak ("REKSA saat ini hanya untuk usia 18 tahun ke atas."); untuk tahun batas muncul centang "Aku sudah berumur 18 tahun." (`adultConfirmed`). Centang izin wali dihapus. `AuthPage` dan `ConsentGate` memetakan `AGE_RESTRICTED` dan `ADULT_CONFIRMATION_REQUIRED` dari backend ke kolomnya.
+- Teks: subjudul halaman daftar, FAQ "Siapa yang bisa memakai REKSA?" dan footer di beranda, bagian "Batas usia" di Kebijakan Privasi, satu butir di Syarat Layanan.
+- Tes: `tests/unit/consent.test.ts` (baru), `tests/e2e/account-privacy.spec.ts`.
+
+## #21 · 2026-11-22 · Teks privasi untuk Gemini versi gratis, pesan saat AI sibuk
+
+Branch: `feat/aldi-gemini-text`.
+
+- `LegalPage` (bagian "Penyedia AI pihak ketiga"), `CookieNotice`, dan catatan di langkah foto `CalibratePage`: materi dan foto dikirim ke Google Gemini; selama lomba dipakai versi gratis, jadi Google boleh memakai data itu dan petugas peninjau bisa membacanya. Janji lama ("tidak memakai data untuk melatih model", "tidak dibagikan ke pihak lain") dihapus.
+- `uploadErrorMessage`: error `AI_UNAVAILABLE` (503 dari backend saat rubrik gagal dibuat) menampilkan pesan backend apa adanya. Tes di `materialsApi.test.ts`.
+
 ## #20 · 2026-11-22 · Pengingat privasi di langkah foto
 
-Branch: `feat/aldi-photo-privacy-tip`.
+Branch: `feat/aldi-photo-privacy-tip`, masuk `main` setelah #22 (konflik dengan #21 diselesaikan; catatan Gemini dan pengingat ini tampil berdampingan).
 
-- `CalibratePage` (setelah tebakan disimpan) dan `PhoneUploadPage` menampilkan `PHOTO_PRIVACY_TIP` dari `scansApi.ts`: tidak perlu menulis nama atau NIS di kertas, dan usahakan wajah serta barang pribadi tidak ikut terfoto. Seluruh isi foto ikut dikirim untuk dinilai (ke Gemini setelah Fase 3), jadi identitas sebaiknya tidak ada di gambar.
+- `CalibratePage` (setelah tebakan disimpan) dan `PhoneUploadPage` menampilkan `PHOTO_PRIVACY_TIP` dari `scansApi.ts`: tidak perlu menulis nama atau NIM di kertas, dan usahakan wajah serta barang pribadi tidak ikut terfoto. Seluruh isi foto ikut dikirim ke Google Gemini untuk dinilai, jadi identitas sebaiknya tidak ada di gambar.
 - Dicek: E2E `study-flow` 3/3 (axe lolos di kedua halaman), tangkapan layar laptop dan HP.
 
 ## #19 · 2026-11-22 · Catatan kualitas: code splitting, token URL, formatter, CSP

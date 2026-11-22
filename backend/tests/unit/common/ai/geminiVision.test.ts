@@ -150,11 +150,10 @@ describe('response schema', () => {
 });
 
 describe('GeminiAiProvider', () => {
-  it('delegates Stage 2 and refuses Stage 1/3 until Aldi implements them', async () => {
+  // Stage 1 dan Stage 3 diuji di geminiRubric.test.ts dan geminiCohort.test.ts.
+  it('delegates Stage 2 to the vision auditor', async () => {
     const client = { generateJson: vi.fn(async () => output()) };
     const provider = new GeminiAiProvider({ client: client as never });
     await expect(provider.evaluateHandwritingEssay(Buffer.from('x'), 'image/webp', MOCK_RUBRIC)).resolves.toMatchObject({ actualScore: 53 });
-    await expect(provider.extractRubric('materi')).rejects.toMatchObject({ kind: 'FATAL' });
-    await expect(provider.clusterCohortBlindSpots([])).rejects.toMatchObject({ kind: 'FATAL' });
   });
 });

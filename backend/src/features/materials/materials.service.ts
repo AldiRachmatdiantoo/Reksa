@@ -1,8 +1,15 @@
 import { createHash } from 'node:crypto';
 import { fileTypeFromBuffer } from 'file-type';
+import { ZodError } from 'zod';
+import { AiProviderError } from '../../common/ai/ai.errors.js';
 import type { IAiService } from '../../common/ai/ai.provider.interface.js';
 import { AiRubricOutputSchema, type AiRubricOutput } from '../../common/ai/ai.schema.js';
-import { NotFoundError, UnprocessableEntityError, UnsupportedMediaTypeError } from '../../common/errors/AppError.js';
+import {
+  NotFoundError,
+  ServiceUnavailableError,
+  UnprocessableEntityError,
+  UnsupportedMediaTypeError,
+} from '../../common/errors/AppError.js';
 import { PdfTooManyPagesError, type PdfTextExtractor } from '../../common/utils/pdfText.js';
 import { buildObjectKey, SIGNED_URL_MAX_TTL_SEC, type IStorageService } from '../../config/storage.js';
 import type { MaterialRecord, MaterialsRepository } from './materials.repository.js';
@@ -27,6 +34,17 @@ export type MaterialsServiceDeps = {
 };
 
 export type UploadedPdf = { buffer: Buffer; size: number };
+
+/** Kode error 503 saat rubrik gagal dibuat AI; frontend menampilkan pesannya apa adanya. */
+export const AI_UNAVAILABLE_CODE = 'AI_UNAVAILABLE';
+export const AI_BUSY_MESSAGE = 'Penyusun konsep kunci sedang sibuk. Tunggu sebentar, lalu kirim lagi.';
+export const AI_DOWN_MESSAGE = 'Penyusun konsep kunci sedang tidak bisa dipakai. Coba lagi nanti.';
+
+function aiErrorKind(err: unknown): 'TRANSIENT' | 'INVALID_OUTPUT' | 'FATAL' {
+  if (err instanceof AiProviderError) return err.kind;
+  if (err instanceof ZodError) return 'INVALID_OUTPUT';
+  return 'TRANSIENT';
+}
 
 export type CreateMaterialResult = { material: MaterialView; rubricCached: boolean };
 
@@ -167,10 +185,28 @@ export class MaterialsService {
   private async getRubric(contentHash: string, text: string): Promise<{ rubric: AiRubricOutput; cached: boolean }> {
     const hit = await this.deps.cache.get(contentHash);
     if (hit) return { rubric: hit, cached: true };
-    // Output AI divalidasi ulang di sini juga: provider apa pun tidak dipercaya begitu saja.
-    const rubric = AiRubricOutputSchema.parse(await this.deps.ai.extractRubric(text));
+    const rubric = await this.extractRubric(text);
     await this.deps.cache.set(contentHash, rubric);
     return { rubric, cached: false };
+  }
+
+  /**
+   * Jawaban AI yang rusak dicoba sekali lagi. Gangguan sementara (kuota per menit habis, server sibuk, batas
+   * waktu) tidak dicoba ulang di sini karena pengguna sedang menunggu; pesannya meminta kirim ulang sebentar lagi.
+   * Detail error hanya masuk log, tidak pernah ke respons.
+   */
+  private async extractRubric(text: string): Promise<AiRubricOutput> {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        // Output AI divalidasi ulang di sini juga: provider apa pun tidak dipercaya begitu saja.
+        return AiRubricOutputSchema.parse(await this.deps.ai.extractRubric(text));
+      } catch (err) {
+        const kind = aiErrorKind(err);
+        if (kind === 'INVALID_OUTPUT' && attempt < 2) continue;
+        this.deps.onWarning?.('Rubrik gagal dibuat AI', { kind, attempt, err });
+        throw new ServiceUnavailableError(kind === 'FATAL' ? AI_DOWN_MESSAGE : AI_BUSY_MESSAGE, AI_UNAVAILABLE_CODE);
+      }
+    }
   }
 }
 

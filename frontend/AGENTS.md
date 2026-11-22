@@ -31,6 +31,6 @@ Sebelum kerja: baca `docs/CHECKPOINT.md` (posisi terakhir) dan `docs/BACKLOG.md`
 - Jangan tambahkan atribusi AI di commit atau PR.
 - Branch `feat/aldi-*` atau `fix/aldi-*`, lewat pull request, tidak commit ke `main`.
 - Data contoh (materi, hasil cek) wajib diberi label "contoh" di UI sampai endpoint aslinya ada. Jangan tampilkan angka, testimoni, atau klaim yang tidak nyata.
-- Bahasa UI: Bahasa Indonesia, nada santai untuk pelajar SMA/mahasiswa. Hindari em dash di teks UI.
+- Bahasa UI: Bahasa Indonesia, nada santai untuk pengguna 18+ (kebanyakan mahasiswa). Hindari em dash di teks UI.
 - Warna: teal untuk struktur, ember (oranye) satu aksen per layar. Radius pill hanya di tombol. Blur hanya di header lengket.
 - Setiap komponen interaktif harus jalan dengan keyboard dan punya target sentuh minimal 44px.

@@ -30,6 +30,10 @@ const FAQ = [
     a: 'Kertas, pulpen, dan kamera HP. Kalau belajar di laptop, foto catatan bisa diunggah dari laptop juga.',
   },
   {
+    q: 'Siapa yang bisa memakai REKSA?',
+    a: 'Siapa saja yang berumur 18 tahun ke atas, misalnya mahasiswa, beserta dosen atau pengajarnya. Penyedia AI yang kami pakai belum mengizinkan aplikasi untuk pengguna di bawah 18 tahun.',
+  },
+  {
     q: 'Materi yang sudah diunggah bisa dihapus?',
     a: 'Bisa, dari halaman Materi saya. Materi yang sudah dipakai di sesi belajar tetap disimpan supaya riwayat belajarmu utuh.',
   },
@@ -258,7 +262,7 @@ export function LandingPage() {
               Pengaturan cookie
             </button>
           </nav>
-          <p>© 2026 REKSA</p>
+          <p>© 2026 REKSA · Untuk usia 18 tahun ke atas</p>
         </div>
       </footer>
     </motion.div>

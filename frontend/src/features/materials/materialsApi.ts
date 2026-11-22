@@ -53,6 +53,8 @@ export const materialsApi = {
 /** Pesan untuk user dari error unggah. Pesan backend dipakai untuk 415/422 karena sudah spesifik. */
 export function uploadErrorMessage(err: unknown): string {
   if (!(err instanceof ApiError)) return 'Materi gagal dikirim. Coba lagi.';
+  // Penyusun konsep kunci (AI) sibuk atau mati: pesan backend sudah ramah dan tidak memuat detail teknis.
+  if (err.code === 'AI_UNAVAILABLE') return err.message;
   switch (err.status) {
     case 0:
       return 'Server REKSA tidak bisa dihubungi. Periksa koneksimu lalu coba lagi.';

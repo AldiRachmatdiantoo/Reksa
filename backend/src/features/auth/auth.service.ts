@@ -6,7 +6,7 @@ import type { AccessTokenSigner } from '../../common/utils/jwt.js';
 import type { PasswordHasher } from '../../common/utils/passwordHasher.js';
 import { effectiveTier } from '../../common/utils/tier.js';
 import type { EmailMessage, IEmailService } from '../../config/email.js';
-import { isPossiblyMinor, maxBirthYear, PRIVACY_VERSION, TERMS_VERSION } from '../../config/policies.js';
+import { maxBirthYear, needsAdultConfirmation, PRIVACY_VERSION, TERMS_VERSION } from '../../config/policies.js';
 import type { AuthRepository, AuthTokenPurpose, ConsentRecord, UserRecord } from './auth.repository.js';
 import type { AuthUserResponse, ConsentInput, LoginInput, RegisterInput } from './auth.schema.js';
 import { resetPasswordMessage, verifyEmailMessage } from './authEmails.js';
@@ -60,6 +60,10 @@ export function hashEmailToken(raw: string): string {
   return createHash('sha256').update(raw).digest('hex');
 }
 
+/** Kode error batas usia; frontend memetakan keduanya ke field formulir. */
+export const AGE_RESTRICTED = 'AGE_RESTRICTED';
+export const ADULT_CONFIRMATION_REQUIRED = 'ADULT_CONFIRMATION_REQUIRED';
+
 export class AuthService {
   private readonly now: () => Date;
   private dummyHash?: Promise<string>;
@@ -70,7 +74,7 @@ export class AuthService {
 
   async register(input: RegisterInput): Promise<AuthResult> {
     // Dicek sebelum Argon2 supaya input yang pasti ditolak tidak memakan CPU.
-    const consent = this.buildConsent(input.birthYear, input.guardianConsent);
+    const consent = this.buildConsent(input.birthYear, input.adultConfirmed);
     const passwordHash = await this.deps.hasher.hash(input.password);
     const user = await this.deps.repo.createUser({
       email: input.email,
@@ -170,7 +174,7 @@ export class AuthService {
     const user = await this.requireUser(userId);
     const birthYear = user.birthYear ?? input.birthYear;
     if (birthYear === undefined) throw new BadRequestError('Tahun lahir wajib diisi');
-    const updated = await this.deps.repo.recordConsent(user.id, this.buildConsent(birthYear, input.guardianConsent));
+    const updated = await this.deps.repo.recordConsent(user.id, this.buildConsent(birthYear, input.adultConfirmed));
     if (!updated) throw new UnauthorizedError();
     return this.toPublicUser(updated);
   }
@@ -314,28 +318,23 @@ export class AuthService {
   }
 
   /**
-   * FR-13: tahun lahir masuk akal (min. 6 tahun) dan pernyataan izin wali untuk yang mungkin di bawah 18.
-   * Pernyataan wali disimpan apa adanya hanya untuk anak; untuk dewasa selalu false.
+   * FR-13 + batas usia 18 tahun (`policies.ts`). Lahir setelah `maxBirthYear` pasti di bawah 18 dan ditolak;
+   * lahir tepat di tahun itu wajib menyatakan sudah 18. Kolom `guardian_consent` tidak dipakai lagi (selalu false).
    */
-  private buildConsent(birthYear: number, guardianConsent: boolean): ConsentRecord {
+  private buildConsent(birthYear: number, adultConfirmed: boolean): ConsentRecord {
     const now = this.now();
     if (birthYear > maxBirthYear(now)) {
-      throw new BadRequestError('Tahun lahir tidak valid');
+      throw new AppError(400, AGE_RESTRICTED, 'REKSA saat ini hanya untuk pengguna berusia 18 tahun ke atas.');
     }
-    const minor = isPossiblyMinor(birthYear, now);
-    if (minor && !guardianConsent) {
-      throw new AppError(
-        400,
-        'GUARDIAN_CONSENT_REQUIRED',
-        'Pengguna di bawah 18 tahun perlu izin orang tua atau wali. Centang pernyataan izin untuk melanjutkan.',
-      );
+    if (needsAdultConfirmation(birthYear, now) && !adultConfirmed) {
+      throw new AppError(400, ADULT_CONFIRMATION_REQUIRED, 'Centang pernyataan bahwa kamu sudah berumur 18 tahun untuk melanjutkan.');
     }
     return {
       birthYear,
       termsVersion: TERMS_VERSION,
       privacyVersion: PRIVACY_VERSION,
       consentedAt: now,
-      guardianConsent: minor && guardianConsent,
+      guardianConsent: false,
     };
   }
 

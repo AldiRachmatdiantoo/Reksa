@@ -73,7 +73,7 @@ Landasan ilmiah: *retrieval practice*, *generation effect*, *dual-coding*, *judg
 | :--- | :--- | :--- |
 | FR-11 | Tier Free/Pro & kuota | Free 3 scan/hari (reset 00.00 WIB), Pro lewat kode aktivasi; payment gateway pasca-MVP |
 | FR-12 | Ekspor PDF *Proof of Understanding* | PDF milik sendiri (Pro) lewat *signed URL*, verifikasi publik `ledger_hash` tanpa data pribadi |
-| FR-13 | Privasi & data anak | Kebijakan Privasi & Syarat Layanan berversi, tahun lahir + izin orang tua, unduh data, hapus akun, aturan penyimpanan |
+| FR-13 | Privasi & batas usia | Kebijakan Privasi & Syarat Layanan berversi, tahun lahir dengan batas usia 18+, unduh data, hapus akun, aturan penyimpanan |
 | FR-14 | Akun dasar | Verifikasi email, lupa password tanpa enumerasi akun, ganti password, ubah nama |
 
 ### Peran (RBAC)
@@ -128,6 +128,8 @@ export interface IAiService {
 ```
 
 `AI_PROVIDER_MODE=mock` mengembalikan JSON statis yang lolos skema Zod, sehingga seluruh alur dan test berjalan tanpa API key dan tanpa biaya token. Di Fase 3, `AI_PROVIDER_MODE=gemini` mengganti provider tanpa mengubah controller, repository, maupun frontend.
+
+**Menyalakan Gemini:** buat API key di [Google AI Studio](https://aistudio.google.com/apikey), isi `GEMINI_API_KEY` dan `AI_PROVIDER_MODE=gemini` di `.env`, lalu `docker compose up -d --build backend`. Free tier gratis, tapi kuota harian per model kecil (cek di [halaman rate limit](https://aistudio.google.com/rate-limit)) dan Google boleh memakai data yang dikirim; Kebijakan Privasi sudah menyebut ini. Kalau kuota habis, rubrik dan saran kelas bisa dipindah ke model lain lewat `GEMINI_TEXT_MODEL`. Rubrik di-cache per isi materi, jadi materi yang sama tidak memanggil Gemini lagi. Ketentuan Gemini API juga melarang aplikasi untuk pengguna di bawah 18 tahun, jadi REKSA hanya menerima pendaftar 18+ (`docs/CHECKPOINT.md` #29).
 
 ### Jaringan container
 
@@ -254,9 +256,11 @@ Variabel yang dibaca backend divalidasi Zod di [`backend/src/config/env.ts`](bac
 | `REDIS_URL` | backend | Cache rubrik, token QR, rate limit |
 | `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` | backend | Minimal 32 karakter, wajib berbeda |
 | `CORS_ORIGIN` | backend | Origin frontend yang diizinkan |
-| `AI_PROVIDER_MODE` | backend | `mock` (Fase 1–2) atau `gemini` (Fase 3) |
+| `AI_PROVIDER_MODE` | backend | `mock` (contoh tetap, tanpa API) atau `gemini` (Gemini asli) |
 | `MOCK_AI_LATENCY_MS` | backend | Simulasi latensi `MockAiProvider` (default 300) |
 | `GEMINI_API_KEY` | backend | Wajib hanya di mode `gemini` |
+| `GEMINI_TEXT_MODEL` | backend | Model Stage 1 (rubrik) dan Stage 3 (saran kelas), default `gemini-2.5-flash` |
+| `GEMINI_VISION_MODEL` | backend | Model Stage 2 (foto catatan), default `gemini-2.5-flash` |
 | `PORT`, `LOG_LEVEL`, `NODE_ENV` | backend | Default `3000`, `info`, `development` |
 | `STORAGE_ENDPOINT` | backend | Endpoint S3 yang dipakai backend (compose: `http://storage:8333`) |
 | `STORAGE_PUBLIC_ENDPOINT` | backend, compose | Host di dalam *signed URL* yang dibuka browser (lokal: `http://localhost:8333`). Kosongkan jika sama dengan `STORAGE_ENDPOINT` |
@@ -343,6 +347,9 @@ Aturan: setiap `*.service.ts` baru wajib punya unit test, setiap endpoint baru w
 - [ ] **Fase 2: golden path & governance dengan `MockAiProvider`**, beserta seluruh test
   - [x] Storage service S3 (`IStorageService`): object key tervalidasi, bucket privat, *signed URL* maks. 5 menit
 - [ ] **Fase 3: `GeminiAiProvider` & uji prompt injection**
+  - [x] Stage 2 Vision dan uji prompt injection (model tiruan + test live opt-in)
+  - [x] Stage 1 rubrik, Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` di `ai.factory.ts`
+  - [ ] Uji dengan API key asli dan foto tulisan tangan sungguhan
 
 Setelah MVP: mode audio Feynman, *interleaving engine*, PWA *offline-first*.
 
