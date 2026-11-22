@@ -44,8 +44,12 @@ export type UploadScanFields = z.infer<typeof UploadScanFieldsSchema>;
 export const MAX_AUDIT_ATTEMPTS = 3;
 /** Batas waktu satu panggilan AI. */
 export const AI_CALL_TIMEOUT_MS = 60_000;
-/** Jeda sebelum mengulang error sementara (TRANSIENT): maks. 2 kali, jeda bertambah. */
-export const AI_TRANSIENT_BACKOFF_MS = [2_000, 5_000] as const;
+/**
+ * Jeda sebelum mengulang error sementara (TRANSIENT): maks. 2 kali, jeda bertambah. Batas free tier Gemini dihitung
+ * per menit, jadi jeda kedua cukup panjang supaya 429 sempat pulih. Kasus terburuk 3 × 60 detik + 50 detik masih di
+ * bawah STALE_PROCESSING_MS.
+ */
+export const AI_TRANSIENT_BACKOFF_MS = [10_000, 40_000] as const;
 /** Output yang gagal validasi Zod diulang sekali. */
 export const AI_INVALID_OUTPUT_RETRIES = 1;
 /**
