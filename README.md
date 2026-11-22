@@ -365,7 +365,7 @@ Target produksi:
 1. **Cookie lintas domain.** Cookie auth memakai `SameSite=Strict` dan `__Host-`, jadi frontend dan API harus satu situs. Rencananya Vercel me-*rewrite* `/api/*` ke backend Render, sehingga browser hanya melihat domain Vercel.
 2. **Supabase Data API.** Secara default Supabase membuka skema `public` lewat REST untuk role `anon`/`authenticated`. REKSA tidak memakainya, jadi Data API dimatikan dan hak akses kedua role itu dicabut lewat migrasi.
 3. **`trust proxy`.** Jumlah hop disesuaikan dengan rantai Vercel → Render agar rate limit membaca IP klien yang benar.
-4. **CSP.** `img-src`/`frame-src` mengizinkan host Supabase Storage untuk *signed URL*.
+4. **CSP.** `img-src` mengizinkan host Supabase Storage untuk *signed URL* (di `nginx.conf` lokal: `http://localhost:8333`). `frame-src` tetap `'none'`; aplikasi tidak memakai iframe.
 
 ---
 

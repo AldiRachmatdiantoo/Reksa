@@ -20,14 +20,7 @@ type RevealProps = HTMLMotionProps<'div'> & { delay?: number };
 /** Muncul sekali saat masuk layar: naik sedikit, blur hilang. */
 export function Reveal({ delay = 0, children, ...rest }: RevealProps) {
   return (
-    <motion.div
-      variants={fadeUp}
-      initial="hidden"
-      whileInView="show"
-      viewport={VIEWPORT}
-      transition={{ delay }}
-      {...rest}
-    >
+    <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={VIEWPORT} transition={{ delay }} {...rest}>
       {children}
     </motion.div>
   );
@@ -84,12 +77,7 @@ export function WordReveal({ text, delay = 0, className }: { text: string; delay
   return (
     <span className={className}>
       <span className="sr-only">{text}</span>
-      <motion.span
-        aria-hidden="true"
-        initial="hidden"
-        animate="show"
-        variants={staggerParent(0.06, delay)}
-      >
+      <motion.span aria-hidden="true" initial="hidden" animate="show" variants={staggerParent(0.06, delay)}>
         {words.map((word, i) => (
           <span key={i} className="inline-block overflow-hidden pb-[0.12em] align-bottom">
             <motion.span

@@ -1,5 +1,74 @@
 # Checkpoint Frontend REKSA
 
+## #19 · 2026-11-22 · Catatan kualitas: code splitting, token URL, formatter, CSP
+
+Branch: `fix/aldi-qa-bugs`.
+
+- `App.tsx`: halaman selain beranda, masuk/daftar, dan 404 dimuat lewat `React.lazy`. Bundle utama 646 kB ke 285 kB.
+- `shared/hooks/useUrlToken.ts` menggantikan `features/auth/tokenFromUrl.ts` dan `takeTokenFromHash` di `PhoneUploadPage`: token dibaca tanpa efek samping saat render, dihapus dari URL di `useEffect`. Perlu karena halaman lazy membuat React kadang membuang render pertama. Tes: `tests/unit/useUrlToken.test.ts`.
+- `.oxfmtrc.json` (root) + `npm run format:check`. Semua file sudah diformat kecuali `tests/e2e/helpers.ts` (area Adli).
+- `nginx.conf`: `img-src` tanpa `https:`, `frame-src 'none'`.
+- E2E: `expectAccessible` menunggu animasi masuk selesai sebelum axe.
+- `AppHeader` + `AuthProvider.logout(then)`: pindah ke beranda setelah server menghapus cookie, bukan sebelumnya (dulu request logout bisa terpotong dan pengguna tetap login).
+
+## #18 · 2026-11-22 · Perbaikan bug QA 5 sampai 9
+
+Branch: `fix/aldi-qa-bugs`.
+
+- `StudentClassesPage`: tombol Gabung mati selama email belum terverifikasi; tidak ada lagi pesan verifikasi dobel.
+- `LedgerSection`: kode bukti lengkap (`LedgerProof`, tombol Salin, tautan "Cek keaslian"), foto `object-contain`.
+- Target sentuh 44px di `AuthPage` ("Lupa kata sandi?"), `LegalPage` ("Baca juga"), `ReviewPage` (kosong: tombol "Mulai sesi belajar").
+- `features/auth/sessionHint.ts` + `AuthProvider`: tanpa cookie penanda `__Host-reksa_session`, langsung anonim tanpa memanggil `/auth/me`. `RequireAuth` memakai `useIsPresent()` supaya halaman yang sedang keluar tidak membelokkan ke `/masuk`; hapus akun memakai `startTransition`.
+- Tes: `sessionHint.test.ts`, E2E `session.spec.ts`.
+
+## #17 · 2026-11-22 · Perbaikan bug QA: menu HP dan refresh sesi
+
+Branch: `fix/aldi-qa-bugs`.
+
+- `shared/ui/AppHeader.tsx`: di bawah `md`, menu pelajar memakai ikon di atas label (`stacked`), jadi Belajar/Materi/Ulang/Kelas muat di 320px. Sebelumnya butuh 435px, menu Kelas terpotong, dan halaman bisa digeser ke samping. E2E `mobile-layout.spec.ts` (320 dan 375px).
+- `core/apiClient.ts`: refresh dikunci antartab dengan Web Locks (`reksa-auth-refresh`), `401 REFRESH_RACE` dari backend diulang dengan cookie baru, dan refresh yang gagal karena 429/5xx/jaringan dilempar sebagai `503 SESSION_REFRESH_UNAVAILABLE` tanpa mengeluarkan pengguna (`AuthProvider` menampilkannya sebagai server tidak terjangkau). Unit test baru di `apiClient.test.ts`.
+
+## #16 · 2026-11-22 · Portal admin institusi (FR-10)
+
+Branch: `feat/aldi-institution-admin`.
+
+- `features/institution/AdminPortal.tsx` menggantikan keterangan "Portal admin institusi menyusul" di `/guru` (subjudul header jadi "Portal Institusi"): pengajar dengan tombol Lepas (dialog konfirmasi), kode undangan (tampil sekali, salin, cabut), tabel kelas (angka disembunyikan untuk kelompok di bawah 5 siswa), konsep tersulit lintas kelas.
+- `features/institution/InstitutionJoinSection.tsx` di halaman Akun pengajar: status institusi atau form kode undangan.
+- Unit `formatScore`/`INVITE_STATUS_LABEL`; E2E `governance.spec.ts` memeriksa form gabung dengan kode tak dikenal. Alur admin dicoba manual lewat Playwright dengan akun dari skrip `institution:create` (akun admin tidak bisa dibuat lewat API, jadi tidak masuk E2E CI).
+
+## #15 · 2026-11-22 · Peta bagian sulit (FR-08)
+
+Branch: `feat/aldi-cohort-blind-spots`.
+
+- `features/governance/CohortSection.tsx` di Portal Guru: pilih kelas, pilih materi (kalau lebih dari satu), daftar konsep dengan batang persentase "x dari y siswa", kartu saran AI. Saran dari AI tiruan diberi keterangan "Contoh". Di bawah 3 siswa hanya ada keterangan, bukan saran.
+- Daftar "Menyusul di portal ini" di `TeacherPage.tsx` dihapus.
+- Unit `conceptShareLabel`, E2E `governance.spec.ts` memeriksa bagian peta untuk kelas kosong. Diperiksa juga lewat screenshot (desktop dan 375 px, tanpa scroll horizontal).
+
+## #14 · 2026-11-22 · PDF bukti belajar (FR-12)
+
+Branch: `feat/aldi-ledger-pdf`.
+
+- `features/governance/LedgerPdfExport.tsx`: `LedgerPdfSection` (halaman Akun, siswa, rentang tanggal default 30 hari terakhir) dan `LedgerPdfButton` (halaman Hasil, satu pengumpulan). Keduanya hanya aktif untuk Pro efektif; unduhan langsung dimulai karena signed URL berlaku 5 menit.
+- `isEffectivePro` di `authApi.ts`, sama dengan `effectiveTier` backend. Unit test `isEffectivePro.test.ts`; E2E `account-privacy.spec.ts` memeriksa akun gratis hanya melihat keterangan Pro.
+
+## #13 · 2026-11-22 · Bukti belajar untuk guru (FR-07)
+
+Branch: `feat/aldi-ledger`.
+
+- `features/governance/LedgerSection.tsx` di Portal Guru: pilih kelas, kartu per pengumpulan (waktu sesi, fokus, tebakan vs skor, validitas, hash, foto), "Tampilkan lebih banyak".
+- Halaman publik `/cek-bukti` dan `/cek-bukti/:hash` (`VerifyLedgerPage.tsx`) untuk tautan di PDF FR-12. Tidak menampilkan data pribadi.
+- **Perbaikan:** sesi dari materi kelas sekarang mengirim `classId` (`studySession.tsx`, `sessionsApi.ts`); tanpanya ledger dan peta blind spot selalu kosong.
+- Unit test `governanceApi.test.ts`, E2E `governance.spec.ts`.
+
+## #12 · 2026-11-22 · Latihan ulang (FR-06)
+
+Branch: `feat/aldi-spaced-review`.
+
+- Halaman `/belajar/ulang` (`features/spaced-repetition/ReviewPage.tsx`) dan menu **Ulang** di header pelajar.
+- Kartu jatuh tempo: buka latihan, tulis di kertas, lihat penjelasan, tandai selesai. Daftar "Berikutnya" untuk jadwal yang belum jatuh tempo.
+- Teks "Pengingat otomatis menyusul" di Hasil Cek dan tur beranda diganti tautan ke menu Ulang.
+- Unit test `spacedApi.test.ts`, E2E `review.spec.ts`.
+
 ## #11 · 2026-11-22 · Privasi (FR-13) dan kode aktivasi Pro (FR-11)
 
 Branch: `feat/aldi-privacy-pro`.

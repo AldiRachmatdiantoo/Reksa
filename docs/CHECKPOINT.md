@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, FR-13 privasi dan FR-11 kode aktivasi Pro (Aldi, branch `feat/aldi-privacy-pro`)
+**Checkpoint terakhir:** 22 November 2026, perbaikan bug QA 1 sampai 9 dan catatan kualitas (Aldi, branch `fix/aldi-qa-bugs`, ditumpuk di atas `feat/aldi-institution-admin`)
 
 ---
 
@@ -16,6 +16,79 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #27 · Catatan kualitas QA · branch `fix/aldi-qa-bugs`
+
+- **Code splitting per halaman.** `App.tsx` memuat semua halaman selain beranda, masuk/daftar, dan 404 lewat `React.lazy` (helper `page()`). Bundle utama turun dari 646 kB ke 285 kB (motion 172 kB terpisah), tanpa peringatan ukuran chunk. `Suspense` berkunci jadi anak langsung `AnimatePresence` supaya animasi keluar tetap jalan; `/belajar/*` punya `Suspense` sendiri di dalam `StudySessionProvider`.
+- **Bug yang muncul karena lazy loading, ikut diperbaiki.** `PhoneUploadPage`, `VerifyEmailPage`, dan `ResetPasswordPage` membaca token dari URL sambil menghapusnya di dalam initializer `useState`. Halaman lazy membuat React kadang membuang render pertama; render ulang tidak lagi menemukan token, jadi HP menampilkan "Kode QR tidak terbaca" (tertangkap E2E QR bridge). Hook baru `shared/hooks/useUrlToken.ts` membaca token tanpa efek samping saat render dan menghapusnya dari address bar di `useEffect`. Unit test mereproduksi render yang dibuang lewat `Suspense` (gagal dengan cara lama, lulus dengan hook baru).
+- **Coverage backend.** Tes baru `cohortCache.test.ts`, `config/email.test.ts` (nodemailer `jsonTransport`, tanpa jaringan), dan `ledgerPdf.test.ts` (teks dibaca balik dari content stream PDF: data kosong, fokus pendek, kata tanpa spasi yang dipotong, halaman lanjutan, tautan cek di setiap halaman). `safeEqualHex` di `crypto.ts` dihapus karena tidak dipakai. `cohortCache`, `email`, `crypto` kini 100%; `ledgerPdf` 99% statement / 89% branch (sisa cabang defensif).
+- **Formatter.** `.oxfmtrc.json` di root (`singleQuote`, `printWidth` 140, abaikan `design-reference`, Markdown, lockfile), `oxfmt` ditambahkan ke backend, script `format` dan `format:check` di kedua paket. Yang diformat baru area Aldi; area Adli (`essay-scans`, `study-sessions`, berkas mock/Gemini Vision, `backend/tests/unit`, `frontend/tests/e2e`) belum, jadi `format:check` belum dipasang di CI.
+- **CSP nginx lebih sempit.** `img-src` tidak lagi mengizinkan semua `https:` (tinggal `'self' data: blob: http://localhost:8333`), dan `frame-src` jadi `'none'` karena aplikasi tidak memakai iframe (PDF dan file materi dibuka di tab baru).
+- **Hasil:** backend 573 lulus (3 skip), coverage statements 96.05% / branch 89.68%. Frontend 52 unit, build tanpa peringatan, E2E 14/14 (`study-flow` diulang 3 kali, 9/9). Dicek juga di stack lokal: foto hasil cek termuat dari `localhost:8333` tanpa pelanggaran CSP; tautan verifikasi email dan reset kata sandi dari Mailpit berhasil dan token hilang dari URL.
+- **Logout yang terpotong (ditemukan CI E2E).** Tombol Keluar pindah ke beranda sebelum `DELETE /auth/refresh` selesai. Kalau pengguna langsung membuka halaman lain, request terpotong: cookie access token (15 menit) dan penanda sesi tetap ada, jadi pengguna masih login. Berbahaya di komputer sekolah yang dipakai bergantian. Sekarang `auth.logout(then)` menunggu server menghapus cookie, lalu pindah halaman dan mengosongkan status dalam satu `startTransition`. `session.spec.ts` memperlambat request logout 1 detik supaya balapan ini selalu teruji.
+- Helper E2E `expectAccessible` kini menunggu animasi masuk selesai sebelum audit axe. Tanpa itu, axe yang jalan di tengah fade pemberitahuan cookie membaca teks setengah transparan sebagai kontras rendah.
+
+### #26 · Perbaikan bug QA 5 sampai 9 · branch `fix/aldi-qa-bugs`
+
+5. **Form gabung kelas untuk akun belum terverifikasi.** Tombol Gabung mati (dengan `aria-describedby` ke kotak verifikasi) dan tidak ada lagi pesan error kedua. Kalau server tetap menjawab `EMAIL_NOT_VERIFIED` (status di tab basi), yang muncul kotak verifikasi, bukan error.
+6. **Kode bukti lengkap di kartu ledger guru,** dengan tombol Salin dan tautan "Cek keaslian" ke `/cek-bukti/<hash>` (tab baru). Chip "Hash cocok" tidak lagi memuat potongan 10 karakter.
+7. **Foto ledger utuh** (`object-contain` di kotak 3:4), tidak terpotong.
+8. **Target sentuh 44px:** "Lupa kata sandi?" (`/masuk`), tautan "Baca juga" (`/privasi`, `/syarat`), dan "Mulai sesi belajar" di halaman Ulang kosong (kini tombol outline).
+9. **Pengunjung tanpa sesi tidak memicu `/auth/me` dan `/auth/refresh`.** Backend memasang cookie penanda `__Host-reksa_session=1` (bukan token, tidak HttpOnly, umur sama dengan refresh token) bersama cookie auth dan menghapusnya bersama cookie auth. `AuthProvider` langsung menganggap anonim kalau penanda tidak ada.
+   - Efek samping yang ikut diperbaiki: status anonim kini datang seketika, jadi halaman yang sedang animasi keluar sempat membelokkan ke `/masuk` setelah logout atau hapus akun. `RequireAuth` tidak mengarahkan selama `useIsPresent()` false, dan hapus akun menjalankan navigasi + `recheck` dalam satu `startTransition`.
+   - Akun yang sudah login sebelum perubahan ini belum punya penanda, jadi perlu masuk ulang sekali (hanya lingkungan lokal; belum ada deploy).
+
+- **Hasil:** backend 562 lulus (3 skip), uji keamanan baru untuk atribut cookie penanda dan penghapusannya. Frontend 50 unit (`sessionHint.test.ts` baru), E2E 14/14 (`session.spec.ts` baru: tanpa panggilan auth dan tanpa error konsol untuk pengunjung, tetap login setelah reload, tetap keluar setelah logout, form gabung untuk akun belum terverifikasi). Kartu ledger dicek lewat Playwright: hash 64 karakter, salin cocok dengan clipboard, `/cek-bukti` menjawab "Asli".
+
+### #25 · Perbaikan bug QA 1 sampai 4 · branch `fix/aldi-qa-bugs`
+
+QA penuh 22 November menemukan 9 bug. Empat yang paling berat diperbaiki di sini; sisanya (5 sampai 9) dan catatan kualitas belum dikerjakan.
+
+1. **Menu pelajar meluber di HP.** Empat menu dengan ikon di samping label butuh 435px, jadi di layar 375px menu Kelas terpotong dan seluruh halaman bisa digeser ke samping. Di bawah `md`, `AppHeader` sekarang menaruh ikon di atas label (`StudentNav stacked`). E2E baru `mobile-layout.spec.ts` memeriksa 5 halaman pelajar di 320px dan 375px.
+2. **Dua tab refresh bersamaan mencabut semua sesi.** Migrasi `20261122000400_refresh_rotation_grace` menambah `refresh_tokens.rotated_at` (diisi hanya saat rotasi). Token yang sudah dirotasi dan muncul lagi dalam 10 detik (`REFRESH_ROTATION_GRACE_MS`) dijawab `401 REFRESH_RACE` tanpa pencabutan dan tanpa menghapus cookie. Lewat 10 detik, atau token yang dicabut karena logout, tetap dianggap reuse. Di frontend, `apiClient` memakai Web Locks (`reksa-auth-refresh`) supaya tab-tab refresh bergantian, dan mengulang request setelah `REFRESH_RACE`.
+3. **Refresh yang gagal karena 429/5xx/jaringan mengeluarkan pengguna.** `apiClient` sekarang membedakan `expired` dari `unavailable`; yang kedua dilempar sebagai `503 SESSION_REFRESH_UNAVAILABLE` tanpa memanggil `onSessionExpired`.
+4. **Batas laju per IP terlalu sempit untuk satu kelas di balik NAT sekolah.** Login 5/menit per akun per IP + 100/menit per IP, register 100/jam, refresh 10/menit per token + 300/menit per IP, logout 300/menit, verifikasi email 200/jam, lupa password 60/jam per IP (+ 3/jam per email tetap), reset 60/15 menit. `rateLimit` mendapat opsi `skip`. Batas unggah foto `scans:upload:ip` (30/jam per IP) punya masalah yang sama, tapi ada di area Adli; dicatat di `UNTUK-ADLI.md`.
+
+- **Hasil:** backend 560 lulus (3 skip), coverage statements 94.9%; uji keamanan baru untuk balapan refresh, cookie tidak terhapus, dan batas per akun/per token; `prisma migrate diff` kosong. Frontend 48 unit, E2E 11/11. Dicoba juga di stack lokal: dua refresh paralel kini 200 + `REFRESH_RACE` dan sesi tetap hidup; dua tab dengan access token habis sama-sama pulih (refresh 200, 200 berurutan).
+
+### #24 · FR-10 portal admin institusi · branch `feat/aldi-institution-admin`
+
+- Migrasi `20261122000300_institution_admin`: tabel `educator_invites` (hash SHA-256 saja, CHECK format hash dan masa berlaku), indeks `institution_id` di `users` dan `classes`, fungsi `SECURITY DEFINER` `institution_class_stats` dan `institution_concept_stats`. Keduanya memeriksa sendiri bahwa pemanggil (`app.current_user_id`) adalah `INSTITUTION_ADMIN` dari institusi itu; tanpa konteks hasilnya kosong. Kelompok di bawah 5 siswa: angkanya `NULL` (dicek lagi di service).
+- Modul `institutions`: `GET /institution`, `GET /institution/concepts`, `GET|POST /institution/invites`, `DELETE /institution/invites/:id` (cabut), `DELETE /institution/educators/:id` (lepas; kelas tetap milik pengajar, `institution_id` dikosongkan). Untuk pengajar: `GET|POST /me/institution` (10 percobaan/jam, 404 yang sama untuk kode salah/kedaluwarsa/dicabut, 409 jika sudah di institusi lain, idempoten untuk institusi yang sama).
+- Skrip `npm run institution:create -- --name ... --admin-email ... --admin-name ...` (role pemilik skema): membuat institusi dan admin, kata sandi sementara tampil sekali. Sudah dicoba di stack lokal lewat container `migrate`.
+- Frontend: `AdminPortal` di `/guru` untuk admin (pengajar + lepas, kode undangan + salin + cabut, tabel kelas, konsep tersulit) dan bagian **Institusi** di halaman Akun pengajar.
+- **Hasil:** backend 549 lulus (3 skip), 11 unit + 10 integrasi baru, `prisma migrate diff` kosong; frontend 44 unit; E2E 9/9. Alur admin juga dicoba ujung ke ujung dengan Playwright (buat kode, guru gabung, kelas baru tercatat, lepas, cabut).
+
+### #23 · FR-08 peta bagian sulit kelas · branch `feat/aldi-cohort-blind-spots`
+
+- `GET /governance/classes/:classId/blind-spots` (materi yang sudah punya hasil cek) dan `GET /governance/classes/:classId/blind-spots/:materialId` (persentase per konsep + saran). EDUCATOR pemilik kelas, 404 untuk kelas lain dan materi tanpa hasil di kelas itu, 30/menit per pengajar. Pembacaan lewat RLS pengajar, jadi siswa yang keluar kelas tidak dihitung.
+- Hitungan memakai hasil cek **terakhir** tiap siswa per materi; satu siswa dihitung sekali per konsep; nama konsep disamakan tanpa beda huruf besar/spasi.
+- Saran dari `IAiService.clusterCohortBlindSpots` mulai 3 siswa. Yang dikirim ke AI hanya konsep, tingkat, dan penjelasan (tanpa nama/id/skor). Angka dari AI dibuang. Cache Redis `cohort:v1:<sha256>` 6 jam. Selama mode mock, respons membawa `sample: true` dan UI menandainya sebagai contoh. AI gagal: status `UNAVAILABLE`, persentase tetap tampil.
+- Frontend: bagian **Peta bagian sulit** di Portal Guru (pilih kelas dan materi, batang persentase, kartu saran). Daftar "Menyusul di portal ini" dihapus karena isinya sudah jalan.
+- **Hasil:** backend 528 lulus (3 skip), 7 unit + 6 integrasi baru, tanpa migrasi; frontend 42 unit; E2E 9/9.
+
+### #22 · FR-12 ekspor PDF Proof of Understanding · branch `feat/aldi-ledger-pdf`
+
+- `POST /ledger/exports` (STUDENT, Pro efektif, 5/jam per user): body `{ submissionIds: uuid[1..50] }` atau `{ from, to }` (tanggal WIB, `to` inklusif, maks 366 hari). 403 `PRO_REQUIRED`, 404 jika ada id yang bukan milik sendiri atau rentang kosong (tidak ada PDF yang dibuat), 400 `TOO_MANY_SUBMISSIONS` di atas 50.
+- PDF dibuat di server dengan `pdf-lib` 1.17.1 (`ledgerPdf.ts`, A4, font standar): satu bagian per pengumpulan berisi waktu sesi, fokus vs rencana, status sesi, tebakan vs skor, foto (webp ke jpeg lewat `sharp`; foto gagal dimuat tidak menggagalkan PDF), konsep tepat dan terlewat. Setiap halaman memuat `ledger_hash` dan tautan `<APP_URL>/cek-bukti/<hash>`.
+- Disimpan lewat `PrivacyService.storeExport` (kind `LEDGER_PDF`, `exports/<userId>/<uuid>.pdf`, dihapus 24 jam, signed URL 300 detik). Pembacaan lewat RLS siswa sendiri.
+- Frontend: bagian **PDF bukti belajar** di halaman Akun (rentang tanggal; akun gratis hanya melihat keterangan Pro) dan tombol **Unduh PDF bukti belajar** di halaman Hasil untuk akun Pro. Helper `isEffectivePro` mengikuti `effectiveTier` backend.
+- **Hasil:** backend 515 lulus (3 skip), 8 integrasi + 9 unit baru, tanpa migrasi baru (`prisma migrate diff` kosong); frontend 41 unit; E2E 9/9.
+
+### #21 · FR-07 Proof of Understanding Ledger · branch `feat/aldi-ledger`
+
+- `GET /governance/classes/:classId/ledger?cursor=&limit=&studentId=` (EDUCATOR pemilik kelas, 404 untuk kelas lain): pengumpulan DONE dari sesi yang terikat kelas, waktu mulai/selesai, fokus aktual vs rencana, validitas, tebakan vs skor AI, jumlah blind spot, signed URL foto 300 detik (inline), dan `hashValid` dari hitung ulang `ledger_hash`. Pembacaan lewat RLS pengajar (`submissions_educator_read`), jadi siswa yang sudah keluar kelas tidak tampil.
+- `GET /ledger/verify/:hash` publik, 30/menit per IP: hanya `{ valid, sessionDate }`. Migrasi `20261122000200_ledger_verify` menambah indeks `ledger_hash` dan fungsi `SECURITY DEFINER ledger_lookup` (RLS tetap tertutup untuk app role).
+- **Bug ditemukan:** frontend tidak pernah mengirim `classId` saat `POST /sessions`, jadi sesi tidak pernah masuk ledger kelas. `studySession` kini menyimpan `classId` materi dan mengirimkannya.
+- Frontend: bagian **Bukti belajar siswa** di Portal Guru (pilih kelas, kartu per pengumpulan, muat lebih banyak) dan halaman publik `/cek-bukti/:hash`.
+- **Hasil:** 8 unit + 10 integrasi baru, `prisma migrate diff` kosong; frontend 38 unit; E2E 9/9 (baru: `governance.spec.ts`).
+
+### #20 · FR-06 daftar latihan ulang · branch `feat/aldi-spaced-review`
+
+- Modul `spaced-repetition` lengkap: `GET /spaced/due?limit=` (jatuh tempo, paling lama dulu, + 10 jadwal berikutnya) dan `POST /spaced/:id/complete` (404 untuk jadwal orang lain, 409 jika belum jatuh tempo, idempoten). Hanya `STUDENT`; semua query lewat RLS `withUserContext` + filter `user_id`.
+- Judul materi dibaca terpisah dan boleh `null`: materi kelas yang sudah tidak terlihat RLS (siswa keluar kelas) tidak membuat daftar gagal.
+- Frontend: halaman `/belajar/ulang` dan menu **Ulang**. Latihan: konsep yang terlewat ditampilkan, siswa menulis di kertas, membuka penjelasan, lalu menandai selesai. Belum ada foto/penilaian untuk latihan ulang (lihat catatan untuk Adli).
+- **Hasil:** 8 unit + 9 integrasi baru; frontend 35 unit; E2E 7/7 (baru: `review.spec.ts`).
 
 ### #19 · FR-13 privasi dan data anak + FR-11 kode aktivasi Pro · branch `feat/aldi-privacy-pro`
 

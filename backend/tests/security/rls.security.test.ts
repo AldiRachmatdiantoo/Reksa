@@ -81,7 +81,7 @@ describe('Row-Level Security', () => {
     expect(await visibleCounts(studentA)).toEqual({ materials: 1, sessions: 1, submissions: 1 });
   });
 
-  it("another student sees none of them (IDOR/BOLA at the database layer)", async () => {
+  it('another student sees none of them (IDOR/BOLA at the database layer)', async () => {
     expect(await visibleCounts(studentB)).toEqual({ materials: 0, sessions: 0, submissions: 0 });
   });
 
@@ -138,9 +138,9 @@ describe('Proof of Understanding Ledger is immutable once audited', () => {
   });
 
   it('the owner cannot delete a submission', async () => {
-    await expect(
-      withUserContext(ctx.prisma, studentA, (tx) => tx.essaySubmission.delete({ where: { id: submissionA } })),
-    ).rejects.toThrow(/permission denied/i);
+    await expect(withUserContext(ctx.prisma, studentA, (tx) => tx.essaySubmission.delete({ where: { id: submissionA } }))).rejects.toThrow(
+      /permission denied/i,
+    );
   });
 
   it('evidence columns stay immutable even before the audit is done', async () => {
@@ -148,7 +148,14 @@ describe('Proof of Understanding Ledger is immutable once audited', () => {
     const pending = randomUUID();
     await withUserContext(ctx.prisma, studentA, async (tx) => {
       await tx.studySession.create({
-        data: { id: pendingSession, userId: studentA, materialId: materialA, sessionType: 'INITIAL_BLURTING', plannedDurationSec: 1500, status: 'EXPIRED' as const },
+        data: {
+          id: pendingSession,
+          userId: studentA,
+          materialId: materialA,
+          sessionType: 'INITIAL_BLURTING',
+          plannedDurationSec: 1500,
+          status: 'EXPIRED' as const,
+        },
       });
       await tx.essaySubmission.create({
         data: { id: pending, sessionId: pendingSession, userId: studentA, imageStorageKey: 'k2', predictedJolScore: 40 },
@@ -170,7 +177,14 @@ describe('Proof of Understanding Ledger is immutable once audited', () => {
     const pending = randomUUID();
     await withUserContext(ctx.prisma, studentA, async (tx) => {
       await tx.studySession.create({
-        data: { id: pendingSession, userId: studentA, materialId: materialA, sessionType: 'INITIAL_BLURTING', plannedDurationSec: 1500, status: 'EXPIRED' as const },
+        data: {
+          id: pendingSession,
+          userId: studentA,
+          materialId: materialA,
+          sessionType: 'INITIAL_BLURTING',
+          plannedDurationSec: 1500,
+          status: 'EXPIRED' as const,
+        },
       });
       await tx.essaySubmission.create({
         data: { id: pending, sessionId: pendingSession, userId: studentA, imageStorageKey: 'k3', predictedJolScore: 40 },
@@ -186,7 +200,14 @@ describe('Proof of Understanding Ledger is immutable once audited', () => {
     const [s1, s2] = [randomUUID(), randomUUID()];
     await withUserContext(ctx.prisma, studentA, (tx) =>
       tx.studySession.createMany({
-        data: [s1, s2].map((id) => ({ id, userId: studentA, materialId: materialA, sessionType: 'INITIAL_BLURTING' as const, plannedDurationSec: 1500, status: 'EXPIRED' as const })),
+        data: [s1, s2].map((id) => ({
+          id,
+          userId: studentA,
+          materialId: materialA,
+          sessionType: 'INITIAL_BLURTING' as const,
+          plannedDurationSec: 1500,
+          status: 'EXPIRED' as const,
+        })),
       }),
     );
     const insert = (data: Record<string, unknown>) =>
@@ -219,15 +240,13 @@ describe('Least privilege (app_service_user)', () => {
 describe('CHECK constraints', () => {
   it('rejects a JOL score outside 0..100', async () => {
     await expect(
-      withUserContext(ctx.prisma, studentA, (tx) =>
-        tx.studySession.update({ where: { id: sessionA }, data: { predictedJolScore: 101 } }),
-      ),
+      withUserContext(ctx.prisma, studentA, (tx) => tx.studySession.update({ where: { id: sessionA }, data: { predictedJolScore: 101 } })),
     ).rejects.toThrow(/chk_sessions_jol/);
   });
 
   it('rejects a non-lowercase email', async () => {
-    await expect(
-      ctx.prisma.user.create({ data: { email: 'UPPER@reksa.id', passwordHash: 'x', fullName: 'U' } }),
-    ).rejects.toThrow(/chk_users_email_lowercase/);
+    await expect(ctx.prisma.user.create({ data: { email: 'UPPER@reksa.id', passwordHash: 'x', fullName: 'U' } })).rejects.toThrow(
+      /chk_users_email_lowercase/,
+    );
   });
 });

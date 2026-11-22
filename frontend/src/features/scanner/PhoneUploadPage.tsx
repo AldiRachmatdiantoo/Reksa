@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { ApiError } from '@/core/apiClient';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useUrlToken } from '@/shared/hooks/useUrlToken';
 import { pageTransition } from '@/shared/motion';
 import { Brand } from '@/shared/ui/Brand';
 import { Button } from '@/shared/ui/Button';
@@ -12,13 +13,6 @@ const TOKEN_RE = /^[A-Za-z0-9_-]{43}$/;
 /** Kode error yang tidak tertolong dengan memilih foto lain. */
 const FINAL_CODES = new Set(['QR_TOKEN_INVALID', 'SESSION_EXPIRED', 'INVALID_SESSION_STATE', 'QUOTA_EXCEEDED']);
 
-/** Membaca token dari fragment sekali, lalu menghapusnya dari address bar dan riwayat browser. */
-function takeTokenFromHash(): string | null {
-  const token = window.location.hash.slice(1);
-  if (window.location.hash) window.history.replaceState(null, '', window.location.pathname);
-  return TOKEN_RE.test(token) ? token : null;
-}
-
 type Phase = { kind: 'pick' } | { kind: 'sending' } | { kind: 'sent' } | { kind: 'error'; message: string; final: boolean };
 
 /**
@@ -26,7 +20,7 @@ type Phase = { kind: 'pick' } | { kind: 'sending' } | { kind: 'sent' } | { kind:
  * Token QR adalah bukti dari laptop yang sudah login; sekali pakai dan berlaku 5 menit.
  */
 export function PhoneUploadPage() {
-  const [token] = useState(takeTokenFromHash);
+  const token = useUrlToken('hash', TOKEN_RE);
   const [phase, setPhase] = useState<Phase>({ kind: 'pick' });
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
@@ -74,8 +68,25 @@ export function PhoneUploadPage() {
             Pastikan seluruh tulisan dan panahmu terlihat jelas dalam satu foto. Lokasi dan info kamera dihapus sebelum foto disimpan.
           </p>
 
-          <input ref={cameraRef} type="file" accept={SCAN_ACCEPT.join(',')} capture="environment" className="sr-only" tabIndex={-1} onChange={onPick} aria-hidden="true" />
-          <input ref={galleryRef} type="file" accept={SCAN_ACCEPT.join(',')} className="sr-only" tabIndex={-1} onChange={onPick} aria-hidden="true" />
+          <input
+            ref={cameraRef}
+            type="file"
+            accept={SCAN_ACCEPT.join(',')}
+            capture="environment"
+            className="sr-only"
+            tabIndex={-1}
+            onChange={onPick}
+            aria-hidden="true"
+          />
+          <input
+            ref={galleryRef}
+            type="file"
+            accept={SCAN_ACCEPT.join(',')}
+            className="sr-only"
+            tabIndex={-1}
+            onChange={onPick}
+            aria-hidden="true"
+          />
 
           {phase.kind === 'error' && (
             <p role="alert" className="flex items-start gap-2 rounded-md bg-danger-wash px-4 py-3 text-body-md text-on-danger-wash">

@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { getAuth } from '../../common/middlewares/auth.middleware.js';
 import { getValidated } from '../../common/middlewares/validate.middleware.js';
-import { clearAuthCookies, REFRESH_COOKIE, setAuthCookies } from '../../common/utils/authCookies.js';
+import { clearAuthCookies, readRefreshCookie, setAuthCookies } from '../../common/utils/authCookies.js';
 import {
   ChangePasswordSchema,
   ConsentSchema,
@@ -12,7 +12,7 @@ import {
   UpdateProfileSchema,
   VerifyEmailSchema,
 } from './auth.schema.js';
-import type { AuthService } from './auth.service.js';
+import { RefreshRaceError, type AuthService } from './auth.service.js';
 
 /** Satu pesan untuk semua permintaan reset, terdaftar atau tidak (anti enumerasi akun). */
 const FORGOT_MESSAGE = 'Kalau email itu terdaftar, tautan untuk mengatur ulang kata sandi sudah dikirim. Cek kotak masuk dan folder spam.';
@@ -40,7 +40,8 @@ export class AuthController {
       setAuthCookies(res, result);
       res.json({ user: result.user });
     } catch (err) {
-      clearAuthCookies(res);
+      // Kalah balapan dengan tab lain: cookie di browser sudah diganti pemenangnya, jangan dihapus.
+      if (!(err instanceof RefreshRaceError)) clearAuthCookies(res);
       throw err;
     }
   };
@@ -95,9 +96,4 @@ export class AuthController {
     setAuthCookies(res, result);
     res.json({ user: result.user });
   };
-}
-
-function readRefreshCookie(req: Request): string | undefined {
-  const value: unknown = req.cookies?.[REFRESH_COOKIE];
-  return typeof value === 'string' && value.length > 0 ? value : undefined;
 }

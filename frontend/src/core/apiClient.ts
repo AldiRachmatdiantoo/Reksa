@@ -8,6 +8,12 @@
  *   request yang gagal bersamaan (single-flight), lalu mengulang request-nya.
  *   Dua refresh paralel dengan token yang sama akan dianggap reuse oleh backend
  *   dan mencabut semua sesi user, jadi aturan ini wajib (lihat PRD §8.3).
+ * - Single-flight juga berlaku antartab lewat Web Locks: tab lain menunggu sampai
+ *   refresh selesai, lalu memakai cookie baru. Kalau tetap bertabrakan (browser tanpa
+ *   Web Locks), backend menjawab 401 `REFRESH_RACE` tanpa mencabut sesi, dan request
+ *   cukup diulang dengan cookie yang sudah diperbarui tab pemenang.
+ * - Refresh yang gagal karena server sibuk (429/5xx) atau jaringan putus BUKAN berarti
+ *   sesi habis: pengguna tidak dikeluarkan, request gagal dengan `SESSION_REFRESH_UNAVAILABLE`.
  */
 
 export const API_BASE = '/api/v1';
@@ -40,7 +46,19 @@ type RequestOptions = {
   signal?: AbortSignal;
 };
 
-let refreshInFlight: Promise<boolean> | null = null;
+/**
+ * - `ok`: cookie baru terpasang.
+ * - `race`: tab lain baru saja me-refresh token yang sama; cookie di browser sudah baru.
+ * - `expired`: sesi benar-benar habis atau dicabut.
+ * - `unavailable`: server sibuk atau tidak terjangkau; sesi belum tentu habis.
+ */
+type RefreshOutcome = 'ok' | 'race' | 'expired' | 'unavailable';
+
+/** Nama kunci Web Locks yang sama untuk semua tab REKSA di browser ini. */
+const REFRESH_LOCK = 'reksa-auth-refresh';
+const REFRESH_TIMEOUT_MS = 15_000;
+
+let refreshInFlight: Promise<RefreshOutcome> | null = null;
 const expiredListeners = new Set<() => void>();
 
 /** Dipanggil saat refresh gagal: sesi benar-benar habis, user harus login lagi. */
@@ -49,14 +67,44 @@ export function onSessionExpired(listener: () => void): () => void {
   return () => expiredListeners.delete(listener);
 }
 
-function refreshOnce(): Promise<boolean> {
-  refreshInFlight ??= fetch(`${API_BASE}/auth/refresh`, { method: 'POST', credentials: 'include' })
-    .then((res) => res.ok)
-    .catch(() => false)
-    .finally(() => {
-      refreshInFlight = null;
+async function postRefresh(): Promise<RefreshOutcome> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      // Kunci antartab ditahan selama fetch berjalan, jadi jangan sampai menggantung selamanya.
+      signal: typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(REFRESH_TIMEOUT_MS) : undefined,
     });
+  } catch {
+    return 'unavailable';
+  }
+  if (res.ok) return 'ok';
+  if (res.status === 429 || res.status >= 500) return 'unavailable';
+  if (res.status === 401) {
+    const code = await res
+      .json()
+      .then((data: { error?: { code?: string } }) => data.error?.code)
+      .catch(() => undefined);
+    if (code === 'REFRESH_RACE') return 'race';
+  }
+  return 'expired';
+}
+
+async function withRefreshLock(fn: () => Promise<RefreshOutcome>): Promise<RefreshOutcome> {
+  const locks = typeof navigator !== 'undefined' && 'locks' in navigator ? navigator.locks : undefined;
+  return locks ? await locks.request(REFRESH_LOCK, fn) : fn();
+}
+
+function refreshOnce(): Promise<RefreshOutcome> {
+  refreshInFlight ??= withRefreshLock(postRefresh).finally(() => {
+    refreshInFlight = null;
+  });
   return refreshInFlight;
+}
+
+function sessionExpired(): void {
+  expiredListeners.forEach((fn) => fn());
 }
 
 async function toApiError(res: Response): Promise<ApiError> {
@@ -97,12 +145,17 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   let res = await send(path, options);
 
   if (res.status === 401 && !NO_REFRESH_PATHS.includes(path)) {
-    const refreshed = await refreshOnce();
-    if (!refreshed) {
-      expiredListeners.forEach((fn) => fn());
+    const outcome = await refreshOnce();
+    if (outcome === 'unavailable') {
+      throw new ApiError(503, 'SESSION_REFRESH_UNAVAILABLE', 'Sesi belum bisa diperbarui. Cek koneksi, lalu coba lagi sebentar lagi.');
+    }
+    if (outcome === 'expired') {
+      sessionExpired();
       throw await toApiError(res);
     }
     res = await send(path, options);
+    // Setelah balapan, cookie dari tab pemenang seharusnya sudah berlaku. Masih 401 berarti sesi memang habis.
+    if (res.status === 401 && outcome === 'race') sessionExpired();
   }
 
   if (!res.ok) throw await toApiError(res);

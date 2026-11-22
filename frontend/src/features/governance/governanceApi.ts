@@ -1,0 +1,96 @@
+import { apiRequest } from '@/core/apiClient';
+
+// Kontrak dari backend/src/features/governance/governance.schema.ts (PRD FR-07).
+export type LedgerEntry = {
+  submissionId: string;
+  student: { id: string; fullName: string };
+  material: { id: string; title: string | null };
+  session: {
+    startedAt: string;
+    focusEndedAt: string | null;
+    plannedDurationSec: number;
+    actualDurationSec: number | null;
+    validity: 'VALID' | 'SHORT_FOCUS' | null;
+  };
+  predictedJolScore: number;
+  actualScore: number;
+  jolDelta: number;
+  blindSpotCount: number;
+  ledgerHash: string;
+  /** false: data yang tersimpan tidak lagi cocok dengan hash saat dikunci. */
+  hashValid: boolean;
+  /** Signed URL 5 menit; null jika storage gagal. */
+  photoUrl: string | null;
+  submittedAt: string;
+  auditedAt: string;
+};
+
+export type LedgerPage = { entries: LedgerEntry[]; nextCursor: string | null };
+
+export type LedgerVerification = { valid: true; sessionDate: string } | { valid: false };
+
+export const governanceApi = {
+  ledger: (classId: string, cursor: string | null, signal?: AbortSignal) => {
+    const params = new URLSearchParams({ limit: '20' });
+    if (cursor) params.set('cursor', cursor);
+    return apiRequest<LedgerPage>(`/governance/classes/${encodeURIComponent(classId)}/ledger?${params}`, { signal });
+  },
+  /** FR-08: materi yang sudah punya hasil cek di kelas ini. */
+  cohortMaterials: (classId: string, signal?: AbortSignal) =>
+    apiRequest<{ materials: CohortMaterial[] }>(`/governance/classes/${encodeURIComponent(classId)}/blind-spots`, { signal }).then(
+      (r) => r.materials,
+    ),
+  cohortBlindSpots: (classId: string, materialId: string, signal?: AbortSignal) =>
+    apiRequest<CohortBlindSpots>(`/governance/classes/${encodeURIComponent(classId)}/blind-spots/${encodeURIComponent(materialId)}`, {
+      signal,
+    }),
+  verify: (hash: string) => apiRequest<LedgerVerification>(`/ledger/verify/${encodeURIComponent(hash)}`),
+  /** FR-12, khusus Pro. Tautan berlaku 5 menit, file dihapus setelah 24 jam. */
+  exportPdf: (body: { submissionIds: string[] } | { from: string; to: string }) =>
+    apiRequest<{ export: LedgerPdfExport }>('/ledger/exports', { method: 'POST', body }).then((r) => r.export),
+};
+
+// Kontrak FR-08 dari governance.schema.ts (CohortMaterial, CohortBlindSpots).
+export type ImportanceLevel = 'HIGH' | 'MEDIUM' | 'LOW';
+export type CohortMaterial = { materialId: string; title: string | null; studentCount: number; lastAuditedAt: string };
+export type CohortConcept = { concept: string; studentCount: number; percent: number; importanceLevel: ImportanceLevel | null };
+export type CohortBlindSpots = {
+  material: { id: string; title: string | null };
+  studentCount: number;
+  concepts: CohortConcept[];
+  recommendationStatus: 'READY' | 'NOT_ENOUGH_DATA' | 'UNAVAILABLE';
+  recommendation: {
+    /** true selama backend memakai AI tiruan: isinya contoh tetap, bukan hasil membaca kelas ini. */
+    sample: boolean;
+    clusters: { label: string; memberConcepts: string[]; severity: ImportanceLevel; remediationSuggestion: string }[];
+    curriculumRecommendation: string;
+  } | null;
+  minStudentsForRecommendation: number;
+};
+
+/** "2 dari 3 siswa (67%)" */
+export function conceptShareLabel(c: Pick<CohortConcept, 'studentCount' | 'percent'>, total: number): string {
+  return `${c.studentCount} dari ${total} siswa (${c.percent}%)`;
+}
+
+export type LedgerPdfExport = { url: string; expiresAt: string; count: number };
+
+const dateTime = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const time = new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+export function formatSessionWindow(startedAt: string, endedAt: string | null): string {
+  const start = dateTime.format(new Date(startedAt));
+  return endedAt ? `${start} sampai ${time.format(new Date(endedAt))}` : start;
+}
+
+export function formatMinutes(seconds: number | null): string {
+  if (seconds === null) return '-';
+  const minutes = Math.round(seconds / 60);
+  return `${minutes} menit`;
+}
+
+/** Selisih tebakan dan skor dalam kalimat pendek untuk guru. */
+export function jolDeltaLabel(delta: number): string {
+  if (Math.abs(delta) <= 10) return 'tebakannya tepat';
+  return delta > 0 ? `meremehkan diri ${delta} poin` : `terlalu yakin ${-delta} poin`;
+}

@@ -67,6 +67,68 @@ describe('apiRequest', () => {
     off();
   });
 
+  it('keeps the user signed in when the refresh is rate limited or the network drops', async () => {
+    const expired = vi.fn();
+    const off = onSessionExpired(expired);
+    const refreshFailures: (() => Response)[] = [
+      () => json(429, { error: { code: 'TOO_MANY_REQUESTS', message: 'x' } }),
+      () => json(503, {}),
+      () => {
+        throw new TypeError('Failed to fetch');
+      },
+    ];
+    for (const refresh of refreshFailures) {
+      handler = (url) => (url.endsWith('/auth/refresh') ? refresh() : json(401, { error: { code: 'UNAUTHORIZED', message: 'x' } }));
+      await expect(apiRequest('/materials')).rejects.toMatchObject({ status: 503, code: 'SESSION_REFRESH_UNAVAILABLE' });
+    }
+    expect(expired).not.toHaveBeenCalled();
+    off();
+  });
+
+  it('retries the request after losing a refresh race to another tab', async () => {
+    let cookieRenewed = false;
+    handler = (url) => {
+      if (url.endsWith('/auth/refresh')) {
+        cookieRenewed = true; // tab pemenang sudah memasang cookie baru di browser yang sama
+        return json(401, { error: { code: 'REFRESH_RACE', message: 'x' } });
+      }
+      return cookieRenewed ? json(200, { ok: true }) : json(401, { error: { code: 'UNAUTHORIZED', message: 'x' } });
+    };
+    const expired = vi.fn();
+    const off = onSessionExpired(expired);
+    await expect(apiRequest('/materials')).resolves.toEqual({ ok: true });
+    expect(expired).not.toHaveBeenCalled();
+    off();
+  });
+
+  it('reports an expired session when the request still fails after a refresh race', async () => {
+    handler = (url) =>
+      url.endsWith('/auth/refresh')
+        ? json(401, { error: { code: 'REFRESH_RACE', message: 'x' } })
+        : json(401, { error: { code: 'UNAUTHORIZED', message: 'x' } });
+    const expired = vi.fn();
+    const off = onSessionExpired(expired);
+    await expect(apiRequest('/materials')).rejects.toMatchObject({ status: 401 });
+    expect(expired).toHaveBeenCalledOnce();
+    off();
+  });
+
+  it('serialises refreshes across tabs with the Web Locks API when available', async () => {
+    const request = vi.fn((_name: string, fn: () => Promise<unknown>) => fn());
+    vi.stubGlobal('navigator', { locks: { request } });
+    let refreshed = false;
+    handler = (url) => {
+      if (url.endsWith('/auth/refresh')) {
+        refreshed = true;
+        return json(200, { user: {} });
+      }
+      return refreshed ? json(200, { ok: true }) : json(401, { error: { code: 'UNAUTHORIZED', message: 'x' } });
+    };
+    await expect(apiRequest('/materials')).resolves.toEqual({ ok: true });
+    expect(request).toHaveBeenCalledOnce();
+    expect(request.mock.calls[0][0]).toBe('reksa-auth-refresh');
+  });
+
   it('exposes validation issues from the backend', async () => {
     handler = () =>
       json(400, {

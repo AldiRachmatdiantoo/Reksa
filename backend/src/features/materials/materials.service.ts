@@ -2,11 +2,7 @@ import { createHash } from 'node:crypto';
 import { fileTypeFromBuffer } from 'file-type';
 import type { IAiService } from '../../common/ai/ai.provider.interface.js';
 import { AiRubricOutputSchema, type AiRubricOutput } from '../../common/ai/ai.schema.js';
-import {
-  NotFoundError,
-  UnprocessableEntityError,
-  UnsupportedMediaTypeError,
-} from '../../common/errors/AppError.js';
+import { NotFoundError, UnprocessableEntityError, UnsupportedMediaTypeError } from '../../common/errors/AppError.js';
 import { PdfTooManyPagesError, type PdfTextExtractor } from '../../common/utils/pdfText.js';
 import { buildObjectKey, SIGNED_URL_MAX_TTL_SEC, type IStorageService } from '../../config/storage.js';
 import type { MaterialRecord, MaterialsRepository } from './materials.repository.js';

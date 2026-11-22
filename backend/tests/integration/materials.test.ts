@@ -75,11 +75,7 @@ describe('POST /materials (text)', () => {
 
   it('rejects other content types', async () => {
     const { cookie } = await login();
-    const res = await request(ctx.app)
-      .post('/api/v1/materials')
-      .set('Cookie', cookie)
-      .set('Content-Type', 'text/plain')
-      .send('judul=x');
+    const res = await request(ctx.app).post('/api/v1/materials').set('Cookie', cookie).set('Content-Type', 'text/plain').send('judul=x');
     expect(res.status).toBe(415);
   });
 });
@@ -115,10 +111,7 @@ describe('POST /materials (PDF)', () => {
       .set('Cookie', cookie)
       .field('title', 'PDF')
       .attach('file', buildPdf([SAMPLE_PDF_TEXT]), 'a.pdf');
-    const res = await request(ctx.app)
-      .post('/api/v1/materials')
-      .set('Cookie', cookie)
-      .send({ title: 'Teks', content: SAMPLE_PDF_TEXT });
+    const res = await request(ctx.app).post('/api/v1/materials').set('Cookie', cookie).send({ title: 'Teks', content: SAMPLE_PDF_TEXT });
     expect(res.body.rubricCached).toBe(true);
   });
 

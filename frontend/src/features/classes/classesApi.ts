@@ -25,12 +25,10 @@ const path = (id: string) => `/classes/${encodeURIComponent(id)}`;
 
 export const classesApi = {
   list: (signal?: AbortSignal) => apiRequest<{ classes: ClassInfo[] }>('/classes', { signal }).then((r) => r.classes),
-  create: (name: string) =>
-    apiRequest<{ class: ClassInfo }>('/classes', { method: 'POST', body: { name } }).then((r) => r.class),
+  create: (name: string) => apiRequest<{ class: ClassInfo }>('/classes', { method: 'POST', body: { name } }).then((r) => r.class),
   rename: (id: string, name: string) =>
     apiRequest<{ class: ClassInfo }>(path(id), { method: 'PATCH', body: { name } }).then((r) => r.class),
-  rotateCode: (id: string) =>
-    apiRequest<{ class: ClassInfo }>(`${path(id)}/code`, { method: 'POST' }).then((r) => r.class),
+  rotateCode: (id: string) => apiRequest<{ class: ClassInfo }>(`${path(id)}/code`, { method: 'POST' }).then((r) => r.class),
   remove: (id: string) => apiRequest<void>(path(id), { method: 'DELETE' }),
   join: (classCode: string) =>
     apiRequest<{ class: ClassInfo }>('/classes/join', { method: 'POST', body: { classCode } }).then((r) => r.class),

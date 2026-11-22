@@ -1,19 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '@/core/apiClient';
+import { EMAIL_TOKEN_RE, useUrlToken } from '@/shared/hooks/useUrlToken';
 import { ButtonLink } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { LoadingBlock } from '@/shared/ui/StateBlock';
 import { AuthCardLayout } from './AuthCardLayout';
 import { useAuth } from './AuthProvider';
 import { authApi, homePathFor } from './authApi';
-import { readTokenFromUrl } from './tokenFromUrl';
 
 type State = 'checking' | 'done' | 'invalid' | 'error';
 
 /** Tujuan tautan di email verifikasi: /verifikasi-email?token=... */
 export function VerifyEmailPage() {
   const auth = useAuth();
-  const [token] = useState(readTokenFromUrl);
+  const token = useUrlToken('query', EMAIL_TOKEN_RE);
   const [state, setState] = useState<State>(token ? 'checking' : 'invalid');
   const started = useRef(false);
 
@@ -39,9 +39,7 @@ export function VerifyEmailPage() {
   }, [state, auth]);
 
   const next =
-    auth.status === 'authenticated'
-      ? { to: homePathFor(auth.user.role), label: 'Lanjut ke REKSA' }
-      : { to: '/masuk', label: 'Masuk' };
+    auth.status === 'authenticated' ? { to: homePathFor(auth.user.role), label: 'Lanjut ke REKSA' } : { to: '/masuk', label: 'Masuk' };
 
   if (state === 'checking') {
     return (

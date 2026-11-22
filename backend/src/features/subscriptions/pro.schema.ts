@@ -21,11 +21,7 @@ export function generateProCode(): string {
 }
 
 /** POST /me/activate-pro */
-export const ActivateProSchema = z
-  .object({ code: z.string().trim().min(PRO_CODE_LENGTH).max(32) })
-  .strict();
+export const ActivateProSchema = z.object({ code: z.string().trim().min(PRO_CODE_LENGTH).max(32) }).strict();
 
-export const ProStatusSchema = z
-  .object({ tier: z.enum(['FREE', 'PRO']), proExpiresAt: z.iso.datetime().nullable() })
-  .strict();
+export const ProStatusSchema = z.object({ tier: z.enum(['FREE', 'PRO']), proExpiresAt: z.iso.datetime().nullable() }).strict();
 export type ProStatus = z.infer<typeof ProStatusSchema>;

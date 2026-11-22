@@ -6,13 +6,7 @@ import { requireRole } from '../../common/middlewares/rbac.middleware.js';
 import { validate } from '../../common/middlewares/validate.middleware.js';
 import type { AccessTokenSigner } from '../../common/utils/jwt.js';
 import { ClassesController } from './classes.controller.js';
-import {
-  ClassIdParamsSchema,
-  ClassMemberParamsSchema,
-  CreateClassSchema,
-  JoinClassSchema,
-  RenameClassSchema,
-} from './classes.schema.js';
+import { ClassIdParamsSchema, ClassMemberParamsSchema, CreateClassSchema, JoinClassSchema, RenameClassSchema } from './classes.schema.js';
 import type { ClassesService } from './classes.service.js';
 
 export type ClassesRouterDeps = {
@@ -54,12 +48,7 @@ export function createClassesRouter({ service, signer, redis }: ClassesRouterDep
     controller.join,
   );
   router.get('/:id', validate({ params: ClassIdParamsSchema }), controller.get);
-  router.patch(
-    '/:id',
-    educatorOnly,
-    validate({ params: ClassIdParamsSchema, body: RenameClassSchema }),
-    controller.rename,
-  );
+  router.patch('/:id', educatorOnly, validate({ params: ClassIdParamsSchema, body: RenameClassSchema }), controller.rename);
   router.delete('/:id', educatorOnly, validate({ params: ClassIdParamsSchema }), controller.delete);
   router.post('/:id/code', educatorOnly, validate({ params: ClassIdParamsSchema }), controller.rotateCode);
   router.get('/:id/members', educatorOnly, validate({ params: ClassIdParamsSchema }), controller.listMembers);

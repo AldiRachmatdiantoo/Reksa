@@ -14,13 +14,19 @@ const STUDENT_NAV = [
     to: '/belajar',
     label: 'Belajar',
     icon: 'edit_note',
-    match: (p: string) => p.startsWith('/belajar') && !p.startsWith('/belajar/materi') && !p.startsWith('/belajar/kelas'),
+    match: (p: string) =>
+      p.startsWith('/belajar') && !['/belajar/materi', '/belajar/kelas', '/belajar/ulang'].some((other) => p.startsWith(other)),
   },
   { to: '/belajar/materi', label: 'Materi', icon: 'menu_book', match: (p: string) => p.startsWith('/belajar/materi') },
+  { to: '/belajar/ulang', label: 'Ulang', icon: 'event_repeat', match: (p: string) => p.startsWith('/belajar/ulang') },
   { to: '/belajar/kelas', label: 'Kelas', icon: 'groups', match: (p: string) => p.startsWith('/belajar/kelas') },
 ];
 
-function StudentNav({ className, layoutId }: { className: string; layoutId: string }) {
+/**
+ * `stacked`: ikon di atas label, untuk baris menu di layar kecil. Empat menu berjajar dengan ikon di
+ * samping label butuh sekitar 435px, jadi di HP 360-375px menu Kelas terpotong dan halaman bisa digeser ke samping.
+ */
+function StudentNav({ className, layoutId, stacked = false }: { className: string; layoutId: string; stacked?: boolean }) {
   const { pathname } = useLocation();
   return (
     <nav aria-label="Menu pelajar" className={className}>
@@ -32,20 +38,20 @@ function StudentNav({ className, layoutId }: { className: string; layoutId: stri
             to={item.to}
             end
             aria-current={active ? 'page' : undefined}
-            className={`relative flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full px-4 text-label-lg transition-colors md:flex-none ${
-              active ? 'text-teal' : 'text-ink-muted hover:text-ink'
-            }`}
+            className={`relative flex min-h-11 items-center justify-center transition-colors ${
+              stacked ? 'min-w-0 flex-1 flex-col gap-0.5 rounded-xl px-1 py-1 text-label-md' : 'gap-1.5 rounded-full px-4 text-label-lg'
+            } ${active ? 'text-teal' : 'text-ink-muted hover:text-ink'}`}
           >
             {active && (
               <motion.span
                 layoutId={layoutId}
                 aria-hidden="true"
-                className="absolute inset-0 rounded-full bg-teal-wash"
+                className={`absolute inset-0 bg-teal-wash ${stacked ? 'rounded-xl' : 'rounded-full'}`}
                 transition={{ type: 'spring', stiffness: 380, damping: 30 }}
               />
             )}
             <Icon name={item.icon} className="relative text-[20px]" />
-            <span className="relative">{item.label}</span>
+            <span className="relative max-w-full truncate">{item.label}</span>
           </NavLink>
         );
       })}
@@ -63,11 +69,10 @@ export function AppHeader({ subtitle }: { subtitle: string }) {
 
   const logout = async () => {
     setLeaving(true);
-    // Pindah ke beranda dulu; kalau state auth berubah duluan, guard halaman
-    // terproteksi akan mengarahkan ke /masuk.
-    navigate('/', { replace: true });
-    // Gagal di server pun, state lokal tetap dikosongkan oleh AuthProvider.
-    await auth.logout().catch(() => undefined);
+    // Pindah ke beranda setelah server menghapus cookie. Kalau pindah duluan, membuka halaman lain saat request
+    // masih jalan memotongnya: cookie tetap ada dan pengguna masih login (berbahaya di komputer bersama).
+    // Gagal di server pun, status lokal tetap dikosongkan oleh AuthProvider.
+    await auth.logout(() => navigate('/', { replace: true })).catch(() => undefined);
   };
 
   return (
@@ -96,7 +101,7 @@ export function AppHeader({ subtitle }: { subtitle: string }) {
       </div>
       {/* Di layar kecil menu pindah ke baris sendiri supaya label tetap terbaca dan mudah diketuk. */}
       {isStudent && (
-        <StudentNav layoutId="student-nav-mobile" className="flex gap-1 border-t border-line-soft px-4 py-1.5 md:hidden" />
+        <StudentNav stacked layoutId="student-nav-mobile" className="flex gap-1 border-t border-line-soft px-2 py-1 sm:px-4 md:hidden" />
       )}
     </header>
   );

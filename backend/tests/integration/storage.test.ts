@@ -80,8 +80,6 @@ describe('S3StorageService against a real S3 bucket', () => {
   });
 
   it('refuses to write to a key that was not built by buildObjectKey', async () => {
-    await expect(
-      ctx.storage.putObject({ key: '../../evil.pdf', body, contentType: 'application/pdf' }),
-    ).rejects.toThrow();
+    await expect(ctx.storage.putObject({ key: '../../evil.pdf', body, contentType: 'application/pdf' })).rejects.toThrow();
   });
 });

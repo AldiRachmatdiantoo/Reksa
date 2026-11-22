@@ -8,7 +8,7 @@ import { authApi } from './authApi';
 type Status = 'idle' | 'sending' | 'sent' | 'error';
 
 /** Pemberitahuan untuk akun yang belum verifikasi email, dengan tombol kirim ulang. Tidak tampil bila sudah terverifikasi. */
-export function VerifyEmailNotice({ reason }: { reason: string }) {
+export function VerifyEmailNotice({ reason, id }: { reason: string; id?: string }) {
   const auth = useAuth();
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState('');
@@ -38,7 +38,7 @@ export function VerifyEmailNotice({ reason }: { reason: string }) {
   };
 
   return (
-    <div role="status" className="flex flex-col gap-3 rounded-md border border-line-soft bg-wash p-4">
+    <div id={id} role="status" className="flex flex-col gap-3 rounded-md border border-line-soft bg-wash p-4">
       <p className="flex items-start gap-2 text-body-md text-ink">
         <Icon name="mark_email_unread" className="mt-px text-[20px] text-teal" />
         <span>

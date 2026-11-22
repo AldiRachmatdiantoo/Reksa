@@ -41,21 +41,18 @@ export function minutesOf(session: Pick<ServerSession, 'plannedDurationSec'>): n
 const path = (id: string) => `/sessions/${encodeURIComponent(id)}`;
 
 export const sessionsApi = {
-  start: (materialId: string, minutes: number) =>
+  /** classId untuk materi kelas: tanpa itu sesi tidak terlihat di ledger guru (FR-07). */
+  start: (materialId: string, minutes: number, classId: string | null = null) =>
     apiRequest<{ session: ServerSession }>('/sessions', {
       method: 'POST',
-      body: { materialId, preset: PRESET_BY_MINUTES[minutes] ?? 'CLASSIC_25_5' },
+      body: { materialId, preset: PRESET_BY_MINUTES[minutes] ?? 'CLASSIC_25_5', ...(classId ? { classId } : {}) },
     }).then((r) => r.session),
-  active: (signal?: AbortSignal) =>
-    apiRequest<{ session: ServerSession | null }>('/sessions/active', { signal }).then((r) => r.session),
+  active: (signal?: AbortSignal) => apiRequest<{ session: ServerSession | null }>('/sessions/active', { signal }).then((r) => r.session),
   get: (id: string, signal?: AbortSignal) => apiRequest<{ session: ServerSession }>(path(id), { signal }).then((r) => r.session),
   submitJol: (id: string, predictedJolScore: number) =>
-    apiRequest<{ session: ServerSession }>(`${path(id)}/jol`, { method: 'PATCH', body: { predictedJolScore } }).then(
-      (r) => r.session,
-    ),
+    apiRequest<{ session: ServerSession }>(`${path(id)}/jol`, { method: 'PATCH', body: { predictedJolScore } }).then((r) => r.session),
   cancel: (id: string) => apiRequest<{ session: ServerSession }>(`${path(id)}/cancel`, { method: 'POST' }).then((r) => r.session),
-  issueQr: (id: string) =>
-    apiRequest<{ qrToken: string; expiresInSec: number }>(`${path(id)}/qr-bridge`, { method: 'POST' }),
+  issueQr: (id: string) => apiRequest<{ qrToken: string; expiresInSec: number }>(`${path(id)}/qr-bridge`, { method: 'POST' }),
   /** URL stream SSE untuk layar laptop (EventSource, cookie ikut otomatis karena origin sama). */
   qrEventsUrl: (id: string) => `/api/v1${path(id)}/qr-bridge/events`,
 };

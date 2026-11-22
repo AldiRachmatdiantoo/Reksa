@@ -1,11 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import {
-  DeleteObjectCommand,
-  GetObjectCommand,
-  HeadBucketCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, GetObjectCommand, HeadBucketCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl as presign } from '@aws-sdk/s3-request-presigner';
 import { z } from 'zod';
 import type { Env } from './env.js';
@@ -28,10 +22,7 @@ export type StorageExtension = (typeof EXTENSIONS)[number];
  */
 const ObjectKeySchema = z
   .string()
-  .regex(
-    new RegExp(`^(${STORAGE_PREFIXES.join('|')})/[0-9a-f-]{36}/[0-9a-f-]{36}\\.(${EXTENSIONS.join('|')})$`),
-    'Object key tidak valid',
-  );
+  .regex(new RegExp(`^(${STORAGE_PREFIXES.join('|')})/[0-9a-f-]{36}/[0-9a-f-]{36}\\.(${EXTENSIONS.join('|')})$`), 'Object key tidak valid');
 
 export function buildObjectKey(prefix: StoragePrefix, ownerId: string, ext: StorageExtension): string {
   return ObjectKeySchema.parse(`${prefix}/${z.uuid().parse(ownerId)}/${randomUUID()}.${ext}`);
@@ -112,9 +103,7 @@ export class S3StorageService implements IStorageService {
   }
 
   async getObject(key: string, maxBytes: number): Promise<Buffer> {
-    const out = await this.client.send(
-      new GetObjectCommand({ Bucket: this.config.bucket, Key: ObjectKeySchema.parse(key) }),
-    );
+    const out = await this.client.send(new GetObjectCommand({ Bucket: this.config.bucket, Key: ObjectKeySchema.parse(key) }));
     if (out.ContentLength !== undefined && out.ContentLength > maxBytes) {
       throw new Error(`Objek ${key} melebihi batas ${maxBytes} byte`);
     }

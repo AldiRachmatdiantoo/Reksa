@@ -26,7 +26,7 @@ Centang `[x]` saat selesai dan catat di `docs/CHECKPOINT.md`.
   - Kode aktivasi Pro: disimpan sebagai hash, punya durasi dan batas pemakaian, `POST /me/activate-pro`, wajib email terverifikasi
   - Tampilan tier dan masa berlaku di halaman Akun
   - Catatan: pemotongan kuota scan harian ada di `essay-scans` (Adli)
-- [ ] **FR-10 Portal admin institusi**
+- [x] **FR-10 Portal admin institusi** (branch `feat/aldi-institution-admin`): skrip `institution:create`, kode undangan pengajar, daftar pengajar/kelas, agregat dengan batas 5 siswa
 - [ ] **Persiapan deploy** (Supabase, Vercel, Render)
   - Migrasi pencabutan hak `anon`/`authenticated` di Supabase (Data API)
   - `vercel.json` di reksa-frontend: rewrite `/api/*` ke Render, header keamanan (CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`)
@@ -37,11 +37,19 @@ Centang `[x]` saat selesai dan catat di `docs/CHECKPOINT.md`.
 
 ## Bisa dibangun sekarang, diuji penuh setelah sesi dan scan Adli jadi
 
-- [ ] **FR-06 Jadwal ulang** (`spaced-repetition`): micro-blurting H+3 dan H+7 dibuat dari sesi yang selesai, daftar sesi jatuh tempo
-- [ ] **FR-07 Proof of Understanding Ledger** (`governance`): `ledger_hash`, Signed URL, `GET /ledger/verify/:hash`
-- [ ] **FR-12 Ekspor PDF Proof of Understanding** (Pro), memakai data ledger
-- [ ] **FR-08 Peta blind spot kelas** + **Gemini Stage 3 (`clusterCohortBlindSpots`)**
+- [x] **FR-06 Jadwal ulang** (`spaced-repetition`): daftar jatuh tempo, tandai selesai, halaman Ulang (branch `feat/aldi-spaced-review`). Sisa: sesi `SPACED_REVIEW` dengan foto dan penilaian (butuh `study-sessions` Adli)
+- [x] **FR-07 Proof of Understanding Ledger** (`governance`): ledger guru, Signed URL, `GET /ledger/verify/:hash`, halaman `/cek-bukti` (branch `feat/aldi-ledger`)
+- [x] **FR-12 Ekspor PDF Proof of Understanding** (Pro): `POST /ledger/exports`, PDF `pdf-lib` dengan kode bukti + tautan cek di tiap halaman (branch `feat/aldi-ledger-pdf`)
+- [x] **FR-08 Peta blind spot kelas** (branch `feat/aldi-cohort-blind-spots`), dengan `MockAiProvider`
+- [ ] **Gemini Stage 3 (`clusterCohortBlindSpots`)** (Fase 3)
 - [ ] **Sambungkan frontend studio ke backend Adli:** sesi belajar, unggah foto, hasil audit asli (ganti `SAMPLE_AUDIT`), QR bridge laptop ke HP
+
+## Temuan QA 22 November 2026
+
+- [x] Bug 1 sampai 4: menu HP meluber, balapan refresh antartab, logout saat refresh 429/jaringan, batas laju per IP untuk NAT sekolah (branch `fix/aldi-qa-bugs`)
+- [x] Bug 5 sampai 9: form gabung kelas, kode bukti lengkap + tautan cek, foto ledger utuh, target sentuh 44px, pengunjung tanpa sesi tidak memanggil auth (branch `fix/aldi-qa-bugs`)
+- [x] Kualitas: code splitting per halaman (646 kB ke 285 kB), tes untuk `cohortCache`, `email`, `ledgerPdf` (`safeEqualHex` dihapus), `.oxfmtrc.json` + script `format`/`format:check`, CSP `img-src` tanpa `https:` dan `frame-src 'none'` (branch `fix/aldi-qa-bugs`)
+- [ ] Format area Adli dengan oxfmt, lalu pasang `npm run format:check` di CI (menunggu keputusan)
 
 ## Perkiraan progres
 

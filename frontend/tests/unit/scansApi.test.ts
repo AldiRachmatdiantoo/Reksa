@@ -1,13 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, apiRequest } from '../../src/core/apiClient';
 import { uploadLinkFor } from '../../src/features/scanner/QrBridgePanel';
-import {
-  auditFailureText,
-  photoProblem,
-  quotaText,
-  scansApi,
-  uploadErrorMessage,
-} from '../../src/features/scanner/scansApi';
+import { auditFailureText, photoProblem, quotaText, scansApi, uploadErrorMessage } from '../../src/features/scanner/scansApi';
 import {
   activeSessionIdOf,
   PRESET_BY_MINUTES,
@@ -50,6 +44,12 @@ describe('sessionsApi', () => {
     expect(url).toBe('/api/v1/sessions');
     expect(JSON.parse(init.body as string)).toEqual({ materialId: 'm-1', preset: 'DEEP_45_10' });
     expect(PRESET_BY_MINUTES).toEqual({ 25: 'CLASSIC_25_5', 45: 'DEEP_45_10', 15: 'FOCUS_SPRINT_15_3' });
+  });
+
+  it('adds classId for a class material so the session reaches the teacher ledger', async () => {
+    fetchMock.mockResolvedValue(json(201, { session: { id: SESSION_ID } }));
+    await sessionsApi.start('m-1', 25, 'c-1');
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body as string)).toEqual({ materialId: 'm-1', preset: 'CLASSIC_25_5', classId: 'c-1' });
   });
 
   it('encodes ids in paths and points EventSource at the same-origin SSE path', async () => {

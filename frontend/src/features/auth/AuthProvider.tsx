@@ -1,6 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, startTransition, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ApiError, onSessionExpired } from '@/core/apiClient';
 import { authApi, type AuthUser, type LoginInput, type RegisterInput } from './authApi';
+import { hasSessionHint } from './sessionHint';
 
 type AuthState =
   | { status: 'loading'; user: null }
@@ -12,7 +13,11 @@ type AuthState =
 type AuthContextValue = AuthState & {
   login: (input: LoginInput) => Promise<AuthUser>;
   register: (input: RegisterInput) => Promise<AuthUser>;
-  logout: () => Promise<void>;
+  /**
+   * Menunggu server menghapus cookie, baru mengosongkan status. `then` (misalnya pindah ke beranda) dijalankan
+   * dalam transisi yang sama dengan perubahan status, supaya halaman terproteksi tidak sempat membelokkan ke /masuk.
+   */
+  logout: (then?: () => void) => Promise<void>;
   recheck: () => void;
   /** Mengganti data user yang sedang login (setelah ubah nama, verifikasi email, ganti kata sandi). */
   updateUser: (user: AuthUser) => void;
@@ -25,6 +30,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    if (!hasSessionHint()) {
+      setState({ status: 'anonymous', user: null });
+      return;
+    }
     const controller = new AbortController();
     authApi
       .me(controller.signal)
@@ -51,11 +60,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return user;
   }, []);
 
-  const logout = useCallback(async () => {
+  const logout = useCallback(async (then?: () => void) => {
     try {
       await authApi.logout();
     } finally {
-      setState({ status: 'anonymous', user: null });
+      startTransition(() => {
+        then?.();
+        setState({ status: 'anonymous', user: null });
+      });
     }
   }, []);
 

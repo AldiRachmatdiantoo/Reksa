@@ -2,11 +2,7 @@ import type { Request, Response } from 'express';
 import { BadRequestError } from '../../common/errors/AppError.js';
 import { getAuth } from '../../common/middlewares/auth.middleware.js';
 import { getValidated } from '../../common/middlewares/validate.middleware.js';
-import {
-  CreatePdfMaterialFieldsSchema,
-  CreateTextMaterialSchema,
-  MaterialIdParamsSchema,
-} from './materials.schema.js';
+import { CreatePdfMaterialFieldsSchema, CreateTextMaterialSchema, MaterialIdParamsSchema } from './materials.schema.js';
 import type { MaterialsService } from './materials.service.js';
 
 export class MaterialsController {

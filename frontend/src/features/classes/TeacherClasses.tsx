@@ -60,7 +60,12 @@ export function TeacherClasses() {
         <h2 id="classes-title" className="font-headline text-headline-md text-ink">
           Kelasmu
         </h2>
-        <form noValidate onSubmit={onCreate} aria-busy={creating} className="flex flex-col gap-3 rounded-lg border border-line-soft bg-card p-4">
+        <form
+          noValidate
+          onSubmit={onCreate}
+          aria-busy={creating}
+          className="flex flex-col gap-3 rounded-lg border border-line-soft bg-card p-4"
+        >
           <TextField
             id="new-class-name"
             label="Nama kelas baru"
@@ -287,7 +292,10 @@ function ClassDetail({ cls, onChanged, onDeleted }: DetailProps) {
       <div className="flex flex-col gap-3 rounded-md bg-wash p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
           <span className="text-label-lg text-ink-muted">Kode kelas</span>
-          <span className="font-mono text-[28px] leading-none font-semibold tracking-[0.18em] text-ink tabular-nums" aria-label={code.split('').join(' ')}>
+          <span
+            className="font-mono text-[28px] leading-none font-semibold tracking-[0.18em] text-ink tabular-nums"
+            aria-label={code.split('').join(' ')}
+          >
             {formatClassCode(code)}
           </span>
           <span className="text-body-sm text-ink-muted">Siswa memasukkan kode ini di menu Kelas.</span>
@@ -363,7 +371,9 @@ function ClassDetail({ cls, onChanged, onDeleted }: DetailProps) {
               className="overflow-hidden"
             >
               <div className="flex flex-col gap-3 rounded-md border border-line-soft p-4">
-                <p className="text-body-md text-ink-muted">Semua siswa di kelas ini bisa membaca materinya, tapi tidak bisa mengubah atau menghapus.</p>
+                <p className="text-body-md text-ink-muted">
+                  Semua siswa di kelas ini bisa membaca materinya, tapi tidak bisa mengubah atau menghapus.
+                </p>
                 <UploadMaterialForm
                   classId={cls.id}
                   submitLabel="Bagikan ke kelas"
@@ -429,8 +439,8 @@ function ClassDetail({ cls, onChanged, onDeleted }: DetailProps) {
           </>
         ) : (
           <>
-            Kode <strong className="font-mono text-ink">{formatClassCode(code)}</strong> langsung tidak berlaku. Siswa yang sudah
-            bergabung tetap di kelas.
+            Kode <strong className="font-mono text-ink">{formatClassCode(code)}</strong> langsung tidak berlaku. Siswa yang sudah bergabung
+            tetap di kelas.
           </>
         )}
       </ConfirmDialog>
@@ -444,8 +454,8 @@ function ClassDetail({ cls, onChanged, onDeleted }: DetailProps) {
         onCancel={() => setToRemove(null)}
         onConfirm={confirmRemove}
       >
-        <strong className="text-ink">{toRemove?.fullName}</strong> tidak bisa lagi membaca materi kelas, dan catatannya tidak lagi
-        terlihat di portal ini. Data belajarnya tetap miliknya.
+        <strong className="text-ink">{toRemove?.fullName}</strong> tidak bisa lagi membaca materi kelas, dan catatannya tidak lagi terlihat
+        di portal ini. Data belajarnya tetap miliknya.
       </ConfirmDialog>
     </section>
   );

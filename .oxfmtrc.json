@@ -1,0 +1,6 @@
+{
+  "$schema": "./frontend/node_modules/oxfmt/configuration_schema.json",
+  "singleQuote": true,
+  "printWidth": 140,
+  "ignorePatterns": ["**/design-reference/**", "**/dist/**", "**/coverage/**", "**/*.md", "**/package-lock.json"]
+}

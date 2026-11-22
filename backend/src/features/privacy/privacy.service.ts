@@ -115,13 +115,7 @@ export class PrivacyService {
     }
   }
 
-  async storeExport(
-    userId: string,
-    kind: ExportKind,
-    body: Buffer,
-    ext: 'zip' | 'pdf',
-    contentType: string,
-  ): Promise<ExportResult> {
+  async storeExport(userId: string, kind: ExportKind, body: Buffer, ext: 'zip' | 'pdf', contentType: string): Promise<ExportResult> {
     const key = buildObjectKey('exports', userId, ext);
     await this.deps.storage.putObject({ key, body, contentType });
     const expiresAt = new Date(this.now().getTime() + EXPORT_TTL_MS);

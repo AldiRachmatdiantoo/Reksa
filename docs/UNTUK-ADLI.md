@@ -6,6 +6,45 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: perbaikan bug QA (branch `fix/aldi-qa-bugs`)
+
+- ⏳ menunggu: **batas unggah foto per IP** (`scans:upload:ip`, 30/jam di `scans.routes.ts`, areamu). Satu kelas biasanya keluar lewat satu IP sekolah, jadi siswa ke-31 dalam satu jam kena 429. Usulanku: batas IP dinaikkan (misal 300/jam) untuk meredam banjir sebelum multer, lalu batas utama dipasang per user untuk unggahan yang login dan per `qrToken` untuk unggahan lewat QR. Kabari kalau setuju atau mau kamu kerjakan sendiri.
+- `auth.service.test.ts` (areamu, tapi isinya tes modul `auth` milikku): repo tiruan menambah `rotatedAt` dan `markRefreshTokenRotated`, ditambah dua tes balapan refresh. Kalau kamu punya repo tiruan `AuthRepository` lain, tambahkan dua hal itu.
+- `RefreshTokenRecord` sekarang punya `rotatedAt`, dan ada migrasi baru `20261122000400_refresh_rotation_grace`.
+- `apiClient` (frontend): refresh dikunci antartab lewat Web Locks, `401 REFRESH_RACE` diulang otomatis, dan refresh yang gagal karena 429/5xx/jaringan menjadi `503 SESSION_REFRESH_UNAVAILABLE` tanpa mengeluarkan pengguna.
+- E2E baru `frontend/tests/e2e/mobile-layout.spec.ts` dan `session.spec.ts` (file baru, tidak mengubah spec lain).
+- Tes baru di `backend/tests/unit` (areamu): `features/governance/cohortCache.test.ts`, `features/governance/ledgerPdf.test.ts`, `config/email.test.ts`. Isinya tes modul milikku, tidak mengubah tes lain.
+- `frontend/tests/e2e/helpers.ts`: `expectAccessible` sekarang menunggu animasi masuk selesai sebelum audit axe (animasi tak berujung diabaikan). Tanpa itu, audit di tengah fade pemberitahuan cookie gagal kontras.
+- Halaman frontend sekarang dimuat lazy. Karena itu token QR di `PhoneUploadPage` dibaca lewat hook `shared/hooks/useUrlToken.ts`: dibaca tanpa efek samping saat render, dihapus dari address bar setelah halaman tampil. Cara lama (hapus hash di dalam `useState`) kadang membuat HP menampilkan "Kode QR tidak terbaca".
+- Formatter: `.oxfmtrc.json` di root dan script `npm run format` / `npm run format:check` di backend dan frontend. Area-mu belum kuformat supaya tidak bentrok dengan kerjaanmu; kalau sudah siap, jalankan `npm run format` di foldermu.
+- Cookie baru `__Host-reksa_session=1` dipasang bersama cookie auth. Isinya bukan token dan sengaja tidak HttpOnly: `AuthProvider` membacanya untuk melewati `/auth/me` bagi pengunjung yang belum login. Kalau kamu menulis tes yang memasang cookie auth secara manual di browser, tambahkan penanda ini juga, atau halaman terproteksi akan menganggapmu belum login.
+
+## 22 Nov 2026: FR-10 portal admin institusi (branch `feat/aldi-institution-admin`)
+
+- Migrasi baru `20261122000300_institution_admin`. Fungsi agregat membaca `essay_submissions.blind_spots_json`, `actual_ai_score`, dan `audit_status = 'DONE'`. Kalau bentuk kolom itu berubah, kabari saya supaya fungsinya ikut diubah.
+- Unit test baru di `backend/tests/unit/features/institutions/` (area tesmu, tidak menyentuh file lain).
+
+## 22 Nov 2026: FR-08 peta bagian sulit (branch `feat/aldi-cohort-blind-spots`)
+
+- Peta membaca `blind_spots_json` lewat `parseBlindSpots` (di `spaced.service.ts`) dan menghitung sendiri persentasenya. Mock Stage 3 tidak diubah.
+- Saya menambah `cohort.service.test.ts` di `backend/tests/unit/features/governance/` (area tes unit kamu) dan memperluas `governance.service.test.ts` sedikit (tipe `FakeRepo`). Tidak ada perubahan di file milikmu yang lain.
+
+## 22 Nov 2026: FR-12 ekspor PDF bukti belajar (branch `feat/aldi-ledger-pdf`)
+
+- `POST /ledger/exports` membaca kolom audit di `submissions` (`accurate_concepts_json`, `blind_spots_json`, `image_storage_key`) dan foto webp hasil `imageProcessor`. Kalau bentuk JSON audit atau format foto berubah, kabari saya supaya `ledgerExport.service.ts` ikut disesuaikan. Data yang tidak dikenal dilewati, tidak menggagalkan PDF.
+- Helper tes baru `backend/tests/support/ledgerSeed.ts` (`createLedgerSeeds`) membuat submission DONE dengan `ledger_hash` asli. Silakan dipakai kalau butuh data serupa.
+
+## 22 Nov 2026: FR-07 ledger guru + perbaikan `classId` di studio (branch `feat/aldi-ledger`)
+
+- Frontend studio sebelumnya tidak mengirim `classId` ke `POST /sessions`, jadi tidak ada sesi yang terikat kelas. Sekarang `selectMaterial` menyimpan `classId` materi dan `sessionsApi.start` mengirimkannya (file `studySession.tsx`, `sessionsApi.ts`, `StudioPage.tsx`). Backend `study-sessions`-mu tidak diubah.
+- Ledger membaca `ledger_hash` yang dibuat `audit.service`, lalu menghitung ulang dengan `computeLedgerHash`. Kalau kamu mengubah isi `LedgerContent`, naikkan `LEDGER_HASH_VERSION`, karena hash lama akan terbaca "data berubah".
+- Migrasi baru `20261122000200_ledger_verify` (indeks `ledger_hash` + fungsi `ledger_lookup`).
+
+## 22 Nov 2026: FR-06 daftar latihan ulang sudah ada (branch `feat/aldi-spaced-review`)
+
+- `GET /spaced/due` dan `POST /spaced/:id/complete` siap; jadwalnya tetap dibuat `audit.service`-mu.
+- Latihan ulang di UI saat ini dicocokkan sendiri oleh siswa lalu ditandai selesai. Kalau nanti kamu menambah sesi `SPACED_REVIEW` (durasi 3 sampai 5 menit, rubrik khusus blind spot, foto + audit), usulanku: `POST /sessions` menerima `scheduleId`, dan saat audit sesi itu `DONE` jadwalnya ditandai `is_completed`. Kabari aku kalau setuju, halaman Ulang tinggal diganti tombolnya.
+
 ## 22 Nov 2026: FR-13 dan FR-11 menyentuh kontrak register dan kuota (branch `feat/aldi-privacy-pro`)
 
 - **`POST /auth/register` sekarang wajib `birthYear` dan `acceptTerms: true`** (plus `guardianConsent: true` jika di bawah 18 tahun). Semua test integrasi dan security yang mendaftar sudah saya tambahi `...CONSENT` (diekspor dari `tests/support/testContext.ts`). Test barumu yang mendaftar user juga perlu memakainya. Helper E2E `registerStudent` ikut diperbarui.

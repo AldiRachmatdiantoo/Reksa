@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useState, type ReactNode } from
 
 /**
  * Persetujuan penyimpanan di perangkat.
- * - Cookie login (HttpOnly, dari backend) dan sesi belajar (sessionStorage) selalu aktif: tanpa itu aplikasi tidak jalan.
+ * - Cookie login (HttpOnly, dari backend, plus penanda sesi `__Host-reksa_session` tanpa rahasia) dan sesi belajar
+ *   (sessionStorage) selalu aktif: tanpa itu aplikasi tidak jalan.
  * - `preferences`: boleh tidaknya REKSA mengingat pilihan tema di localStorage. Default mati.
  * Catatan persetujuan ini sendiri disimpan di localStorage supaya pop up tidak muncul terus.
  */
@@ -52,9 +53,7 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
   const reopen = useCallback(() => setReopened(true), []);
 
   return (
-    <ConsentContext.Provider value={{ consent, noticeOpen: consent == null || reopened, save, reopen }}>
-      {children}
-    </ConsentContext.Provider>
+    <ConsentContext.Provider value={{ consent, noticeOpen: consent == null || reopened, save, reopen }}>{children}</ConsentContext.Provider>
   );
 }
 

@@ -9,7 +9,9 @@ beforeEach(() => ctx.reset());
 afterAll(() => ctx.close());
 
 async function login(email: string, role: 'STUDENT' | 'EDUCATOR') {
-  const res = await request(ctx.app).post('/api/v1/auth/register').send({ ...CONSENT, email, password: VALID_PASSWORD, fullName: 'Pengguna Uji', role });
+  const res = await request(ctx.app)
+    .post('/api/v1/auth/register')
+    .send({ ...CONSENT, email, password: VALID_PASSWORD, fullName: 'Pengguna Uji', role });
   const cookie = cookieHeader({ [ACCESS_COOKIE]: parseSetCookies(res.headers['set-cookie'])[ACCESS_COOKIE]?.value ?? '' });
   // Siswa wajib terverifikasi untuk bergabung ke kelas (FR-14): pakai tautan dari email, seperti user asli.
   const verified = await request(ctx.app)
@@ -78,7 +80,7 @@ describe('classes: IDOR / BOLA', () => {
     expect(await ctx.owner.classMember.count({ where: { classId: cls.id } })).toBe(2);
   });
 
-  it("an outsider cannot read a class material, even with its id", async () => {
+  it('an outsider cannot read a class material, even with its id', async () => {
     const { guru, cls } = await setup();
     const outsider = await login('orang-luar@reksa.id', 'STUDENT');
     const created = await request(ctx.app)
@@ -126,10 +128,7 @@ describe('classes: input hardening', () => {
 
   it('treats SQL payloads in the class code as a plain wrong code', async () => {
     const siswa = await login('siswa@reksa.id', 'STUDENT');
-    const res = await request(ctx.app)
-      .post('/api/v1/classes/join')
-      .set('Cookie', siswa.cookie)
-      .send({ classCode: "' OR 1=1 --" });
+    const res = await request(ctx.app).post('/api/v1/classes/join').set('Cookie', siswa.cookie).send({ classCode: "' OR 1=1 --" });
     expect(res.status).toBe(404);
   });
 
@@ -152,7 +151,10 @@ describe('classes: brute-force protection', () => {
     const created = await request(ctx.app).post('/api/v1/classes').set('Cookie', guru.cookie).send({ name: 'Kelas' });
 
     for (let i = 0; i < 10; i++) {
-      const res = await request(ctx.app).post('/api/v1/classes/join').set('Cookie', siswa.cookie).send({ classCode: `TEBAK${i}AA` });
+      const res = await request(ctx.app)
+        .post('/api/v1/classes/join')
+        .set('Cookie', siswa.cookie)
+        .send({ classCode: `TEBAK${i}AA` });
       expect(res.status).toBe(404);
     }
     const blocked = await request(ctx.app)

@@ -11,7 +11,9 @@ beforeEach(() => ctx.reset());
 afterAll(() => ctx.close());
 
 async function register(email: string, role: 'STUDENT' | 'EDUCATOR' = 'STUDENT') {
-  const res = await request(ctx.app).post('/api/v1/auth/register').send({ ...CONSENT, email, password: VALID_PASSWORD, fullName: 'Uji', role });
+  const res = await request(ctx.app)
+    .post('/api/v1/auth/register')
+    .send({ ...CONSENT, email, password: VALID_PASSWORD, fullName: 'Uji', role });
   expect(res.status).toBe(201);
   const cookie = cookieHeader({ [ACCESS_COOKIE]: parseSetCookies(res.headers['set-cookie'])[ACCESS_COOKIE]?.value ?? '' });
   return { cookie, userId: res.body.user.id as string };

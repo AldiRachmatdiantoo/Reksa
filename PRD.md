@@ -205,7 +205,7 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
   * **Layanan email transaksional** lewat antarmuka `IEmailService`. Implementasi lokal/CI menangkap email tanpa mengirim (misal Mailpit di Docker); produksi memakai penyedia email transaksional (misal Resend atau Amazon SES).
   * Token email (verifikasi dan reset) berupa 32 byte acak, hanya hash-nya yang disimpan, sekali pakai. Verifikasi berlaku 24 jam, reset password 30 menit.
   * **Verifikasi email:** dikirim saat mendaftar, bisa dikirim ulang (maks. 3 kali per jam). Akun yang belum terverifikasi tetap bisa belajar mandiri, tetapi belum bisa bergabung ke kelas (FR-09) atau menukar kode Pro (FR-11).
-  * **Lupa password:** `POST /auth/password/forgot { email }` selalu menjawab `202` dengan pesan yang sama, baik email terdaftar maupun tidak, supaya keberadaan akun tidak bocor. Rate limit 3 per jam per email dan 10 per jam per IP. `POST /auth/password/reset { token, newPassword }` memakai aturan password yang sama dengan register dan mencabut seluruh refresh token user.
+  * **Lupa password:** `POST /auth/password/forgot { email }` selalu menjawab `202` dengan pesan yang sama, baik email terdaftar maupun tidak, supaya keberadaan akun tidak bocor. Rate limit 3 per jam per email dan 60 per jam per IP. `POST /auth/password/reset { token, newPassword }` memakai aturan password yang sama dengan register dan mencabut seluruh refresh token user.
   * **Ganti password** saat login: wajib password lama, lalu semua sesi di perangkat lain dicabut.
   * *(Implementasi)* Saat ganti atau reset password, refresh token lama dihapus, bukan ditandai dicabut. Kalau ditandai, refresh dari perangkat lain terbaca sebagai *reuse* dan ikut mencabut sesi baru. Password lama yang salah dijawab `400 INVALID_CURRENT_PASSWORD`, bukan `401`, supaya klien tidak mengira sesinya habis.
   * **Ubah nama:** `PATCH /me { fullName }`. Ganti email ditunda ke pasca-MVP karena butuh verifikasi ke alamat baru.
@@ -374,7 +374,8 @@ Seluruh endpoint berada di bawah prefix `/api/v1` dan menggunakan middleware val
 | `POST` | `/scans/upload` | `STUDENT` / QR Token | Menerima `multipart/form-data` foto esai, validasi *magic bytes*, menghapus EXIF, memotong kuota, lalu mengantrekan audit `IAiService` (v1.3: respons `202`, hasil dibaca lewat `GET /scans/:id`). |
 | `GET` | `/spaced/due` | `STUDENT` | Mengambil daftar sesi *micro-blurting* yang jatuh tempo hari ini. |
 | `GET` | `/governance/classes/:classId/ledger` | `EDUCATOR` (Owner) | Mengambil daftar *Proof of Understanding Ledger* siswa beserta *Signed URL* foto tulisan tangan. |
-| `GET` | `/governance/classes/:classId/blind-spots` | `EDUCATOR` / `ADMIN` | Mengambil hasil klasterisasi *Cohort Blind-Spots* & rekomendasi perbaikan kurikulum. |
+| `GET` | `/governance/classes/:classId/blind-spots` | `EDUCATOR` (Owner) | Daftar materi yang sudah punya hasil cek di kelas, dengan jumlah siswa (FR-08). |
+| `GET` | `/governance/classes/:classId/blind-spots/:materialId` | `EDUCATOR` (Owner) | Persentase siswa yang melewatkan tiap konsep (hasil cek terakhir per siswa) + rekomendasi `IAiService` Stage 3 (FR-08). |
 
 *Endpoint baru v1.2 (belum dibangun):*
 
@@ -395,6 +396,13 @@ Seluruh endpoint berada di bawah prefix `/api/v1` dan menggunakan middleware val
 | `GET` | `/institution/analytics` | `INSTITUTION_ADMIN` | Agregat per kelas dan per konsep; kelompok di bawah 5 siswa disembunyikan. |
 | `GET` | `/me/quota` | `STUDENT` | `{ tier, used, limit, remaining, resetAt }` (FR-11). |
 | `POST` | `/me/activate-pro` | Authenticated (Rate-Limited) | Menukar kode aktivasi Pro `{ code }`. |
+| `GET` | `/me/institution` | `EDUCATOR` | Institusi tempat pengajar terhubung, atau `null` (FR-10). |
+| `POST` | `/me/institution` | `EDUCATOR` (Rate-Limited) | Bergabung dengan kode undangan `{ code }` (43 karakter base64url). Kode salah/kedaluwarsa/dicabut: `404` yang sama; sudah di institusi lain: `409 ALREADY_IN_INSTITUTION` (FR-10). |
+| `GET` | `/institution` | `INSTITUTION_ADMIN` | Pengajar, kelas, dan agregat per kelas; kelompok di bawah 5 siswa disembunyikan (FR-10). |
+| `GET` | `/institution/concepts` | `INSTITUTION_ADMIN` | Konsep tersulit lintas kelas, materi kelas dengan minimal 5 siswa (FR-10). |
+| `GET` / `POST` | `/institution/invites` | `INSTITUTION_ADMIN` | Daftar / buat kode undangan pengajar (7 hari; kode mentah hanya di jawaban `POST`) (FR-10). |
+| `DELETE` | `/institution/invites/:inviteId` | `INSTITUTION_ADMIN` | Cabut kode undangan (idempoten) (FR-10). |
+| `DELETE` | `/institution/educators/:educatorId` | `INSTITUTION_ADMIN` | Lepas pengajar; `classes.institution_id` miliknya dikosongkan (FR-10). |
 | `POST` | `/ledger/exports` | `STUDENT` (Pro) | Membuat PDF *Proof of Understanding* `{ submissionIds?, from?, to? }`; mengembalikan *Signed URL* (FR-12). |
 | `GET` | `/ledger/verify/:hash` | Public (Rate-Limited) | Memeriksa keaslian `ledger_hash`; hanya mengembalikan status valid dan tanggal sesi. |
 | `POST` | `/sessions/:id/cancel` | `STUDENT` (Owner) | Membatalkan sesi aktif → `EXPIRED` (v1.3, FR-02). |
@@ -450,9 +458,9 @@ Sumber kebenarannya adalah file `*.schema.ts`. Tabel ini ringkasan agar frontend
 * Register: `email` (di-trim & lowercase, maks 254), `password` (12–128 karakter, wajib huruf kecil, huruf besar, angka), `fullName` (1–100), `role` opsional `STUDENT` | `EDUCATOR` (default `STUDENT`). `INSTITUTION_ADMIN` tidak bisa daftar sendiri.
 * Login: `email`, `password` (maks 128).
 * Respons user: `id`, `email`, `fullName`, `role`, `tier`. Tidak pernah memuat hash password maupun token.
-* Status: register `201`, login/refresh/me `200`, logout `204`. Kredensial salah selalu `401` dengan pesan yang sama, baik email tidak terdaftar maupun password salah. Email duplikat `409`. Rate limit `429` + header `Retry-After` (login 5/menit, register 10/jam, refresh 30/menit per IP).
+* Status: register `201`, login/refresh/me `200`, logout `204`. Kredensial salah selalu `401` dengan pesan yang sama, baik email tidak terdaftar maupun password salah. Email duplikat `409`. Rate limit `429` + header `Retry-After`. Login 5/menit per akun per IP dan 100/menit per IP, register 100/jam per IP, refresh 10/menit per token dan 300/menit per IP, verifikasi email 200/jam per IP, reset password 60/15 menit per IP. Batas per IP sengaja longgar karena satu kelas biasanya keluar lewat satu IP sekolah (NAT).
 * Access token hanya dibaca dari cookie `__Host-access_token`; header `Authorization` diabaikan.
-* **Wajib di frontend (`apiClient`):** saat menerima `401`, panggil `POST /auth/refresh` **satu kali saja walau ada banyak request yang gagal bersamaan** (antrekan request lain sampai refresh selesai), lalu ulangi request-nya. Dua refresh paralel dengan token yang sama dianggap *token reuse* dan seluruh sesi user dicabut. Jika refresh juga `401`, arahkan ke halaman login.
+* **Wajib di frontend (`apiClient`):** saat menerima `401`, panggil `POST /auth/refresh` **satu kali saja walau ada banyak request yang gagal bersamaan** (antrekan request lain sampai refresh selesai), lalu ulangi request-nya. Single-flight ini juga berlaku antartab lewat Web Locks API (`navigator.locks`, nama kunci `reksa-auth-refresh`). Token yang sudah dirotasi dan dipakai lagi **dalam 10 detik** dijawab `401 REFRESH_RACE` tanpa mencabut sesi dan tanpa menghapus cookie (tab lain baru saja me-refresh), jadi klien cukup mengulang request-nya. Lewat dari 10 detik dianggap *token reuse* dan seluruh sesi user dicabut. Jika refresh `401` lainnya, arahkan ke halaman login. Refresh yang gagal karena `429`, `5xx`, atau jaringan putus tidak berarti sesi habis: jangan keluarkan pengguna.
 
 **`materials`** (`features/materials/materials.schema.ts`)
 * Teks: body JSON `{ title (1–200), content (1–15.000 karakter), classId? }`.
@@ -469,9 +477,15 @@ Sumber kebenarannya adalah file `*.schema.ts`. Tabel ini ringkasan agar frontend
 **`spaced-repetition`** (`features/spaced-repetition/spaced.schema.ts`)
 * `GET /spaced/due?limit=` (1–50, default 20). Interval hanya 3 dan 7 hari.
 
+**`institutions`** (`features/institutions/institution.schema.ts`, FR-10)
+* `GET /institution` → `{ institution { id, name }, educators[] { id, fullName, email, classCount }, classes[] { id, name, educator { id, fullName }, memberCount, auditedStudents|null, completedSessions|null, avgScore|null, suppressed }, minGroupSize: 5 }`.
+* `GET /institution/concepts` → `{ concepts[] { materialId, materialTitle, concept, studentsMissing, studentsAudited, percent }, minGroupSize: 5 }`.
+* Agregat dihitung fungsi `SECURITY DEFINER` `institution_class_stats` / `institution_concept_stats` yang memeriksa sendiri bahwa `app.current_user_id` adalah admin institusi itu dan mengosongkan angka kelompok di bawah 5 siswa. Institusi + admin dibuat lewat `npm run institution:create`.
+
 **`governance`** (`features/governance/governance.schema.ts`)
 * `GET /governance/classes/:classId/ledger?cursor=&limit=` (cursor UUID, limit 1–100, default 20).
-* `GET /governance/classes/:classId/blind-spots?materialId=`.
+* `GET /governance/classes/:classId/blind-spots` → `{ materials[] { materialId, title|null, studentCount, lastAuditedAt } }`.
+* `GET /governance/classes/:classId/blind-spots/:materialId` → `{ material, studentCount, concepts[] { concept, studentCount, percent, importanceLevel|null }, recommendationStatus READY|NOT_ENOUGH_DATA|UNAVAILABLE, recommendation { sample, clusters[] { label, memberConcepts[], severity, remediationSuggestion }, curriculumRecommendation } | null, minStudentsForRecommendation: 3 }`. Angka dari AI (`affectedStudentCount`, `failureRatePercent`) tidak diteruskan; persentase dihitung server. Rekomendasi di-cache Redis 6 jam per isi data. 30 permintaan/menit per pengajar.
 
 **Output AI** (`common/ai/ai.schema.ts`, semua `.strict()`)
 * `AiRubricOutput`: `materialTitle`, `summary`, `keyConcepts[] { id (slug), concept, definition, weight 1..5 }`, `causalRelations[] { fromConceptId, toConceptId, relation }`. Setiap relasi wajib merujuk `id` konsep yang ada.
@@ -498,7 +512,7 @@ Keamanan ditempatkan sebagai prioritas arsitektur nomor satu (*Security-First De
 2. **Hardening JWT + Cookies & Anti-CSRF:**
    * Token tidak pernah disimpan di `localStorage` atau `sessionStorage`.
    * Access Token (TTL 15 menit) disimpan dalam cookie `__Host-access_token` (`HttpOnly; Secure; SameSite=Strict; Path=/`).
-   * Refresh Token (TTL 7 hari) disimpan dalam cookie `__Secure-refresh_token` (`HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth/refresh`, tanpa atribut `Domain`). Prefiks `__Secure-` dipakai (bukan `__Host-`) karena browser menolak cookie `__Host-` yang `Path`-nya bukan `/`; pembatasan path menjaga refresh token hanya terkirim ke endpoint refresh. Token ini dilengkapi mekanisme **Refresh Token Rotation & Reuse Detection**. Jika token lama dipakai ulang, seluruh *token family* milik user langsung dicabut.
+   * Refresh Token (TTL 7 hari) disimpan dalam cookie `__Secure-refresh_token` (`HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth/refresh`, tanpa atribut `Domain`). Prefiks `__Secure-` dipakai (bukan `__Host-`) karena browser menolak cookie `__Host-` yang `Path`-nya bukan `/`; pembatasan path menjaga refresh token hanya terkirim ke endpoint refresh. Bersama keduanya backend memasang `__Host-reksa_session=1` (`Secure; SameSite=Strict; Path=/`, umur sama dengan refresh token) yang **sengaja tidak HttpOnly** dan bukan token: frontend membacanya supaya pengunjung tanpa sesi tidak memanggil `/auth/me` dan `/auth/refresh` yang pasti `401`. Penanda ini dihapus bersama cookie auth (logout, refresh gagal, hapus akun) dan tidak pernah dipakai sebagai bukti login. Refresh token dilengkapi mekanisme **Refresh Token Rotation & Reuse Detection**. Jika token lama dipakai ulang, seluruh sesi milik user langsung dicabut. Pengecualian: token yang baru dirotasi dan muncul lagi dalam 10 detik (`refresh_tokens.rotated_at`) dianggap dua tab yang refresh bersamaan, ditolak dengan `401 REFRESH_RACE` tanpa pencabutan.
    * Hashing password menggunakan **Argon2id** (`memoryCost: 65536`, `timeCost: 3`).
 3. **Anti-IDOR / Broken Object Level Authorization (BOLA):**
    * Setiap metode di `Service` dan `Repository` wajib menyertakan klausa kepemilikan (`userId` atau kepemilikan `classId` bagi pengajar) di dalam kueri pengambilan data.
@@ -507,7 +521,7 @@ Keamanan ditempatkan sebagai prioritas arsitektur nomor satu (*Security-First De
    * Seluruh foto tulisan tangan diproses ulang lewat `sharp` untuk menghapus metadata sensitif (**EXIF, koordinat GPS, tipe perangkat**) sebelum diunggah ke **Private Bucket S3-compatible** (Supabase Storage di produksi, SeaweedFS di lokal/CI). Object key selalu dibuat server (`<prefix>/<ownerId>/<uuid>.<ext>`) dan divalidasi ulang sebelum dipakai, sehingga *path traversal* lewat key tidak mungkin.
    * File gambar hanya dapat diakses melalui **Pre-Signed URL** berumur pendek (5 menit).
 5. **Network & HTTP Hardening:**
-   * Konfigurasi `Helmet` ketat, `Content-Security-Policy (CSP)`, validasi origin CORS eksplisit, serta **Redis Sliding-Window Rate Limiting** (misal: maksimal 5 percobaan login/menit per IP; maksimal 10 permintaan AI/jam per user).
+   * Konfigurasi `Helmet` ketat, `Content-Security-Policy (CSP)`, validasi origin CORS eksplisit, serta **Redis Sliding-Window Rate Limiting** (misal: maksimal 5 percobaan login/menit per akun per IP; maksimal 10 permintaan AI/jam per user).
 
 ### 9.2 Arsitektur Docker Multi-Stage & Network Isolation
 * **`backend/Dockerfile` (3-Stage Build):**

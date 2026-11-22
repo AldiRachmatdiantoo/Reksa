@@ -11,6 +11,8 @@ export type RateLimitOptions = {
   windowMs: number;
   /** Defaults to the client IP (req.ip, trusted from the single Nginx proxy). */
   key?: (req: Request) => string;
+  /** Lewati limiter ini untuk request tertentu (tidak dihitung sama sekali). */
+  skip?: (req: Request) => boolean;
 };
 
 /**
@@ -25,6 +27,10 @@ export function rateLimit(options: RateLimitOptions): RequestHandler {
   const keyOf = options.key ?? ((req: Request) => req.ip ?? 'unknown');
 
   return async (req, res, next) => {
+    if (options.skip?.(req)) {
+      next();
+      return;
+    }
     const now = Date.now();
     const redisKey = `rl:${options.name}:${keyOf(req)}`;
 

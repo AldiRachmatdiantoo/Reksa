@@ -111,16 +111,19 @@ export function LandingPage() {
                 <WordReveal text="Ubah catatan kertas jadi pemahaman nyata" delay={0.1} />
               </h1>
               <Reveal delay={0.45}>
-              <p className="max-w-prose text-body-lg text-ink-muted text-pretty">
-                Catat ulang pelajaran di kertas saat waktu fokus berjalan, lalu foto catatanmu. REKSA menunjukkan bagian yang sudah tepat
-                dan yang masih terlewat, tanpa tablet mahal.
-              </p>
+                <p className="max-w-prose text-body-lg text-ink-muted text-pretty">
+                  Catat ulang pelajaran di kertas saat waktu fokus berjalan, lalu foto catatanmu. REKSA menunjukkan bagian yang sudah tepat
+                  dan yang masih terlewat, tanpa tablet mahal.
+                </p>
               </Reveal>
               <Reveal delay={0.6} className="flex flex-wrap items-center gap-3 pt-1">
                 <ButtonLink to={user ? homePathFor(user.role) : '/daftar'} variant="accent" size="lg">
                   {user ? 'Lanjut belajar' : 'Buat akun gratis'}
                 </ButtonLink>
-                <a href="#kenalan" className="inline-flex min-h-13 items-center gap-1.5 rounded-full px-4 text-title-md text-teal hover:bg-wash">
+                <a
+                  href="#kenalan"
+                  className="inline-flex min-h-13 items-center gap-1.5 rounded-full px-4 text-title-md text-teal hover:bg-wash"
+                >
                   Kenalan dulu
                   <Icon name="arrow_downward" className="text-[20px]" />
                 </a>
@@ -212,10 +215,13 @@ export function LandingPage() {
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, margin: '0px 0px -10% 0px' }}
             transition={{ duration: 0.7, ease: EASE_OUT }}
-            className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 rounded-xl bg-teal p-8 text-on-teal sm:p-10 md:flex-row md:items-center dark:border dark:border-line dark:bg-teal-wash dark:text-ink">
+            className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 rounded-xl bg-teal p-8 text-on-teal sm:p-10 md:flex-row md:items-center dark:border dark:border-line dark:bg-teal-wash dark:text-ink"
+          >
             <div className="flex max-w-xl flex-col gap-2">
               <h2 className="font-headline text-headline-md text-balance sm:text-headline-lg">Siap uji pemahamanmu hari ini?</h2>
-              <p className="text-body-lg opacity-90 text-pretty">Siapkan selembar kertas dan pulpen. Siapkan materi, lalu sesi pertama selesai dalam 15 menit.</p>
+              <p className="text-body-lg opacity-90 text-pretty">
+                Siapkan selembar kertas dan pulpen. Siapkan materi, lalu sesi pertama selesai dalam 15 menit.
+              </p>
             </div>
             <ButtonLink to={user ? homePathFor(user.role) : '/daftar'} variant="accent" size="lg" className="shrink-0">
               {user ? 'Buka ruang belajar' : 'Buat akun gratis'}

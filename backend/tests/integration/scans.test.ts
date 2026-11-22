@@ -13,7 +13,13 @@ import { CONSENT, cookieHeader, createTestContext, parseSetCookies, VALID_PASSWO
 
 const ctx = createTestContext();
 const logger = pino({ level: 'silent' });
-const worker = buildAuditWorker({ prisma: ctx.prisma, redis: ctx.redis, storage: ctx.storage, ai: new MockAiProvider({ latencyMs: 0 }), logger });
+const worker = buildAuditWorker({
+  prisma: ctx.prisma,
+  redis: ctx.redis,
+  storage: ctx.storage,
+  ai: new MockAiProvider({ latencyMs: 0 }),
+  logger,
+});
 /** Worker yang AI-nya selalu gagal sementara, untuk alur FAILED → refund → retry. */
 const failingWorker = buildAuditWorker(
   { prisma: ctx.prisma, redis: ctx.redis, storage: ctx.storage, ai: new MockAiProvider({ latencyMs: 0 }), logger },
@@ -31,7 +37,9 @@ beforeEach(() => ctx.reset());
 afterAll(() => ctx.close());
 
 async function register(email: string) {
-  const res = await request(ctx.app).post('/api/v1/auth/register').send({ ...CONSENT, email, password: VALID_PASSWORD, fullName: 'Uji' });
+  const res = await request(ctx.app)
+    .post('/api/v1/auth/register')
+    .send({ ...CONSENT, email, password: VALID_PASSWORD, fullName: 'Uji' });
   expect(res.status).toBe(201);
   const cookie = cookieHeader({ [ACCESS_COOKIE]: parseSetCookies(res.headers['set-cookie'])[ACCESS_COOKIE]?.value ?? '' });
   return { cookie, userId: res.body.user.id as string };
@@ -43,7 +51,10 @@ async function readySession(cookie: string) {
     .post('/api/v1/materials')
     .set('Cookie', cookie)
     .send({ title: 'Homeostasis', content: 'Homeostasis menjaga kondisi internal tubuh tetap stabil.' });
-  const s = await request(ctx.app).post('/api/v1/sessions').set('Cookie', cookie).send({ materialId: material.body.material.id, preset: 'CLASSIC_25_5' });
+  const s = await request(ctx.app)
+    .post('/api/v1/sessions')
+    .set('Cookie', cookie)
+    .send({ materialId: material.body.material.id, preset: 'CLASSIC_25_5' });
   expect(s.status).toBe(201);
   const id = s.body.session.id as string;
   await request(ctx.app).patch(`/api/v1/sessions/${id}/jol`).set('Cookie', cookie).send({ predictedJolScore: 80 });
@@ -102,7 +113,10 @@ describe('golden path: upload → worker → result', () => {
 
     const session = await request(ctx.app).get(`/api/v1/sessions/${sessionId}`).set('Cookie', siswa.cookie);
     expect(session.body.session).toMatchObject({ status: 'COMPLETED', submissionId });
-    const schedules = await ctx.owner.spacedSchedule.findMany({ where: { originSubmissionId: submissionId }, orderBy: { intervalDay: 'asc' } });
+    const schedules = await ctx.owner.spacedSchedule.findMany({
+      where: { originSubmissionId: submissionId },
+      orderBy: { intervalDay: 'asc' },
+    });
     expect(schedules.map((s) => s.intervalDay)).toEqual(scan.result.blindSpots.length > 0 ? [3, 7] : []);
   });
 
@@ -131,7 +145,9 @@ describe('QR bridge upload (phone without login)', () => {
     expect(res.status).toBe(202);
 
     const bridge = new RedisQrBridge(ctx.redis);
-    await expect(bridge.waitForUpload(sessionId, { signal: new AbortController().signal, timeoutMs: 1000 })).resolves.toBe(res.body.submissionId);
+    await expect(bridge.waitForUpload(sessionId, { signal: new AbortController().signal, timeoutMs: 1000 })).resolves.toBe(
+      res.body.submissionId,
+    );
 
     const again = await upload({ qrToken }, await phonePhoto(1));
     expect(again.status).toBe(410);

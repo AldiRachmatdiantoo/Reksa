@@ -11,7 +11,10 @@ export function AuthCardLayout({ title, intro, children }: { title: string; intr
   return (
     <motion.div {...pageTransition} className="flex min-h-dvh flex-col px-4 py-6 sm:px-8">
       <div className="flex items-center justify-between gap-4">
-        <Link to="/masuk" className="inline-flex min-h-11 items-center gap-1.5 rounded-full pr-3 text-label-lg text-ink-muted hover:text-teal">
+        <Link
+          to="/masuk"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-full pr-3 text-label-lg text-ink-muted hover:text-teal"
+        >
           <Icon name="arrow_back" />
           Halaman masuk
         </Link>

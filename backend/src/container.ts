@@ -15,6 +15,20 @@ import { PrismaClassesRepository } from './features/classes/classes.repository.j
 import { createClassesRouter } from './features/classes/classes.routes.js';
 import { ClassesService } from './features/classes/classes.service.js';
 import { UnpdfTextExtractor, type PdfTextExtractor } from './common/utils/pdfText.js';
+import { MockAiProvider } from './common/ai/mockAi.provider.js';
+import { CohortService } from './features/governance/cohort.service.js';
+import { PrismaInstitutionRepository } from './features/institutions/institution.repository.js';
+import { createEducatorInstitutionRouter, createInstitutionRouter } from './features/institutions/institution.routes.js';
+import { InstitutionService } from './features/institutions/institution.service.js';
+import { RedisCohortCache } from './features/governance/cohortCache.js';
+import { PrismaGovernanceRepository } from './features/governance/governance.repository.js';
+import { createGovernanceRouter, createLedgerRouter } from './features/governance/governance.routes.js';
+import { GovernanceService } from './features/governance/governance.service.js';
+import { PrismaLedgerExportRepository } from './features/governance/ledgerExport.repository.js';
+import { LedgerExportService } from './features/governance/ledgerExport.service.js';
+import { PrismaSpacedRepository } from './features/spaced-repetition/spaced.repository.js';
+import { createSpacedRouter } from './features/spaced-repetition/spaced.routes.js';
+import { SpacedService } from './features/spaced-repetition/spaced.service.js';
 import { PrismaMaterialsRepository } from './features/materials/materials.repository.js';
 import { createMaterialsRouter } from './features/materials/materials.routes.js';
 import { MaterialsService } from './features/materials/materials.service.js';
@@ -100,24 +114,59 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     onWarning: (message, data) => deps.logger.warn(data, message),
   });
 
+  const governanceRepo = new PrismaGovernanceRepository(deps.prisma);
+  const cohortService = new CohortService({
+    repo: governanceRepo,
+    ai: deps.ai,
+    cache: new RedisCohortCache(deps.redis, (err, op) => deps.logger.warn({ err, op }, 'Cohort cache unavailable')),
+    aiIsSample: deps.ai instanceof MockAiProvider,
+    onWarning: (message, data) => deps.logger.warn(data, message),
+  });
+  const governanceService = new GovernanceService({
+    repo: governanceRepo,
+    storage: deps.storage,
+    onWarning: (message, data) => deps.logger.warn(data, message),
+  });
+
   const privacyService = createPrivacyService(deps, hasher);
   const proService = new ProService({ repo: new PrismaProRepository(deps.prisma) });
+  const institutionService = new InstitutionService({ repo: new PrismaInstitutionRepository(deps.prisma) });
 
   // Semua yang ada di bawah /me: profil & persetujuan (auth), privasi (FR-13), Pro (FR-11).
   const me = Router();
   me.use(createMeRouter({ service: authService, signer, redis: deps.redis }));
   me.use(createPrivacyRouter({ service: privacyService, signer, redis: deps.redis }));
   me.use(createProRouter({ service: proService, signer, redis: deps.redis }));
+  me.use(createEducatorInstitutionRouter({ service: institutionService, signer, redis: deps.redis }));
 
   return {
     '/auth': createAuthRouter({ service: authService, signer, redis: deps.redis }),
     '/me': me,
     '/materials': createMaterialsRouter({ service: materialsService, signer, redis: deps.redis }),
+    '/spaced': createSpacedRouter({
+      service: new SpacedService({ repo: new PrismaSpacedRepository(deps.prisma) }),
+      signer,
+      redis: deps.redis,
+    }),
     '/classes': createClassesRouter({ service: classesService, signer, redis: deps.redis }),
     '/sessions': createSessionsRouter({ service: sessionsService, signer, redis: deps.redis }),
     // Dipasang setelah '/me' (auth). Router '/me' tidak punya GET /quota, jadi permintaan diteruskan ke sini.
     '/me/quota': createQuotaRouter({ service: quotaService, signer }),
     '/scans': createScansRouter({ service: scansService, signer, redis: deps.redis }),
+    '/institution': createInstitutionRouter({ service: institutionService, signer, redis: deps.redis }),
+    '/governance': createGovernanceRouter({ service: governanceService, cohort: cohortService, signer, redis: deps.redis }),
+    '/ledger': createLedgerRouter({
+      service: governanceService,
+      exports: new LedgerExportService({
+        repo: new PrismaLedgerExportRepository(deps.prisma),
+        storage: deps.storage,
+        exports: privacyService,
+        appUrl: (deps.env.APP_URL ?? deps.env.CORS_ORIGIN).replace(/\/+$/, ''),
+        onWarning: (message, data) => deps.logger.warn(data, message),
+      }),
+      signer,
+      redis: deps.redis,
+    }),
   };
 }
 

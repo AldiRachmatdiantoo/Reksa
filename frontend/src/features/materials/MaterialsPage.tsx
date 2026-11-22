@@ -9,13 +9,7 @@ import { Button } from '@/shared/ui/Button';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { Icon } from '@/shared/ui/Icon';
 import { LoadingBlock, StateBlock } from '@/shared/ui/StateBlock';
-import {
-  formatMaterialDate,
-  materialsApi,
-  useMaterials,
-  type CreateMaterialResult,
-  type MaterialSummary,
-} from './materialsApi';
+import { formatMaterialDate, materialsApi, useMaterials, type CreateMaterialResult, type MaterialSummary } from './materialsApi';
 import { RubricPreview } from './RubricPreview';
 import { UploadMaterialForm } from './UploadMaterialForm';
 
@@ -227,7 +221,9 @@ export function MaterialsPage() {
                               </p>
                             )}
                           </div>
-                          {active && <span className="shrink-0 rounded-full bg-teal px-2.5 py-0.5 text-label-sm text-on-teal">Dipakai</span>}
+                          {active && (
+                            <span className="shrink-0 rounded-full bg-teal px-2.5 py-0.5 text-label-sm text-on-teal">Dipakai</span>
+                          )}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <Button variant={active ? 'primary' : 'outline'} onClick={() => studyWith(m.id, m.title)}>
@@ -264,8 +260,8 @@ export function MaterialsPage() {
         onCancel={() => setToDelete(null)}
         onConfirm={confirmDelete}
       >
-        <strong className="text-ink">{toDelete?.title}</strong> dan file PDF-nya akan dihapus permanen. Materi yang sudah dipakai di
-        sesi belajar tidak bisa dihapus.
+        <strong className="text-ink">{toDelete?.title}</strong> dan file PDF-nya akan dihapus permanen. Materi yang sudah dipakai di sesi
+        belajar tidak bisa dihapus.
       </ConfirmDialog>
     </>
   );

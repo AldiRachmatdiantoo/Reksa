@@ -108,9 +108,7 @@ function MaterialPicker() {
           <h1 id="picker-title" className="font-headline text-headline-lg-mobile text-ink sm:text-headline-md">
             Mau belajar materi apa?
           </h1>
-          <p className="text-body-lg text-ink-muted text-pretty">
-            Pilih satu materi. Baca dulu, lalu tulis ulang dari ingatan di kertas.
-          </p>
+          <p className="text-body-lg text-ink-muted text-pretty">Pilih satu materi. Baca dulu, lalu tulis ulang dari ingatan di kertas.</p>
         </div>
         <ButtonLink to="/belajar/materi" variant="outline">
           <Icon name="add" />
@@ -152,7 +150,7 @@ function MaterialPicker() {
             <StaggerItem as="li" key={m.id}>
               <button
                 type="button"
-                onClick={() => selectMaterial(m.id, m.title)}
+                onClick={() => selectMaterial(m.id, m.title, m.classId)}
                 className="group flex h-full w-full flex-col gap-2 rounded-md border border-line-soft bg-card p-4 text-left transition-colors hover:border-teal"
               >
                 <span className="flex items-center gap-2 text-body-sm text-ink-muted">
@@ -213,11 +211,7 @@ function FocusSession({ material }: { material: Material }) {
     navigate('/belajar/foto');
   };
 
-  const status = timeUp
-    ? 'Waktu fokus habis. Kerja bagus!'
-    : running
-      ? 'Waktunya menulis di kertas'
-      : 'Siap mulai catat di kertas';
+  const status = timeUp ? 'Waktu fokus habis. Kerja bagus!' : running ? 'Waktunya menulis di kertas' : 'Siap mulai catat di kertas';
 
   return (
     <>
@@ -226,8 +220,8 @@ function FocusSession({ material }: { material: Material }) {
           <h1 className="font-headline text-headline-md text-ink">Waktu fokus sudah tercatat</h1>
           <p className="text-body-lg text-ink-muted">
             Kamu fokus menulis <strong className="text-ink">{material.title}</strong> selama{' '}
-            <strong className="text-ink">{formatDuration(session!.focusSeconds!)}</strong>. Lanjutkan dengan menebak nilaimu lalu
-            memotret catatan.
+            <strong className="text-ink">{formatDuration(session!.focusSeconds!)}</strong>. Lanjutkan dengan menebak nilaimu lalu memotret
+            catatan.
           </p>
           <div className="flex flex-wrap gap-3">
             <Button variant="accent" size="lg" onClick={() => navigate('/belajar/foto')}>
@@ -266,8 +260,8 @@ function FocusSession({ material }: { material: Material }) {
                   <Icon name="lock" className="text-[36px] text-teal" />
                   <h2 className="font-title text-title-lg text-ink">Bacaan ditutup sementara</h2>
                   <p className="max-w-sm text-body-md text-ink-muted">
-                    Tulis semua yang kamu ingat tentang <strong className="text-ink">{material.title}</strong> di kertas. Bacaan
-                    terbuka lagi kalau kamu menekan Ulangi.
+                    Tulis semua yang kamu ingat tentang <strong className="text-ink">{material.title}</strong> di kertas. Bacaan terbuka
+                    lagi kalau kamu menekan Ulangi.
                   </p>
                 </motion.div>
               ) : (

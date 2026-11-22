@@ -12,7 +12,9 @@ beforeEach(() => ctx.reset());
 afterAll(() => ctx.close());
 
 async function register(email: string) {
-  const res = await request(ctx.app).post('/api/v1/auth/register').send({ ...CONSENT, email, password: VALID_PASSWORD, fullName: 'Uji' });
+  const res = await request(ctx.app)
+    .post('/api/v1/auth/register')
+    .send({ ...CONSENT, email, password: VALID_PASSWORD, fullName: 'Uji' });
   expect(res.status).toBe(201);
   const cookie = cookieHeader({ [ACCESS_COOKIE]: parseSetCookies(res.headers['set-cookie'])[ACCESS_COOKIE]?.value ?? '' });
   return { cookie, userId: res.body.user.id as string };
@@ -24,7 +26,10 @@ async function sessionFor(cookie: string, jol = true) {
     .post('/api/v1/materials')
     .set('Cookie', cookie)
     .send({ title: 'Homeostasis', content: 'Homeostasis menjaga kondisi internal tubuh.' });
-  const s = await request(ctx.app).post('/api/v1/sessions').set('Cookie', cookie).send({ materialId: material.body.material.id, preset: 'CLASSIC_25_5' });
+  const s = await request(ctx.app)
+    .post('/api/v1/sessions')
+    .set('Cookie', cookie)
+    .send({ materialId: material.body.material.id, preset: 'CLASSIC_25_5' });
   const id = s.body.session.id as string;
   if (jol) await request(ctx.app).patch(`/api/v1/sessions/${id}/jol`).set('Cookie', cookie).send({ predictedJolScore: 50 });
   return id;

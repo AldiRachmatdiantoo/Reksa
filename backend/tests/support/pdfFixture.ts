@@ -40,5 +40,4 @@ export function buildPdf(pages: string[]): Buffer {
   return Buffer.from(body, 'latin1');
 }
 
-export const SAMPLE_PDF_TEXT =
-  'Homeostasis adalah kemampuan tubuh menjaga kondisi internal tetap stabil melalui umpan balik negatif.';
+export const SAMPLE_PDF_TEXT = 'Homeostasis adalah kemampuan tubuh menjaga kondisi internal tetap stabil melalui umpan balik negatif.';

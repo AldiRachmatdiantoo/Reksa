@@ -34,8 +34,7 @@ export type MaterialSummary = Omit<Material, 'rubric'> & { conceptCount: number 
 export type CreateMaterialResult = { material: Material; rubricCached: boolean };
 
 export const materialsApi = {
-  list: (signal?: AbortSignal) =>
-    apiRequest<{ materials: MaterialSummary[] }>('/materials', { signal }).then((r) => r.materials),
+  list: (signal?: AbortSignal) => apiRequest<{ materials: MaterialSummary[] }>('/materials', { signal }).then((r) => r.materials),
   get: (id: string, signal?: AbortSignal) =>
     apiRequest<{ material: Material }>(`/materials/${encodeURIComponent(id)}`, { signal }).then((r) => r.material),
   createText: (title: string, content: string, classId?: string) =>
@@ -47,8 +46,7 @@ export const materialsApi = {
     form.append('file', file);
     return apiRequest<CreateMaterialResult>('/materials', { method: 'POST', body: form });
   },
-  fileUrl: (id: string) =>
-    apiRequest<{ url: string; expiresInSec: number }>(`/materials/${encodeURIComponent(id)}/file`),
+  fileUrl: (id: string) => apiRequest<{ url: string; expiresInSec: number }>(`/materials/${encodeURIComponent(id)}/file`),
   remove: (id: string) => apiRequest<void>(`/materials/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 };
 

@@ -12,11 +12,7 @@ export interface IAiService {
   extractRubric(materialText: string): Promise<AiRubricOutput>;
 
   /** Stage 2: foto tulisan tangan + rubrik → audit pemahaman. */
-  evaluateHandwritingEssay(
-    imageBuffer: Buffer,
-    mimeType: string,
-    rubric: AiRubricOutput,
-  ): Promise<AiEssayAuditOutput>;
+  evaluateHandwritingEssay(imageBuffer: Buffer, mimeType: string, rubric: AiRubricOutput): Promise<AiEssayAuditOutput>;
 
   /** Stage 3: kumpulan blind spots satu kelas (satu array per siswa) → klaster & rekomendasi. */
   clusterCohortBlindSpots(blindSpotsList: AiEssayAuditOutput['blindSpots'][]): Promise<AiCohortClusterOutput>;

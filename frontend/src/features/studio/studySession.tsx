@@ -14,6 +14,11 @@ export type StudySession = {
   materialId: string;
   /** Disalin dari materi supaya halaman berikutnya tidak perlu memuat ulang. */
   materialTitle: string;
+  /**
+   * Kelas pemilik materi. Dikirim saat mulai sesi supaya sesi ini masuk ledger dan peta blind spot
+   * kelas itu (FR-07, FR-08). null untuk materi pribadi. Opsional karena cache lama belum punya.
+   */
+  classId?: string | null;
   presetMinutes: number;
   /** Id sesi di server; null sebelum waktu fokus dimulai. */
   serverId: string | null;
@@ -36,9 +41,10 @@ export type StudySession = {
 const STORAGE_KEY = 'reksa-study-session';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const emptySession = (materialId: string, materialTitle: string, presetMinutes = 25): StudySession => ({
+const emptySession = (materialId: string, materialTitle: string, presetMinutes = 25, classId: string | null = null): StudySession => ({
   materialId,
   materialTitle,
+  classId,
   presetMinutes,
   serverId: null,
   status: null,
@@ -57,6 +63,7 @@ export function fromServer(s: ServerSession, previous?: StudySession | null): St
   return {
     materialId: s.materialId,
     materialTitle: s.materialTitle ?? previous?.materialTitle ?? 'Materi',
+    classId: s.classId,
     presetMinutes: minutesOf(s),
     serverId: s.id,
     status: s.status,
@@ -107,7 +114,7 @@ type Ctx = {
   /** File foto yang dipilih (hanya di memori). */
   photoFile: File | null;
   /** Pilih materi untuk sesi baru (belum dikirim ke server). */
-  selectMaterial: (materialId: string, materialTitle: string) => void;
+  selectMaterial: (materialId: string, materialTitle: string, classId?: string | null) => void;
   /** Mulai waktu fokus di server. Melempar ActiveSessionConflict bila masih ada sesi aktif. */
   start: () => Promise<void>;
   /** Lanjutkan sesi yang sudah ada di server (mis. dari perangkat lain). */
@@ -147,9 +154,12 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     }
   }, [session]);
 
-  useEffect(() => () => {
-    if (photoUrl) URL.revokeObjectURL(photoUrl);
-  }, [photoUrl]);
+  useEffect(
+    () => () => {
+      if (photoUrl) URL.revokeObjectURL(photoUrl);
+    },
+    [photoUrl],
+  );
 
   const adopt = useCallback((s: ServerSession) => setSession((prev) => fromServer(s, prev)), []);
 
@@ -192,7 +202,7 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     const current = sessionRef.current;
     if (!current) return;
     try {
-      const s = await sessionsApi.start(current.materialId, current.presetMinutes);
+      const s = await sessionsApi.start(current.materialId, current.presetMinutes, current.classId ?? null);
       resetPhoto();
       setSession({ ...fromServer(s, current), materialTitle: current.materialTitle, focusSeconds: null });
     } catch (err) {
@@ -207,9 +217,9 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     syncing,
     photoUrl,
     photoFile,
-    selectMaterial: (materialId, materialTitle) => {
+    selectMaterial: (materialId, materialTitle, classId = null) => {
       resetPhoto();
-      setSession((prev) => emptySession(materialId, materialTitle, prev?.presetMinutes));
+      setSession((prev) => emptySession(materialId, materialTitle, prev?.presetMinutes, classId));
     },
     start,
     resume: async (sessionId) => {
@@ -225,7 +235,7 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     resetTimer: async () => {
       const current = sessionRef.current;
       if (current?.serverId) await sessionsApi.cancel(current.serverId);
-      update((s) => ({ ...emptySession(s.materialId, s.materialTitle, s.presetMinutes) }));
+      update((s) => ({ ...emptySession(s.materialId, s.materialTitle, s.presetMinutes, s.classId ?? null) }));
     },
     saveJol: async (score) => {
       const current = sessionRef.current;

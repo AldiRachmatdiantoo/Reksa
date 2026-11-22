@@ -1,10 +1,7 @@
 import type { PrismaClient } from '../../config/prisma.js';
 import { Prisma } from '../../generated/prisma/client.js';
 
-export type RedeemOutcome =
-  | { kind: 'ok'; proExpiresAt: Date }
-  | { kind: 'invalid' }
-  | { kind: 'already_redeemed' };
+export type RedeemOutcome = { kind: 'ok'; proExpiresAt: Date } | { kind: 'invalid' } | { kind: 'already_redeemed' };
 
 type CodeRow = { id: string; duration_days: number; max_redemptions: number; redemption_count: number; expires_at: Date };
 

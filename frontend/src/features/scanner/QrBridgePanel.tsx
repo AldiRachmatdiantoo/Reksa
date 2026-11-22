@@ -83,7 +83,13 @@ export function QrBridgePanel({ sessionId, onUploaded }: Props) {
 
       {state.kind === 'ready' && !expiredByClock && (
         <>
-          <img src={state.qrDataUrl} width={240} height={240} alt="Kode QR untuk membuka halaman unggah foto di HP" className="rounded-sm bg-white p-2" />
+          <img
+            src={state.qrDataUrl}
+            width={240}
+            height={240}
+            alt="Kode QR untuk membuka halaman unggah foto di HP"
+            className="rounded-sm bg-white p-2"
+          />
           <ol className="flex max-w-xs list-decimal flex-col gap-1 pl-5 text-left text-body-md text-ink">
             <li>Buka kamera HP dan arahkan ke kode ini.</li>
             <li>Ketuk tautan yang muncul, lalu foto catatanmu.</li>

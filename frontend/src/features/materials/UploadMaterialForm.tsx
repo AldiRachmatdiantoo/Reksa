@@ -56,7 +56,13 @@ export function UploadMaterialForm({
     setErrors((e) => ({ ...e, file: undefined, form: undefined }));
     setFile(picked);
     // Judul diisi dari nama file kalau masih kosong, tetap bisa diubah.
-    if (!title.trim()) setTitle(picked.name.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ').slice(0, 200));
+    if (!title.trim())
+      setTitle(
+        picked.name
+          .replace(/\.pdf$/i, '')
+          .replace(/[_-]+/g, ' ')
+          .slice(0, 200),
+      );
   };
 
   const onDrop = (e: DragEvent<HTMLLabelElement>) => {
@@ -89,7 +95,8 @@ export function UploadMaterialForm({
         const fieldErrors: typeof errors = {};
         for (const issue of err.issues) {
           if (issue.path === 'title') fieldErrors.title = 'Judul 1 sampai 200 karakter.';
-          if (issue.path === 'content') fieldErrors.content = `Isi materi maksimal ${MATERIAL_MAX_TEXT_CHARS.toLocaleString('id-ID')} karakter.`;
+          if (issue.path === 'content')
+            fieldErrors.content = `Isi materi maksimal ${MATERIAL_MAX_TEXT_CHARS.toLocaleString('id-ID')} karakter.`;
         }
         setErrors(Object.keys(fieldErrors).length ? fieldErrors : { form: 'Periksa lagi isian formulir.' });
       } else {
@@ -201,7 +208,11 @@ export function UploadMaterialForm({
                 onDragLeave={() => setDragging(false)}
                 onDrop={onDrop}
                 className={`flex min-h-44 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-6 py-8 text-center transition-colors peer-focus-visible:outline-3 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-teal ${
-                  dragging ? 'border-teal bg-teal-wash' : errors.file ? 'border-danger bg-danger-wash/40' : 'border-line bg-wash hover:border-teal'
+                  dragging
+                    ? 'border-teal bg-teal-wash'
+                    : errors.file
+                      ? 'border-danger bg-danger-wash/40'
+                      : 'border-line bg-wash hover:border-teal'
                 }`}
               >
                 <motion.span
@@ -251,11 +262,7 @@ export function UploadMaterialForm({
       <Button type="submit" variant="accent" size="lg" disabled={submitting || overLimit}>
         {submitting ? (
           <>
-            <motion.span
-              className="flex"
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-            >
+            <motion.span className="flex" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
               <Icon name="progress_activity" />
             </motion.span>
             Menyusun konsep kunci...

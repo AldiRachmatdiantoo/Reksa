@@ -106,10 +106,7 @@ describe('register consent (FR-13)', () => {
   it('POST /me/consent needs a session and rejects unknown fields', async () => {
     expect((await request(ctx.app).post('/api/v1/me/consent').send({ acceptTerms: true })).status).toBe(401);
     const { cookie } = await register('asing@reksa.id');
-    const res = await request(ctx.app)
-      .post('/api/v1/me/consent')
-      .set('Cookie', cookie)
-      .send({ acceptTerms: true, termsVersion: '9999' });
+    const res = await request(ctx.app).post('/api/v1/me/consent').set('Cookie', cookie).send({ acceptTerms: true, termsVersion: '9999' });
     expect(res.status).toBe(400);
   });
 });
