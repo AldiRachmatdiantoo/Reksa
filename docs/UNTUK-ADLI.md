@@ -6,6 +6,15 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: mode offline (PWA) menyentuh studio, scanner, shared (branch `feat/aldi-offline-pwa`)
+
+Detail di `CHECKPOINT.md` #40. Yang berubah di areamu:
+
+- **`src/shared/offline/outbox.ts`, `src/shared/hooks/useOnlineStatus.ts`, `src/shared/ui/OfflineNotice.tsx`, `src/shared/pwa/registerServiceWorker.ts`** (baru).
+- **`src/features/studio/studySession.tsx`:** `saveJol` menyimpan tebakan ke antrean saat error jaringan, ada `queuePhoto`, `syncNotice`, dan `pendingSync` di state sesi. `mergeServer` (diekspor) menjaga tebakan yang belum terkirim supaya tidak tertimpa status `FOCUS_ACTIVE` dari server. Logika kirim ada di `offlineSync.ts` (baru).
+- **`CalibratePage.tsx`:** tombol "Simpan dan kirim nanti" saat offline, panel foto menunggu, QR dimatikan saat offline. **`StudioPage.tsx`:** tombol mulai dinonaktifkan saat offline.
+- **E2E:** `playwright.config.ts` kini `serviceWorkers: 'block'` supaya spec lain tidak terpengaruh cache; `offline.spec.ts` menyalakannya sendiri.
+
 ## 22 Nov 2026: helper E2E baca email dari Mailpit (branch `feat/aldi-change-email`)
 
 Untuk F1 (ganti email, area `auth` Aldi) ada tambahan kecil di areamu:

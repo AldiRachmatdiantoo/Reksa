@@ -19,6 +19,8 @@ export default defineConfig({
     locale: 'id-ID',
     timezoneId: 'Asia/Jakarta',
     trace: 'retain-on-failure',
+    // Service worker (F2) hanya dinyalakan di offline.spec.ts, supaya page.route dan cache tidak memengaruhi spec lain.
+    serviceWorkers: 'block',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 });

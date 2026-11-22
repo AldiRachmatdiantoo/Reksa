@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, F1 ganti email (Aldi, branch `feat/aldi-change-email`)
+**Checkpoint terakhir:** 22 November 2026, F2 offline-first PWA (Aldi, branch `feat/aldi-offline-pwa`)
 
 ---
 
@@ -16,6 +16,17 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #40 · F2 offline-first PWA · branch `feat/aldi-offline-pwa`
+
+Koneksi putus di tengah sesi tidak lagi menghilangkan tebakan atau foto. Tanpa perubahan backend.
+
+- **Service worker** (`frontend/pwa/sw.js`, dibangun plugin Vite di `vite.config.ts` lewat `pwa/precache.ts`): menyimpan JS, CSS, dan font latin hasil build; halaman network-first dengan `index.html` dari cache sebagai cadangan offline; `/assets/` cache-first (maks. 60 entri tambahan). Respons `/api/` tidak pernah disentuh. Versi cache = hash daftar file + `index.html`, cache lama dihapus saat aktif. Hanya didaftarkan di build produksi.
+- **Antrean IndexedDB** (`src/shared/offline/outbox.ts`, database `reksa-offline`): satu tebakan dan satu foto per sesi, foto disimpan sebagai byte. `src/features/studio/offlineSync.ts` mengirim tebakan dulu baru foto. Status 0/401/408/429/5xx dicoba lagi (saat event `online` dan tiap 30 detik); `INVALID_SESSION_STATE` dianggap sudah beres (sesi dimuat ulang); 4xx lain dibuang dengan pesan (tebakan yang ditolak ikut membuang fotonya). Item lebih tua dari 6 jam dibuang; item akun lain di perangkat yang sama tidak dikirim. Antrean dikosongkan saat keluar dan saat akun dihapus.
+- **UI:** pita "Kamu sedang offline" di header, tombol "Simpan dan kirim nanti", panel foto menunggu dengan "Kirim sekarang", QR dimatikan saat offline. Mulai sesi dinonaktifkan saat offline (butuh server). Layar "server belum bisa dihubungi" memeriksa ulang sendiri saat online lagi.
+- **Batasan (aturan server tetap berlaku):** durasi fokus dihitung server saat tebakan tiba (maks. preset + 5 menit); tebakan harus terkirim dalam masa tenggang preset + 30 menit dan foto dalam 2 jam setelahnya. Memuat ulang saat offline membuka aplikasi dari cache tetapi menampilkan layar server tidak terhubung; antrean tetap aman dan terkirim saat online. Prompt "pasang aplikasi" butuh ikon 192px dan 512px (belum ada, `manifest.webmanifest` baru memakai favicon 96px).
+- **Deploy:** `nginx.conf` menyajikan `sw.js` dengan `no-cache` dan manifest dengan tipe `application/manifest+json`. Vercel (Fase D) perlu header yang sama untuk `sw.js`.
+- **Tes:** unit `offlineSync.test.ts` (urutan kirim, coba lagi, buang, kedaluwarsa, akun lain, `mergeServer`) dan `precache.test.ts`; frontend 88 unit. E2E `offline.spec.ts`: offline di tengah sesi, tebakan + foto masuk IndexedDB, muat ulang offline, online lagi lalu hasil tampil dengan kuota terpotong sekali; mulai sesi offline ditolak. Playwright memblokir service worker di spec lain. E2E lengkap 18/18.
 
 ### #39 · F1 ganti email · branch `feat/aldi-change-email`
 

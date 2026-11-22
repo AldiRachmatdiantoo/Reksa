@@ -5,6 +5,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/core/apiClient';
 import { formatMaterialDate, useMaterial, useMaterials, type Material } from '@/features/materials/materialsApi';
 import { useNow } from '@/shared/hooks/useNow';
+import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { EASE_OUT, pageTransition, Reveal, Stagger, StaggerItem } from '@/shared/motion';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button, ButtonLink } from '@/shared/ui/Button';
@@ -181,6 +182,7 @@ function FocusSession({ material }: { material: Material }) {
   const [conflictId, setConflictId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const online = useOnlineStatus();
 
   /** Menjalankan aksi server dengan status sibuk dan pesan error yang ramah. */
   const run = async (action: () => Promise<void>) => {
@@ -427,10 +429,24 @@ function FocusSession({ material }: { material: Material }) {
                 )}
               </div>
             ) : (
-              <Button variant="accent" size="lg" disabled={busy} onClick={() => void run(start)}>
-                <Icon name="play_arrow" fill />
-                {busy ? 'Menyiapkan sesi...' : 'Mulai waktu fokus'}
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="accent"
+                  size="lg"
+                  disabled={busy || !online}
+                  aria-describedby={online ? undefined : 'start-offline-hint'}
+                  onClick={() => void run(start)}
+                >
+                  <Icon name="play_arrow" fill />
+                  {busy ? 'Menyiapkan sesi...' : 'Mulai waktu fokus'}
+                </Button>
+                {!online && (
+                  <p id="start-offline-hint" className="text-body-sm text-ink-muted">
+                    Mulai sesi butuh koneksi karena waktu mulainya dicatat server. Setelah mulai, timer, tebakan, dan foto tetap jalan walau
+                    koneksi putus.
+                  </p>
+                )}
+              </div>
             )}
           </section>
         </div>

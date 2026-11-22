@@ -6,6 +6,7 @@ import { homePathFor, ROLE_LABEL } from '@/features/auth/authApi';
 import { Brand } from './Brand';
 import { Button, ButtonLink } from './Button';
 import { Icon } from './Icon';
+import { OfflineNotice } from './OfflineNotice';
 import { ThemeToggle } from './ThemeToggle';
 
 /** Tempat utama pelajar. Langkah foto dan hasil termasuk "Belajar" karena bagian dari satu sesi. */
@@ -105,6 +106,7 @@ export function AppHeader({ subtitle }: { subtitle: string }) {
       {isStudent && (
         <StudentNav stacked layoutId="student-nav-mobile" className="flex gap-1 border-t border-line-soft px-2 py-1 sm:px-4 md:hidden" />
       )}
+      <OfflineNotice />
     </header>
   );
 }
