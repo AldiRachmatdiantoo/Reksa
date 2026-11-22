@@ -13,7 +13,7 @@ export type HistoryRow = {
     materialId: string;
     startedAt: Date;
     actualDurationSec: number | null;
-    validity: string;
+    validity: string | null;
   };
   materialTitle: string | null;
 };

@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, Fase A selesai (Aldi, branch `feat/aldi-tidy-notes`)
+**Checkpoint terakhir:** 22 November 2026, B1 riwayat dan B2 tren kalibrasi Pro (Aldi, branch `feat/aldi-results-history`)
 
 ---
 
@@ -16,6 +16,16 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #32 · B1 riwayat hasil cek dan B2 tren kalibrasi Pro · branch `feat/aldi-results-history`
+
+- **Backend** `features/history/` (routes, schema, controller, service, repository), dipasang di `/api/v1/history`, khusus pelajar:
+  - `GET /history?cursor=&limit=` (limit 1 sampai 50, default 20): submission milik sendiri, urut `created_at` lalu `id` menurun. Item: `submissionId`, `sessionId`, `sessionType`, `materialTitle` (null jika materi tak terbaca), `startedAt`, `actualDurationSec`, `validity`, `predictedJolScore`, `auditStatus`, `actualScore`, `jolDelta` (mutlak), `blindSpotCount`, `createdAt`. Respons `{items, nextCursor}`. Cursor milik orang lain dijawab `{items: [], nextCursor: null}`.
+  - `GET /history/calibration`: khusus Pro (`effectiveTier`), 403 `PRO_REQUIRED` untuk Free dan Pro kedaluwarsa. Paling banyak 30 hasil `DONE` terakhir, urut lama ke baru: `{submissionId, auditedAt, predicted, actual, gap}` dengan `gap = tebakan - nilai`. Ringkasan `{count, meanAbsGap, meanSignedGap}` dibulatkan 1 desimal, null jika belum ada data.
+  - Semua query lewat `withUserContext` dengan filter `userId` eksplisit; query string tambahan ditolak (`.strict()`).
+- **Frontend** `features/history/`: halaman `/belajar/riwayat` (menu baru "Riwayat"), daftar dengan "Muat lebih banyak", hasil lama di `/belajar/riwayat/:submissionId` memakai `AuditResult` dari `ResultPage` tanpa penanda langkah. Grafik tren (SVG, lebar mengikuti wadah) dengan dua garis: nilai asli teal utuh, tebakan putus-putus dengan penanda kotak, tooltip saat hover, dan tabel sebagai alternatif. Pengguna Free melihat keterangan bahwa fitur ini khusus Pro.
+- **Tes:** unit backend 7 (`history.service.test.ts`), integration 5 (`history.test.ts`: paging, akses data orang lain lewat daftar dan cursor, query asing, tanpa login, guru, Free, Pro aktif, Pro kedaluwarsa), unit frontend 4, E2E `history.spec.ts` + `navigation` + `mobile-layout` lulus. Grafik dicek manual di tema gelap (laptop) dan terang (375px) dengan akun Pro uji.
+- **Catatan warna grafik:** teal dan oranye tua dari token merek lolos cek pemisahan buta warna (ΔE 10,5 terang, 9,7 gelap), tapi teal tercatat terlalu kusam oleh validator. Garis putus-putus, bentuk penanda, legenda, dan tabel menjadi pembeda kedua.
 
 ### #31 · Fase A selesai · branch `feat/aldi-photo-privacy-tip` (PR #31) dan `feat/aldi-tidy-notes`
 
@@ -442,10 +452,9 @@ Branch ini dibuat **di atas** `feat/adli-essay-scans` (PR belum di-merge), jadi 
 
 Urutan kerja lengkap, gerbang uji, dan checkpoint ada di [SISA-ALDI.md](SISA-ALDI.md). Langkah terdekat:
 
-1. B1: riwayat hasil cek
-2. B2: tren kalibrasi Pro
-3. B3: latihan ulang yang dinilai AI (tanpa memotong kuota), lalu CP-1
-4. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
+1. B3: latihan ulang yang dinilai AI (tanpa memotong kuota)
+2. CP-1: Gerbang Lengkap
+3. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
 
 ## Catatan teknis yang perlu diingat
 

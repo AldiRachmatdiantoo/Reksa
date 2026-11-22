@@ -57,7 +57,7 @@ function toItem(r: HistoryRow): HistoryItem {
     materialTitle: r.materialTitle,
     startedAt: r.session.startedAt.toISOString(),
     actualDurationSec: r.session.actualDurationSec,
-    validity: r.session.validity,
+    validity: r.session.validity as HistoryItem['validity'],
     predictedJolScore: r.predictedJolScore,
     auditStatus: r.auditStatus,
     actualScore: r.actualAiScore,

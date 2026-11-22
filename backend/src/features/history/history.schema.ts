@@ -21,7 +21,7 @@ export type HistoryItem = {
   materialTitle: string | null;
   startedAt: string;
   actualDurationSec: number | null;
-  validity: string;
+  validity: 'VALID' | 'SHORT_FOCUS' | null;
   predictedJolScore: number;
   auditStatus: string;
   actualScore: number | null;

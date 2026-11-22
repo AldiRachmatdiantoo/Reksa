@@ -37,6 +37,8 @@ const LegalPage = page(() => import('@/features/legal/LegalPage'), 'LegalPage');
 const CalibratePage = page(() => import('@/features/scanner/CalibratePage'), 'CalibratePage');
 const PhoneUploadPage = page(() => import('@/features/scanner/PhoneUploadPage'), 'PhoneUploadPage');
 const ReviewPage = page(() => import('@/features/spaced-repetition/ReviewPage'), 'ReviewPage');
+const HistoryPage = page(() => import('@/features/history/HistoryPage'), 'HistoryPage');
+const HistoryDetailPage = page(() => import('@/features/history/HistoryDetailPage'), 'HistoryDetailPage');
 const StudioPage = page(() => import('@/features/studio/StudioPage'), 'StudioPage');
 
 const pageFallback = <LoadingBlock label="Memuat halaman..." />;
@@ -94,6 +96,8 @@ function AnimatedRoutes() {
             <Route path="ulang" element={<ReviewPage />} />
             <Route path="foto" element={<CalibratePage />} />
             <Route path="hasil" element={<ResultPage />} />
+            <Route path="riwayat" element={<HistoryPage />} />
+            <Route path="riwayat/:submissionId" element={<HistoryDetailPage />} />
           </Route>
           <Route
             path="/guru"

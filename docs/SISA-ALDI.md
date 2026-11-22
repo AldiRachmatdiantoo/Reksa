@@ -46,11 +46,11 @@ Daftar ini urut: kerjakan dari atas. Centang `[x]` saat PR-nya sudah masuk `main
 
 ## Fase B · Fitur MVP yang belum ada
 
-- [ ] **B1. Riwayat hasil cek** (FR-05 menjanjikan hasil "muncul di riwayat"):
+- [x] **B1. Riwayat hasil cek** (FR-05 menjanjikan hasil "muncul di riwayat"), `feat/aldi-results-history`:
   - Backend: daftar sesi milik pelajar yang sudah punya foto, dengan paginasi dan filter pemilik.
   - Frontend: halaman Riwayat di `/belajar`, bisa membuka hasil cek lama.
   - Tes: unit, integration (termasuk akses sesi orang lain), E2E.
-- [ ] **B2. Tren kalibrasi untuk Pro** (pembeda Pro di FR-11):
+- [x] **B2. Tren kalibrasi untuk Pro** (pembeda Pro di FR-11), PR yang sama dengan B1:
   - Selisih tebakan nilai dan skor AI per sesi beserta rata-ratanya, dihitung di server.
   - Grafik di halaman Riwayat. Pengguna Free melihat keterangan bahwa fitur ini khusus Pro.
   - Tes untuk Free, Pro aktif, dan Pro kedaluwarsa.

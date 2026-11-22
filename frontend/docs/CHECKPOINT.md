@@ -1,5 +1,14 @@
 # Checkpoint Frontend REKSA
 
+## #23 · 2026-11-22 · Riwayat hasil cek dan tren kalibrasi Pro
+
+Branch: `feat/aldi-results-history`.
+
+- `features/history/`: `historyApi.ts` (kontrak `GET /history` dan `GET /history/calibration`, `tendencyText`, `formatGap`), `HistoryPage.tsx` (`/belajar/riwayat`), `HistoryDetailPage.tsx` (`/belajar/riwayat/:submissionId`), `CalibrationTrend.tsx` (grafik SVG dua garis + tabel).
+- `ResultPage.tsx` mengekspor `useScanPolling` dan `AuditResult`. `AuditResult` menerima `from="history"`: tautan "Kembali ke riwayat" menggantikan penanda langkah, tanggal cek ditampilkan, tombol bawah menjadi tautan ke `/belajar`.
+- `AppHeader`: menu pelajar kini Belajar, Materi, Ulang, Riwayat, Kelas. Muat di 320px (mode bertumpuk) dan di laptop.
+- Tes: `tests/unit/historyApi.test.ts`, `tests/e2e/history.spec.ts`.
+
 ## #22 · 2026-11-22 · Batas usia 18+
 
 Branch: `feat/aldi-gemini-text`.
