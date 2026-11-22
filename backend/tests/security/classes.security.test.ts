@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { ACCESS_COOKIE } from '../../src/common/utils/authCookies.js';
-import { cookieHeader, createTestContext, parseSetCookies, VALID_PASSWORD } from '../support/testContext.js';
+import { CONSENT, cookieHeader, createTestContext, parseSetCookies, VALID_PASSWORD } from '../support/testContext.js';
 
 const ctx = createTestContext();
 
@@ -9,7 +9,7 @@ beforeEach(() => ctx.reset());
 afterAll(() => ctx.close());
 
 async function login(email: string, role: 'STUDENT' | 'EDUCATOR') {
-  const res = await request(ctx.app).post('/api/v1/auth/register').send({ email, password: VALID_PASSWORD, fullName: 'Pengguna Uji', role });
+  const res = await request(ctx.app).post('/api/v1/auth/register').send({ ...CONSENT, email, password: VALID_PASSWORD, fullName: 'Pengguna Uji', role });
   const cookie = cookieHeader({ [ACCESS_COOKIE]: parseSetCookies(res.headers['set-cookie'])[ACCESS_COOKIE]?.value ?? '' });
   // Siswa wajib terverifikasi untuk bergabung ke kelas (FR-14): pakai tautan dari email, seperti user asli.
   const verified = await request(ctx.app)
@@ -102,7 +102,7 @@ describe('classes: email verification gate (FR-14)', () => {
     const created = await request(ctx.app).post('/api/v1/classes').set('Cookie', guru.cookie).send({ name: 'Kelas' });
     const reg = await request(ctx.app)
       .post('/api/v1/auth/register')
-      .send({ email: 'belum@reksa.id', password: VALID_PASSWORD, fullName: 'Belum Verifikasi', role: 'STUDENT' });
+      .send({ ...CONSENT, email: 'belum@reksa.id', password: VALID_PASSWORD, fullName: 'Belum Verifikasi', role: 'STUDENT' });
     const cookie = cookieHeader({ [ACCESS_COOKIE]: parseSetCookies(reg.headers['set-cookie'])[ACCESS_COOKIE]?.value ?? '' });
 
     const res = await request(ctx.app).post('/api/v1/classes/join').set('Cookie', cookie).send({ classCode: created.body.class.classCode });

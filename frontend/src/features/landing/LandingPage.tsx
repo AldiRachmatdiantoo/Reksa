@@ -242,6 +242,12 @@ export function LandingPage() {
             <Link to="/daftar" className="inline-flex min-h-11 items-center hover:text-teal">
               Daftar
             </Link>
+            <Link to="/privasi" className="inline-flex min-h-11 items-center hover:text-teal">
+              Privasi
+            </Link>
+            <Link to="/syarat" className="inline-flex min-h-11 items-center hover:text-teal">
+              Syarat
+            </Link>
             <button type="button" onClick={openCookieSettings} className="inline-flex min-h-11 items-center hover:text-teal">
               Pengaturan cookie
             </button>

@@ -13,10 +13,11 @@ import type { Env } from './env.js';
 /** PRD §9.1: file privat hanya lewat signed URL berumur maksimal 5 menit. */
 export const SIGNED_URL_MAX_TTL_SEC = 300;
 
-export const STORAGE_PREFIXES = ['materials', 'scans'] as const;
+// exports: arsip data (FR-13) dan PDF ledger (FR-12), dihapus setelah 24 jam.
+export const STORAGE_PREFIXES = ['materials', 'scans', 'exports'] as const;
 export type StoragePrefix = (typeof STORAGE_PREFIXES)[number];
 
-const EXTENSIONS = ['pdf', 'webp', 'jpg', 'png'] as const;
+const EXTENSIONS = ['pdf', 'webp', 'jpg', 'png', 'zip'] as const;
 export type StorageExtension = (typeof EXTENSIONS)[number];
 
 /**

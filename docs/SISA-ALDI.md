@@ -14,14 +14,14 @@ Centang `[x]` saat selesai dan catat di `docs/CHECKPOINT.md`.
 
 ## Bisa dikerjakan sekarang (tidak menunggu Adli)
 
-- [ ] **FR-13 Privasi & data anak** (wajib sebelum rilis publik)
+- [x] **FR-13 Privasi & data anak** (branch `feat/aldi-privacy-pro`)
   - Persetujuan Kebijakan Privasi & Syarat Layanan saat daftar, kolom `birth_year`, `terms_version`, `privacy_version`, `consented_at`, `guardian_consent`
   - Centang pernyataan izin orang tua atau wali untuk pengguna di bawah 18 tahun
   - `POST /me/consent` saat versi kebijakan berubah
   - `POST /me/export`: arsip data pribadi lewat Signed URL, 1 kali per hari
   - `DELETE /me`: hapus akun dan seluruh datanya, dengan konfirmasi kata sandi
   - Halaman `/privasi` dan `/syarat` di frontend
-- [ ] **FR-11 Tier Free/Pro (bagian Aldi)**
+- [x] **FR-11 Tier Free/Pro (bagian Aldi)** (branch `feat/aldi-privacy-pro`)
   - Kolom `pro_expires_at` sebagai sumber tier efektif
   - Kode aktivasi Pro: disimpan sebagai hash, punya durasi dan batas pemakaian, `POST /me/activate-pro`, wajib email terverifikasi
   - Tampilan tier dan masa berlaku di halaman Akun

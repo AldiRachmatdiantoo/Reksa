@@ -1,4 +1,5 @@
 import type { PrismaClient, TxClient } from '../../config/prisma.js';
+import { effectiveTier } from '../../common/utils/tier.js';
 import type { QuotaCounters, QuotaState, Tier } from './quota.policy.js';
 
 /** Keputusan yang diambil service atas state terkunci: counter baru (atau null = tidak diubah) + hasilnya. */
@@ -18,10 +19,13 @@ export interface QuotaRepository {
 
 type QuotaRow = { tier: Tier; daily_scan_count: number; last_scan_reset_at: Date | null };
 
+/** Tier efektif (FR-11) dihitung di SQL dengan jam database, sama dengan effectiveTier() di common/utils/tier.ts. */
+
 /** Dipakai juga oleh transaksi unggah foto supaya potong kuota dan simpan submission atomik. */
 export async function lockQuotaState(tx: TxClient, userId: string): Promise<QuotaState | null> {
   const rows = await tx.$queryRaw<QuotaRow[]>`
-    SELECT tier, daily_scan_count, last_scan_reset_at
+    SELECT CASE WHEN tier = 'PRO' OR pro_expires_at > now() THEN 'PRO' ELSE 'FREE' END AS tier,
+           daily_scan_count, last_scan_reset_at
     FROM users WHERE id = ${userId}::uuid
     FOR UPDATE`;
   const row = rows[0];
@@ -41,9 +45,11 @@ export class PrismaQuotaRepository implements QuotaRepository {
   async getState(userId: string): Promise<QuotaState | null> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { tier: true, dailyScanCount: true, lastScanResetAt: true },
+      select: { tier: true, proExpiresAt: true, dailyScanCount: true, lastScanResetAt: true },
     });
-    return user;
+    if (!user) return null;
+    const { proExpiresAt, ...state } = user;
+    return { ...state, tier: effectiveTier(user.tier, proExpiresAt, new Date()) };
   }
 
   updateLocked<T>(userId: string, decide: (state: QuotaState) => QuotaDecision<T>): Promise<T | null> {

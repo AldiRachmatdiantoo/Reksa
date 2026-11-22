@@ -6,6 +6,12 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: FR-13 dan FR-11 menyentuh kontrak register dan kuota (branch `feat/aldi-privacy-pro`)
+
+- **`POST /auth/register` sekarang wajib `birthYear` dan `acceptTerms: true`** (plus `guardianConsent: true` jika di bawah 18 tahun). Semua test integrasi dan security yang mendaftar sudah saya tambahi `...CONSENT` (diekspor dari `tests/support/testContext.ts`). Test barumu yang mendaftar user juga perlu memakainya. Helper E2E `registerStudent` ikut diperbarui.
+- **`quota.repository.ts` (areamu) saya ubah sedikit:** tier efektif dihitung dari `tier = 'PRO' OR pro_expires_at > now()` (SQL `lockQuotaState`) dan `effectiveTier()` dari `common/utils/tier.ts` (`getState`). Logika kuota lain tidak berubah. Komentar di `quota.policy.ts` ikut disesuaikan.
+- Respons user menambah `proExpiresAt`, `birthYear`, dan `consentRequired`.
+
 ## ⚠️ 21 Nov 2026: riwayat `main` ditulis ulang, wajib sinkron sebelum push
 
 Setelah PR #14 (monorepo), riwayat `main` membawa dua commit pertama `reksa-frontend` yang dibuat otomatis oleh `figma[bot]` (`55c5172`, `42caaec`). Dua commit itu saya tulis ulang atas nama saya, lalu `main` di-force-push. Isi file sama persis, tidak ada kode yang berubah.

@@ -3,7 +3,7 @@
 
 export type Tier = 'FREE' | 'PRO';
 
-/** Kolom `users` yang menentukan kuota. Tier efektif dari `pro_expires_at` menyusul (migrasi Aldi). */
+/** Kolom `users` yang menentukan kuota. `tier` di sini sudah tier efektif (memperhitungkan `pro_expires_at`). */
 export type QuotaState = {
   tier: Tier;
   dailyScanCount: number;

@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { Link, type LinkProps } from 'react-router-dom';
 
-type Variant = 'accent' | 'primary' | 'outline' | 'ghost';
+type Variant = 'accent' | 'primary' | 'outline' | 'ghost' | 'danger';
 type Size = 'md' | 'lg';
 
 // Aturan aksen: `accent` (oranye) hanya untuk SATU aksi utama per layar.
@@ -11,6 +11,8 @@ const VARIANTS: Record<Variant, string> = {
   primary: 'bg-teal text-on-teal hover:brightness-110 active:brightness-95',
   outline: 'border border-line bg-card text-teal hover:bg-wash active:bg-wash-strong',
   ghost: 'text-ink-muted hover:bg-wash hover:text-ink active:bg-wash-strong',
+  // Aksi yang menghapus data permanen.
+  danger: 'border border-danger bg-card text-danger hover:bg-danger-wash hover:text-on-danger-wash',
 };
 
 const SIZES: Record<Size, string> = {

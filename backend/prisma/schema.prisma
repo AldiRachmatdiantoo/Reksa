@@ -86,17 +86,27 @@ model User {
   dailyScanCount  Int       @default(0) @map("daily_scan_count")
   lastScanResetAt DateTime? @map("last_scan_reset_at") @db.Timestamptz(6)
   emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  /// FR-13: persetujuan dokumen dan tahun lahir. Null pada akun sebelum FR-13 (wajib setuju ulang).
+  birthYear       Int?      @map("birth_year") @db.SmallInt
+  termsVersion    String?   @map("terms_version") @db.VarChar(32)
+  privacyVersion  String?   @map("privacy_version") @db.VarChar(32)
+  consentedAt     DateTime? @map("consented_at") @db.Timestamptz(6)
+  guardianConsent Boolean   @default(false) @map("guardian_consent")
+  /// FR-11: tier efektif PRO selama tanggal ini belum lewat.
+  proExpiresAt    DateTime? @map("pro_expires_at") @db.Timestamptz(6)
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  institution      Institution?      @relation(fields: [institutionId], references: [id], onDelete: SetNull)
+  institution      Institution?        @relation(fields: [institutionId], references: [id], onDelete: SetNull)
   refreshTokens    RefreshToken[]
   authTokens       AuthToken[]
-  taughtClasses    Class[]           @relation("ClassEducator")
+  taughtClasses    Class[]             @relation("ClassEducator")
   classMemberships ClassMember[]
   materials        StudyMaterial[]
   studySessions    StudySession[]
   submissions      EssaySubmission[]
   spacedSchedules  SpacedSchedule[]
+  dataExports      DataExport[]
+  proRedemptions   ProCodeRedemption[]
 
   @@unique([email], map: "idx_users_email")
   @@map("users")
@@ -262,4 +272,51 @@ model SpacedSchedule {
   // Satu submission hanya boleh punya satu jadwal H+3 dan satu H+7.
   @@unique([originSubmissionId, intervalDay], map: "idx_spaced_origin_interval")
   @@map("spaced_schedules")
+}
+
+/// FR-13/FR-12: arsip data dan PDF ledger di storage privat, dihapus pembersih berkala setelah expiresAt.
+model DataExport {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  kind       String   @db.VarChar(16)
+  storageKey String   @map("storage_key")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, kind, createdAt(sort: Desc)], map: "idx_data_exports_user_kind_created")
+  @@index([expiresAt], map: "idx_data_exports_expires")
+  @@map("data_exports")
+}
+
+/// FR-11: kode aktivasi Pro. Hanya hash yang disimpan; dibuat lewat skrip admin.
+model ProActivationCode {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  codeHash        String   @map("code_hash") @db.VarChar(64)
+  label           String?  @db.VarChar(100)
+  durationDays    Int      @map("duration_days")
+  maxRedemptions  Int      @map("max_redemptions")
+  redemptionCount Int      @default(0) @map("redemption_count")
+  expiresAt       DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  redemptions ProCodeRedemption[]
+
+  @@unique([codeHash], map: "idx_pro_codes_hash")
+  @@map("pro_activation_codes")
+}
+
+model ProCodeRedemption {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  codeId     String   @map("code_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  redeemedAt DateTime @default(now()) @map("redeemed_at") @db.Timestamptz(6)
+
+  code ProActivationCode @relation(fields: [codeId], references: [id], onDelete: Cascade)
+  user User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([codeId, userId], map: "idx_pro_redemptions_code_user")
+  @@index([userId], map: "idx_pro_redemptions_user")
+  @@map("pro_code_redemptions")
 }

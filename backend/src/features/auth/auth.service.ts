@@ -4,9 +4,11 @@ import { REFRESH_TOKEN_TTL_SEC } from '../../common/utils/authCookies.js';
 import { generateOpaqueToken, hmacSha256Hex } from '../../common/utils/crypto.js';
 import type { AccessTokenSigner } from '../../common/utils/jwt.js';
 import type { PasswordHasher } from '../../common/utils/passwordHasher.js';
+import { effectiveTier } from '../../common/utils/tier.js';
 import type { EmailMessage, IEmailService } from '../../config/email.js';
-import type { AuthRepository, AuthTokenPurpose, UserRecord } from './auth.repository.js';
-import type { AuthUserResponse, LoginInput, RegisterInput } from './auth.schema.js';
+import { isPossiblyMinor, maxBirthYear, PRIVACY_VERSION, TERMS_VERSION } from '../../config/policies.js';
+import type { AuthRepository, AuthTokenPurpose, ConsentRecord, UserRecord } from './auth.repository.js';
+import type { AuthUserResponse, ConsentInput, LoginInput, RegisterInput } from './auth.schema.js';
 import { resetPasswordMessage, verifyEmailMessage } from './authEmails.js';
 
 export type AuthResult = {
@@ -52,12 +54,15 @@ export class AuthService {
   }
 
   async register(input: RegisterInput): Promise<AuthResult> {
+    // Dicek sebelum Argon2 supaya input yang pasti ditolak tidak memakan CPU.
+    const consent = this.buildConsent(input.birthYear, input.guardianConsent);
     const passwordHash = await this.deps.hasher.hash(input.password);
     const user = await this.deps.repo.createUser({
       email: input.email,
       passwordHash,
       fullName: input.fullName,
       role: input.role,
+      ...consent,
     });
     // Pendaftaran tidak gagal hanya karena email verifikasi gagal dibuat; bisa dikirim ulang.
     await this.sendEmailToken(user, 'EMAIL_VERIFY').catch((err: unknown) =>
@@ -122,7 +127,7 @@ export class AuthService {
     }
 
     return {
-      user: toPublicUser(outcome.user),
+      user: this.toPublicUser(outcome.user),
       accessToken: await this.deps.signer.sign({ userId: outcome.user.id, role: outcome.user.role }),
       refreshToken: outcome.refreshToken,
     };
@@ -136,7 +141,19 @@ export class AuthService {
   }
 
   async getCurrentUser(userId: string): Promise<AuthUserResponse> {
-    return toPublicUser(await this.requireUser(userId));
+    return this.toPublicUser(await this.requireUser(userId));
+  }
+
+  // ---------- FR-13: persetujuan ulang ----------
+
+  /** Menyimpan persetujuan atas versi dokumen terbaru. Tahun lahir lama dipakai bila sudah ada. */
+  async recordConsent(userId: string, input: ConsentInput): Promise<AuthUserResponse> {
+    const user = await this.requireUser(userId);
+    const birthYear = user.birthYear ?? input.birthYear;
+    if (birthYear === undefined) throw new BadRequestError('Tahun lahir wajib diisi');
+    const updated = await this.deps.repo.recordConsent(user.id, this.buildConsent(birthYear, input.guardianConsent));
+    if (!updated) throw new UnauthorizedError();
+    return this.toPublicUser(updated);
   }
 
   // ---------- FR-14: verifikasi email ----------
@@ -194,7 +211,7 @@ export class AuthService {
   async updateProfile(userId: string, fullName: string): Promise<AuthUserResponse> {
     const user = await this.deps.repo.updateFullName(userId, fullName);
     if (!user) throw new UnauthorizedError();
-    return toPublicUser(user);
+    return this.toPublicUser(user);
   }
 
   /**
@@ -256,7 +273,7 @@ export class AuthService {
   private async issueSession(user: UserRecord): Promise<AuthResult> {
     const refreshToken = await this.storeNewRefreshToken(this.deps.repo, user.id, randomUUID());
     return {
-      user: toPublicUser(user),
+      user: this.toPublicUser(user),
       accessToken: await this.deps.signer.sign({ userId: user.id, role: user.role }),
       refreshToken,
     };
@@ -277,6 +294,46 @@ export class AuthService {
     return hmacSha256Hex(raw, this.deps.refreshTokenKey);
   }
 
+  /**
+   * FR-13: tahun lahir masuk akal (min. 6 tahun) dan pernyataan izin wali untuk yang mungkin di bawah 18.
+   * Pernyataan wali disimpan apa adanya hanya untuk anak; untuk dewasa selalu false.
+   */
+  private buildConsent(birthYear: number, guardianConsent: boolean): ConsentRecord {
+    const now = this.now();
+    if (birthYear > maxBirthYear(now)) {
+      throw new BadRequestError('Tahun lahir tidak valid');
+    }
+    const minor = isPossiblyMinor(birthYear, now);
+    if (minor && !guardianConsent) {
+      throw new AppError(
+        400,
+        'GUARDIAN_CONSENT_REQUIRED',
+        'Pengguna di bawah 18 tahun perlu izin orang tua atau wali. Centang pernyataan izin untuk melanjutkan.',
+      );
+    }
+    return {
+      birthYear,
+      termsVersion: TERMS_VERSION,
+      privacyVersion: PRIVACY_VERSION,
+      consentedAt: now,
+      guardianConsent: minor && guardianConsent,
+    };
+  }
+
+  private toPublicUser(user: UserRecord): AuthUserResponse {
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      tier: effectiveTier(user.tier, user.proExpiresAt, this.now()),
+      emailVerified: user.emailVerifiedAt !== null,
+      proExpiresAt: user.proExpiresAt?.toISOString() ?? null,
+      birthYear: user.birthYear,
+      consentRequired: user.termsVersion !== TERMS_VERSION || user.privacyVersion !== PRIVACY_VERSION,
+    };
+  }
+
   private getDummyHash(): Promise<string> {
     this.dummyHash ??= this.deps.hasher.hash(generateOpaqueToken());
     return this.dummyHash;
@@ -285,15 +342,4 @@ export class AuthService {
 
 function invalidLink(): AppError {
   return new AppError(400, 'INVALID_TOKEN', INVALID_LINK);
-}
-
-function toPublicUser(user: UserRecord): AuthUserResponse {
-  return {
-    id: user.id,
-    email: user.email,
-    fullName: user.fullName,
-    role: user.role,
-    tier: user.tier,
-    emailVerified: user.emailVerifiedAt !== null,
-  };
 }

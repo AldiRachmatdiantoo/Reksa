@@ -1,4 +1,4 @@
-import type { Router } from 'express';
+import { Router } from 'express';
 import type { Redis } from 'ioredis';
 import type { Logger } from 'pino';
 import type { IAiService } from './common/ai/ai.provider.interface.js';
@@ -30,6 +30,12 @@ import { ScansService } from './features/essay-scans/scans.service.js';
 import { PrismaQuotaRepository } from './features/essay-scans/quota.repository.js';
 import { createQuotaRouter } from './features/essay-scans/quota.routes.js';
 import { QuotaService } from './features/essay-scans/quota.service.js';
+import { PrismaPrivacyRepository } from './features/privacy/privacy.repository.js';
+import { createPrivacyRouter } from './features/privacy/privacy.routes.js';
+import { PrivacyService } from './features/privacy/privacy.service.js';
+import { PrismaProRepository } from './features/subscriptions/pro.repository.js';
+import { createProRouter } from './features/subscriptions/pro.routes.js';
+import { ProService } from './features/subscriptions/pro.service.js';
 import { PrismaSessionsRepository } from './features/study-sessions/sessions.repository.js';
 import { createSessionsRouter } from './features/study-sessions/sessions.routes.js';
 import { SessionsService } from './features/study-sessions/sessions.service.js';
@@ -54,9 +60,10 @@ export type ContainerDeps = {
 export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
   const signer = new AccessTokenSigner(deps.env.JWT_ACCESS_SECRET);
 
+  const hasher = deps.hasher ?? new Argon2PasswordHasher();
   const authService = new AuthService({
     repo: new PrismaAuthRepository(deps.prisma),
-    hasher: deps.hasher ?? new Argon2PasswordHasher(),
+    hasher,
     signer,
     refreshTokenKey: deps.env.JWT_REFRESH_SECRET,
     email: deps.email,
@@ -93,9 +100,18 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     onWarning: (message, data) => deps.logger.warn(data, message),
   });
 
+  const privacyService = createPrivacyService(deps, hasher);
+  const proService = new ProService({ repo: new PrismaProRepository(deps.prisma) });
+
+  // Semua yang ada di bawah /me: profil & persetujuan (auth), privasi (FR-13), Pro (FR-11).
+  const me = Router();
+  me.use(createMeRouter({ service: authService, signer, redis: deps.redis }));
+  me.use(createPrivacyRouter({ service: privacyService, signer, redis: deps.redis }));
+  me.use(createProRouter({ service: proService, signer, redis: deps.redis }));
+
   return {
     '/auth': createAuthRouter({ service: authService, signer, redis: deps.redis }),
-    '/me': createMeRouter({ service: authService, signer, redis: deps.redis }),
+    '/me': me,
     '/materials': createMaterialsRouter({ service: materialsService, signer, redis: deps.redis }),
     '/classes': createClassesRouter({ service: classesService, signer, redis: deps.redis }),
     '/sessions': createSessionsRouter({ service: sessionsService, signer, redis: deps.redis }),
@@ -103,6 +119,18 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     '/me/quota': createQuotaRouter({ service: quotaService, signer }),
     '/scans': createScansRouter({ service: scansService, signer, redis: deps.redis }),
   };
+}
+
+export function createPrivacyService(
+  deps: Pick<ContainerDeps, 'prisma' | 'storage' | 'logger'>,
+  hasher: PasswordHasher = new Argon2PasswordHasher(),
+): PrivacyService {
+  return new PrivacyService({
+    repo: new PrismaPrivacyRepository(deps.prisma),
+    storage: deps.storage,
+    hasher,
+    onWarning: (message, data) => deps.logger.warn(data, message),
+  });
 }
 
 function createAuditService(deps: Pick<ContainerDeps, 'prisma' | 'storage' | 'ai' | 'logger'>): AuditService {

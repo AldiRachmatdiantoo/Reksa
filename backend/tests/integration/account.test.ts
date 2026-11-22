@@ -2,7 +2,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { ACCESS_COOKIE, REFRESH_COOKIE } from '../../src/common/utils/authCookies.js';
 import { hashEmailToken } from '../../src/features/auth/auth.service.js';
-import { cookieHeader, createTestContext, parseSetCookies, VALID_PASSWORD } from '../support/testContext.js';
+import { CONSENT, cookieHeader, createTestContext, parseSetCookies, VALID_PASSWORD } from '../support/testContext.js';
 
 const ctx = createTestContext();
 
@@ -15,7 +15,7 @@ const NEW_PASSWORD = 'PasswordBaru456';
 async function register(email = EMAIL) {
   const res = await request(ctx.app)
     .post('/api/v1/auth/register')
-    .send({ email, password: VALID_PASSWORD, fullName: 'Dimas Pratama', role: 'STUDENT' });
+    .send({ ...CONSENT, email, password: VALID_PASSWORD, fullName: 'Dimas Pratama', role: 'STUDENT' });
   const cookies = parseSetCookies(res.headers['set-cookie']);
   return {
     userId: res.body.user.id as string,

@@ -1,5 +1,17 @@
 # Checkpoint Frontend REKSA
 
+## #11 · 2026-11-22 · Privasi (FR-13) dan kode aktivasi Pro (FR-11)
+
+Branch: `feat/aldi-privacy-pro`.
+
+- **Daftar:** `ConsentFields` (tahun lahir, izin wali jika mungkin di bawah 18, persetujuan dokumen). Validasi klien di `features/auth/consent.ts` sama dengan backend.
+- **Halaman publik** `/privasi` dan `/syarat` (`features/legal/LegalPage.tsx`), versi di `policyVersions.ts`. Tautan di footer beranda.
+- **`ConsentGate`:** dipasang di `RequireAuth`; muncul jika `user.consentRequired`.
+- **Akun:** `AccountDataSections.tsx` berisi Paket + kode aktivasi, Unduh data saya, Hapus akun. Varian tombol baru `danger`.
+- **E2E baru** `tests/e2e/account-privacy.spec.ts` (halaman dokumen, daftar sebagai pelajar di bawah 18, unduh data, batas sekali sehari, hapus akun). Helper `registerStudent` mengirim `birthYear` dan `acceptTerms`.
+
+Diverifikasi: typecheck, 33 unit, E2E 6/6 di stack Docker, axe lulus di semua halaman baru.
+
 ## #10 · 2026-11-21 · Perbaikan build produksi di balik nginx
 
 Branch: `fix/aldi-docker-build-bugs`.

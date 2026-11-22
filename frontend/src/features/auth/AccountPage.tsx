@@ -1,19 +1,22 @@
 import { motion } from 'motion/react';
 import { useEffect, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ApiError } from '@/core/apiClient';
 import { pageTransition } from '@/shared/motion';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { TextField } from '@/shared/ui/TextField';
+import { DataSection, PlanSection } from './AccountDataSections';
 import { useAuth } from './AuthProvider';
 import { authApi, ROLE_LABEL, type AuthUser } from './authApi';
 import { isStrongPassword, PasswordRules } from './PasswordRules';
 import { VerifyEmailNotice } from './VerifyEmailNotice';
 
-/** Profil, status verifikasi email, dan ganti kata sandi (FR-14). */
+/** Profil dan kata sandi (FR-14), paket Pro (FR-11), unduh dan hapus data (FR-13). */
 export function AccountPage() {
   const auth = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     document.title = 'Akun · REKSA';
@@ -27,7 +30,21 @@ export function AccountPage() {
       <motion.main {...pageTransition} className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
         <h1 className="font-display text-headline-lg-mobile text-ink sm:text-headline-lg">Akun</h1>
         <ProfileSection user={auth.user} onSaved={auth.updateUser} />
+        <PlanSection user={auth.user} onChanged={auth.updateUser} />
         <PasswordSection onChanged={auth.updateUser} />
+        <DataSection
+          user={auth.user}
+          onDeleted={() => {
+            // Cookie sesi sudah dihapus server. Sisa state sesi belajar di tab ini ikut dibuang.
+            try {
+              sessionStorage.clear();
+            } catch {
+              /* diabaikan */
+            }
+            navigate('/', { replace: true });
+            auth.recheck();
+          }}
+        />
       </motion.main>
     </>
   );
