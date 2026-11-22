@@ -23,6 +23,9 @@ export const EnvSchema = z
     REDIS_URL: z.url({ protocol: /^rediss?$/ }),
 
     CORS_ORIGIN: z.url(),
+    // Jumlah reverse proxy tepercaya di depan backend, supaya req.ip berisi IP klien asli untuk rate limit.
+    // Lokal (Nginx) = 1. Produksi Vercel → Render = 2 (rewrite Vercel + load balancer Render).
+    TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
 
     JWT_ACCESS_SECRET: z.string().min(32),
     JWT_REFRESH_SECRET: z.string().min(32),

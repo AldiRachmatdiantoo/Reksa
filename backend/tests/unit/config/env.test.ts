@@ -25,6 +25,12 @@ describe('loadEnv', () => {
     expect(loadEnv({ ...validEnv, STORAGE_FORCE_PATH_STYLE: 'false' }).STORAGE_FORCE_PATH_STYLE).toBe(false);
   });
 
+  it('trusts one proxy hop by default and accepts the Vercel → Render chain of two', () => {
+    expect(loadEnv(validEnv).TRUST_PROXY_HOPS).toBe(1);
+    expect(loadEnv({ ...validEnv, TRUST_PROXY_HOPS: '2' }).TRUST_PROXY_HOPS).toBe(2);
+    expect(() => loadEnv({ ...validEnv, TRUST_PROXY_HOPS: '9' })).toThrow(/TRUST_PROXY_HOPS/);
+  });
+
   it('rejects an invalid bucket name', () => {
     expect(() => loadEnv({ ...validEnv, STORAGE_BUCKET: 'Bad_Bucket!' })).toThrow(/STORAGE_BUCKET/);
   });

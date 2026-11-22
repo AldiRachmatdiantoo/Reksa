@@ -77,7 +77,7 @@ Daftar ini urut: kerjakan dari atas. Centang `[x]` saat PR-nya sudah masuk `main
 
 ## Fase D · Deploy (MVP selesai)
 
-- [ ] **D1. Persiapan deploy:** `vercel.json` (rewrite `/api`, header keamanan), konfigurasi Render, migrasi pencabutan hak `anon`/`authenticated` di Supabase, `trust proxy`, penyedia email produksi, panduan `docs/DEPLOY.md`.
+- [x] **D1. Persiapan deploy** (22 November 2026, `feat/aldi-deploy-prep`, `CHECKPOINT.md` #42, panduan di `docs/DEPLOY.md`): `vercel.json` (rewrite `/api`, header keamanan), konfigurasi Render, migrasi pencabutan hak `anon`/`authenticated` di Supabase, `trust proxy`, penyedia email produksi, panduan `docs/DEPLOY.md`.
 - [ ] **D2. Aldi menyiapkan akun dan secret:** Supabase, Vercel, Render, penyedia email.
 - [ ] **D3. Deploy pertama:** migrasi, institusi dan kode Pro lewat skrip, akun demo kalau dibutuhkan juri.
 - [ ] **D4. Uji produksi:** E2E ke URL produksi dengan akun uji, uji manual, Lighthouse, cek header, cookie, dan CSP.
