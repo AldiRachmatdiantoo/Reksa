@@ -1,3 +1,4 @@
+import { useIsPresent } from 'motion/react';
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Button } from '@/shared/ui/Button';
@@ -10,6 +11,10 @@ import { ConsentGate } from './ConsentGate';
 export function RequireAuth({ roles, children }: { roles: Role[]; children: ReactNode }) {
   const auth = useAuth();
   const location = useLocation();
+  // Halaman yang sedang animasi keluar (AnimatePresence) jangan mengarahkan ke /masuk. Saat logout atau hapus
+  // akun, tujuan sudah dipilih (beranda); tanpa ini status anonim yang datang lebih cepat dari animasi
+  // membuat halaman lama membelokkan pengguna ke /masuk.
+  const isPresent = useIsPresent();
 
   if (auth.status === 'loading') return <LoadingBlock label="Memeriksa sesi login..." />;
 
@@ -29,7 +34,7 @@ export function RequireAuth({ roles, children }: { roles: Role[]; children: Reac
   }
 
   if (auth.status === 'anonymous') {
-    return <Navigate to="/masuk" replace state={{ from: location.pathname }} />;
+    return isPresent ? <Navigate to="/masuk" replace state={{ from: location.pathname }} /> : null;
   }
 
   if (auth.user.consentRequired) return <ConsentGate user={auth.user} />;

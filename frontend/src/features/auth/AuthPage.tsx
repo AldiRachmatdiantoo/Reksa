@@ -275,7 +275,10 @@ export function AuthPage({ mode }: { mode: Mode }) {
               />
             )}
             {!isRegister && (
-              <Link to="/lupa-password" className="-mt-2 self-end text-label-lg text-teal underline-offset-2 hover:underline">
+              <Link
+                to="/lupa-password"
+                className="-mt-2 inline-flex min-h-11 items-center self-end text-label-lg text-teal underline-offset-2 hover:underline"
+              >
                 Lupa kata sandi?
               </Link>
             )}

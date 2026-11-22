@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useClasses } from '@/features/classes/classesApi';
-import { Button } from '@/shared/ui/Button';
+import { Button, ButtonLink } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { formatMinutes, formatSessionWindow, governanceApi, jolDeltaLabel, type LedgerEntry } from './governanceApi';
 
@@ -183,9 +183,9 @@ function LedgerCard({ entry }: { entry: LedgerEntry }) {
             </span>
           )}
           {entry.hashValid ? (
-            <span className="inline-flex items-center gap-1 rounded-md bg-wash px-2 py-1 text-ink" title={entry.ledgerHash}>
+            <span className="inline-flex items-center gap-1 rounded-md bg-wash px-2 py-1 text-ink">
               <Icon name="verified" className="text-[18px] text-teal" />
-              Hash cocok <span className="font-mono text-ink-muted">{entry.ledgerHash.slice(0, 10)}</span>
+              Hash cocok
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 rounded-md bg-danger-wash px-2 py-1 text-on-danger-wash">
@@ -194,6 +194,7 @@ function LedgerCard({ entry }: { entry: LedgerEntry }) {
             </span>
           )}
         </div>
+        <LedgerProof hash={entry.ledgerHash} />
       </div>
       {entry.photoUrl ? (
         <a href={entry.photoUrl} target="_blank" rel="noreferrer" className="block self-start overflow-hidden rounded-md border border-line-soft">
@@ -201,12 +202,50 @@ function LedgerCard({ entry }: { entry: LedgerEntry }) {
             src={entry.photoUrl}
             alt={`Foto catatan tulisan tangan ${entry.student.fullName}`}
             loading="lazy"
-            className="aspect-[3/4] w-full bg-wash object-cover"
+            className="aspect-[3/4] w-full bg-wash object-contain"
           />
         </a>
       ) : (
         <p className="self-start rounded-md bg-wash px-3 py-4 text-center text-body-sm text-ink-muted">Foto belum bisa dimuat</p>
       )}
     </article>
+  );
+}
+
+/**
+ * Kode bukti lengkap. Guru bisa mencocokkannya dengan kode di PDF siswa atau mengeceknya di /cek-bukti;
+ * potongan 10 karakter saja tidak cukup untuk keduanya.
+ */
+function LedgerProof({ hash }: { hash: string }) {
+  const [copy, setCopy] = useState<'idle' | 'done' | 'failed'>('idle');
+
+  const copyHash = async () => {
+    try {
+      await navigator.clipboard.writeText(hash);
+      setCopy('done');
+    } catch {
+      setCopy('failed');
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="text-label-sm text-ink-muted">Kode bukti</p>
+      <code className="rounded-md bg-wash px-2 py-1.5 font-mono text-body-sm text-ink [overflow-wrap:anywhere]">{hash}</code>
+      <div className="flex flex-wrap items-center gap-1">
+        <Button variant="ghost" onClick={() => void copyHash()} className="px-3">
+          <Icon name={copy === 'done' ? 'check' : 'content_copy'} />
+          {copy === 'done' ? 'Tersalin' : 'Salin'}
+        </Button>
+        <ButtonLink to={`/cek-bukti/${hash}`} target="_blank" rel="noreferrer" variant="ghost" className="px-3">
+          <Icon name="open_in_new" />
+          Cek keaslian
+        </ButtonLink>
+      </div>
+      {/* Sukses cukup terlihat dari tombol "Tersalin"; kalimatnya untuk pembaca layar saja. */}
+      <p role="status" className={copy === 'failed' ? 'text-body-sm text-on-danger-wash' : 'sr-only'}>
+        {copy === 'done' ? 'Kode bukti tersalin.' : copy === 'failed' ? 'Kode tidak bisa disalin otomatis. Salin manual dari kotak di atas.' : ''}
+      </p>
+    </div>
   );
 }

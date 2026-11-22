@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { useEffect, useState, type FormEvent } from 'react';
+import { startTransition, useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError } from '@/core/apiClient';
 import { pageTransition } from '@/shared/motion';
@@ -45,8 +45,12 @@ export function AccountPage() {
             } catch {
               /* diabaikan */
             }
-            navigate('/', { replace: true });
-            auth.recheck();
+            // Satu transition: react-router menjalankan navigasi sebagai transition, jadi recheck di luar
+            // transition akan tampil lebih dulu dan halaman Akun yang masih aktif membelokkan ke /masuk.
+            startTransition(() => {
+              navigate('/', { replace: true });
+              auth.recheck();
+            });
           }}
         />
       </motion.main>

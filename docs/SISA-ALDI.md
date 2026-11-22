@@ -47,11 +47,7 @@ Centang `[x]` saat selesai dan catat di `docs/CHECKPOINT.md`.
 ## Temuan QA 22 November 2026
 
 - [x] Bug 1 sampai 4: menu HP meluber, balapan refresh antartab, logout saat refresh 429/jaringan, batas laju per IP untuk NAT sekolah (branch `fix/aldi-qa-bugs`)
-- [ ] 5: form gabung kelas menampilkan pesan verifikasi email dua kali; tombol Gabung tetap aktif untuk akun belum terverifikasi
-- [ ] 6: kartu ledger guru hanya menampilkan potongan hash, tanpa tautan ke `/cek-bukti`
-- [ ] 7: thumbnail foto ledger terpotong (`object-cover`)
-- [ ] 8: target sentuh di bawah 44px ("Lupa kata sandi?", "Mulai sesi belajar", tautan "Baca juga" di `/privasi` dan `/syarat`)
-- [ ] 9: pengunjung tanpa login memicu `/auth/me` 401 lalu `/auth/refresh` 401 di setiap muat halaman
+- [x] Bug 5 sampai 9: form gabung kelas, kode bukti lengkap + tautan cek, foto ledger utuh, target sentuh 44px, pengunjung tanpa sesi tidak memanggil auth (branch `fix/aldi-qa-bugs`)
 - [ ] Kualitas: bundle JS 646 kB tanpa code splitting, coverage rendah (`cohortCache.ts`, `config/email.ts`, `crypto.ts`, cabang `ledgerPdf.ts`), oxfmt tanpa config, CSP `img-src`/`frame-src` mengizinkan semua `https:`
 
 ## Perkiraan progres

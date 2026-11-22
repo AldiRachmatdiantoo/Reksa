@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, perbaikan bug hasil QA 1 sampai 4 (Aldi, branch `fix/aldi-qa-bugs`, ditumpuk di atas `feat/aldi-institution-admin`)
+**Checkpoint terakhir:** 22 November 2026, perbaikan bug hasil QA 1 sampai 9 (Aldi, branch `fix/aldi-qa-bugs`, ditumpuk di atas `feat/aldi-institution-admin`)
 
 ---
 
@@ -16,6 +16,18 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | ⬜ | ⬜ |
 
 ## Riwayat checkpoint
+
+### #26 · Perbaikan bug QA 5 sampai 9 · branch `fix/aldi-qa-bugs`
+
+5. **Form gabung kelas untuk akun belum terverifikasi.** Tombol Gabung mati (dengan `aria-describedby` ke kotak verifikasi) dan tidak ada lagi pesan error kedua. Kalau server tetap menjawab `EMAIL_NOT_VERIFIED` (status di tab basi), yang muncul kotak verifikasi, bukan error.
+6. **Kode bukti lengkap di kartu ledger guru,** dengan tombol Salin dan tautan "Cek keaslian" ke `/cek-bukti/<hash>` (tab baru). Chip "Hash cocok" tidak lagi memuat potongan 10 karakter.
+7. **Foto ledger utuh** (`object-contain` di kotak 3:4), tidak terpotong.
+8. **Target sentuh 44px:** "Lupa kata sandi?" (`/masuk`), tautan "Baca juga" (`/privasi`, `/syarat`), dan "Mulai sesi belajar" di halaman Ulang kosong (kini tombol outline).
+9. **Pengunjung tanpa sesi tidak memicu `/auth/me` dan `/auth/refresh`.** Backend memasang cookie penanda `__Host-reksa_session=1` (bukan token, tidak HttpOnly, umur sama dengan refresh token) bersama cookie auth dan menghapusnya bersama cookie auth. `AuthProvider` langsung menganggap anonim kalau penanda tidak ada.
+   - Efek samping yang ikut diperbaiki: status anonim kini datang seketika, jadi halaman yang sedang animasi keluar sempat membelokkan ke `/masuk` setelah logout atau hapus akun. `RequireAuth` tidak mengarahkan selama `useIsPresent()` false, dan hapus akun menjalankan navigasi + `recheck` dalam satu `startTransition`.
+   - Akun yang sudah login sebelum perubahan ini belum punya penanda, jadi perlu masuk ulang sekali (hanya lingkungan lokal; belum ada deploy).
+
+- **Hasil:** backend 562 lulus (3 skip), uji keamanan baru untuk atribut cookie penanda dan penghapusannya. Frontend 50 unit (`sessionHint.test.ts` baru), E2E 14/14 (`session.spec.ts` baru: tanpa panggilan auth dan tanpa error konsol untuk pengunjung, tetap login setelah reload, tetap keluar setelah logout, form gabung untuk akun belum terverifikasi). Kartu ledger dicek lewat Playwright: hash 64 karakter, salin cocok dengan clipboard, `/cek-bukti` menjawab "Asli".
 
 ### #25 · Perbaikan bug QA 1 sampai 4 · branch `fix/aldi-qa-bugs`
 

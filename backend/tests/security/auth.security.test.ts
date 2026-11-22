@@ -1,7 +1,7 @@
 import { SignJWT } from 'jose';
 import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { ACCESS_COOKIE, REFRESH_COOKIE } from '../../src/common/utils/authCookies.js';
+import { ACCESS_COOKIE, REFRESH_COOKIE, SESSION_HINT_COOKIE } from '../../src/common/utils/authCookies.js';
 import { REFRESH_ROTATION_GRACE_MS } from '../../src/features/auth/auth.service.js';
 import {
   CONSENT,
@@ -47,6 +47,34 @@ describe('Cookie hardening (PRD §9.1, §11.2)', () => {
       path: '/api/v1/auth/refresh',
     });
     expect(refresh?.attributes.domain).toBeUndefined();
+  });
+
+  it('session hint cookie: __Host-, readable by JS but holds no secret, Secure, SameSite=Strict, Path=/', async () => {
+    const { cookies } = await registerStudent();
+    const hint = cookies[SESSION_HINT_COOKIE];
+
+    expect(hint?.value).toBe('1');
+    expect(hint?.attributes).toMatchObject({ secure: true, samesite: 'Strict', path: '/' });
+    expect(hint?.attributes.httponly).toBeUndefined();
+    expect(hint?.attributes.domain).toBeUndefined();
+    // Penanda saja: tanpa access token, /auth/me tetap 401.
+    const me = await request(ctx.app)
+      .get('/api/v1/auth/me')
+      .set('Cookie', cookieHeader({ [SESSION_HINT_COOKIE]: '1' }));
+    expect(me.status).toBe(401);
+  });
+
+  it('logout and a failed refresh clear the session hint too', async () => {
+    const { cookies } = await registerStudent();
+    const logout = await request(ctx.app)
+      .delete('/api/v1/auth/refresh')
+      .set('Cookie', cookieHeader({ [REFRESH_COOKIE]: cookies[REFRESH_COOKIE]?.value ?? '' }));
+    expect(String(logout.headers['set-cookie'])).toContain(`${SESSION_HINT_COOKIE}=;`);
+
+    const failed = await request(ctx.app)
+      .post('/api/v1/auth/refresh')
+      .set('Cookie', cookieHeader({ [REFRESH_COOKIE]: 'bukan-token' }));
+    expect(String(failed.headers['set-cookie'])).toContain(`${SESSION_HINT_COOKIE}=;`);
   });
 
   it('never returns tokens in the response body', async () => {

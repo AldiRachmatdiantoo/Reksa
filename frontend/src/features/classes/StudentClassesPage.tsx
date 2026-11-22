@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { ApiError } from '@/core/apiClient';
 import { pageTransition, Stagger, StaggerItem } from '@/shared/motion';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { AppHeader } from '@/shared/ui/AppHeader';
@@ -16,6 +17,9 @@ import { classesApi, formatJoinDate, joinErrorMessage, useClasses, type ClassInf
 export function StudentClassesPage() {
   const auth = useAuth();
   const userId = auth.status === 'authenticated' ? auth.user.id : '';
+  // Backend menolak gabung kelas sebelum email terverifikasi (403 EMAIL_NOT_VERIFIED). Penjelasannya
+  // sudah ada di VerifyEmailNotice, jadi tombolnya dimatikan dan tidak ada pesan error kedua.
+  const verified = auth.status === 'authenticated' && auth.user.emailVerified;
   const { state, reload } = useClasses();
   const [code, setCode] = useState('');
   const [joinError, setJoinError] = useState('');
@@ -30,6 +34,7 @@ export function StudentClassesPage() {
 
   const onJoin = async (e: FormEvent) => {
     e.preventDefault();
+    if (!verified) return;
     if (!code.trim()) {
       setJoinError('Masukkan kode kelas dari gurumu.');
       return;
@@ -43,7 +48,12 @@ export function StudentClassesPage() {
       setCode('');
       reload();
     } catch (err) {
-      setJoinError(joinErrorMessage(err));
+      if (err instanceof ApiError && err.code === 'EMAIL_NOT_VERIFIED' && auth.status === 'authenticated') {
+        // Status verifikasi di tab ini kedaluwarsa: tampilkan pemberitahuan verifikasi, bukan error kedua.
+        auth.updateUser({ ...auth.user, emailVerified: false });
+      } else {
+        setJoinError(joinErrorMessage(err));
+      }
     } finally {
       setJoining(false);
     }
@@ -79,7 +89,7 @@ export function StudentClassesPage() {
             <h2 id="join-title" className="font-title text-title-lg text-ink">
               Gabung ke kelas
             </h2>
-            <VerifyEmailNotice reason="Verifikasi emailmu dulu supaya bisa bergabung ke kelas." />
+            <VerifyEmailNotice id="join-verify-notice" reason="Verifikasi emailmu dulu supaya bisa bergabung ke kelas." />
             <form noValidate onSubmit={onJoin} aria-busy={joining} className="flex flex-col gap-4">
               <TextField
                 id="class-code"
@@ -98,7 +108,13 @@ export function StudentClassesPage() {
                 error={joinError || undefined}
                 className="[&_input]:font-mono [&_input]:tracking-[0.2em]"
               />
-              <Button type="submit" variant="accent" size="lg" disabled={joining}>
+              <Button
+                type="submit"
+                variant="accent"
+                size="lg"
+                disabled={joining || !verified}
+                aria-describedby={verified ? undefined : 'join-verify-notice'}
+              >
                 <Icon name="login" />
                 {joining ? 'Memeriksa kode...' : 'Gabung'}
               </Button>

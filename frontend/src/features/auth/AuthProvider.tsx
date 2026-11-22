@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ApiError, onSessionExpired } from '@/core/apiClient';
 import { authApi, type AuthUser, type LoginInput, type RegisterInput } from './authApi';
+import { hasSessionHint } from './sessionHint';
 
 type AuthState =
   | { status: 'loading'; user: null }
@@ -25,6 +26,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    if (!hasSessionHint()) {
+      setState({ status: 'anonymous', user: null });
+      return;
+    }
     const controller = new AbortController();
     authApi
       .me(controller.signal)

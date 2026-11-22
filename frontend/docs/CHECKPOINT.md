@@ -1,5 +1,15 @@
 # Checkpoint Frontend REKSA
 
+## #18 · 2026-11-22 · Perbaikan bug QA 5 sampai 9
+
+Branch: `fix/aldi-qa-bugs`.
+
+- `StudentClassesPage`: tombol Gabung mati selama email belum terverifikasi; tidak ada lagi pesan verifikasi dobel.
+- `LedgerSection`: kode bukti lengkap (`LedgerProof`, tombol Salin, tautan "Cek keaslian"), foto `object-contain`.
+- Target sentuh 44px di `AuthPage` ("Lupa kata sandi?"), `LegalPage` ("Baca juga"), `ReviewPage` (kosong: tombol "Mulai sesi belajar").
+- `features/auth/sessionHint.ts` + `AuthProvider`: tanpa cookie penanda `__Host-reksa_session`, langsung anonim tanpa memanggil `/auth/me`. `RequireAuth` memakai `useIsPresent()` supaya halaman yang sedang keluar tidak membelokkan ke `/masuk`; hapus akun memakai `startTransition`.
+- Tes: `sessionHint.test.ts`, E2E `session.spec.ts`.
+
 ## #17 · 2026-11-22 · Perbaikan bug QA: menu HP dan refresh sesi
 
 Branch: `fix/aldi-qa-bugs`.

@@ -44,11 +44,11 @@ export function LegalPage({ doc }: { doc: Doc }) {
         <div className="flex flex-col gap-8 text-body-lg text-ink">{doc === 'privasi' ? <PrivacyBody /> : <TermsBody />}</div>
         <nav aria-label="Dokumen lain" className="border-t border-line-soft pt-6 text-body-md">
           {doc === 'privasi' ? (
-            <Link to="/syarat" className="text-teal underline underline-offset-2">
+            <Link to="/syarat" className="inline-flex min-h-11 items-center text-teal underline underline-offset-2">
               Baca juga Syarat Layanan
             </Link>
           ) : (
-            <Link to="/privasi" className="text-teal underline underline-offset-2">
+            <Link to="/privasi" className="inline-flex min-h-11 items-center text-teal underline underline-offset-2">
               Baca juga Kebijakan Privasi
             </Link>
           )}

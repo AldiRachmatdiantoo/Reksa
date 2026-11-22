@@ -1,11 +1,10 @@
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { ApiError } from '@/core/apiClient';
 import { useLoad } from '@/shared/hooks/useLoad';
 import { pageTransition, Stagger, StaggerItem } from '@/shared/motion';
 import { AppHeader } from '@/shared/ui/AppHeader';
-import { Button } from '@/shared/ui/Button';
+import { Button, ButtonLink } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { LoadingBlock, StateBlock } from '@/shared/ui/StateBlock';
 import { formatReviewDay, IMPORTANCE_LABEL, overdueLabel, spacedApi, type ScheduleItem } from './spacedApi';
@@ -49,9 +48,9 @@ function ReviewLists({ due, upcoming, onChanged }: { due: ScheduleItem[]; upcomi
         icon="event_available"
         title="Belum ada latihan ulang"
         action={
-          <Link to="/belajar" className="text-label-lg text-teal underline underline-offset-2">
+          <ButtonLink to="/belajar" variant="outline">
             Mulai sesi belajar
-          </Link>
+          </ButtonLink>
         }
       >
         Jadwal dibuat otomatis setelah catatanmu dicek dan ada konsep yang terlewat.
