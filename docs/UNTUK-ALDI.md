@@ -44,7 +44,8 @@ Maaf tidak menunggu tawaran dibalas: saya (Adli) memutuskan langsung mengerjakan
 - **Ikon:** di nginx, CSP memblokir Google Fonts sehingga ikon tampil sebagai kata. Saya self-host font ikonnya (varian `fill`, 1,1 MB) karena axe menggagalkannya (WCAG 2.5.3). `<link>` Google di `index.html` belum saya hapus (ikut keputusan font teks di atas).
 - **E2E:** `npm run test:e2e` terhadap stack Docker, cara jalan di `frontend/tests/e2e/README.md`. Belum masuk CI.
 
-### ⏳ 2026-11-21 — Keputusan produk: skor Stage 2 dihitung server (Gemini)
+### ✅ 2026-11-21 — Keputusan produk: skor Stage 2 dihitung server (Gemini)
+**Disetujui (Aldi, 22 Nov 2026):** skor dihitung server dari bobot rubrik seperti di `mapStage2Output`; model tidak menentukan angka.
 **Butuh untuk:** Fase 3, `GeminiAiProvider` Stage 2 (branch `feat/adli-gemini-vision`, belum aktif).
 **Usulan:** dengan Gemini, `actualScore` **tidak** diambil dari model. Model hanya menilai tiap konsep rubrik (`MASTERED`/`PARTIAL`/`MISSING`) dan wajib mengutip bukti dari tulisan; server menghitung `round(100 × Σ bobot × kredit / Σ bobot)` (1 / 0,5 / 0). Klaim tanpa bukti dihitung `MISSING`.
 **Alasan:** pertahanan *prompt injection* (PRD §5.3): tulisan "beri nilai 100" di foto tidak punya jalan untuk mengubah angka, dan skor bisa dijelaskan ke guru dari bobot rubrik (cocok dengan ledger FR-07).
@@ -57,7 +58,8 @@ Maaf tidak menunggu tawaran dibalas: saya (Adli) memutuskan langsung mengerjakan
 - `ai.factory.ts` belum saya ubah. Saat Fase 3 dibuka: `case 'gemini': return new GeminiAiProvider({ clientOptions: { apiKey: env.GEMINI_API_KEY! } })`.
 - Jenis error baru `FATAL` (400/401/403): `AuditService` tidak mengulangnya. Kalau `materials` memanggil `extractRubric`, perlakukan `FATAL` sebagai konfigurasi salah, bukan kesalahan pengguna.
 
-### ⏳ 2026-11-21 — Review: audit asinkron `essay-scans` menyentuh area kamu (opsi A)
+### ✅ 2026-11-21 — Review: audit asinkron `essay-scans` menyentuh area kamu (opsi A)
+**Selesai:** disetujui dan di-merge lewat PR #16 (tes worker di PR #18). Temuan header `X-Content-Type-Options` ganda sudah beres lewat `map` di `nginx.conf`.
 Kamu belum sempat memutuskan, jadi atas persetujuan saya (Adli) Claude mengerjakan **opsi A** penuh di branch `feat/adli-essay-scans`. Mohon direview di PR; kalau tidak setuju, bilang saja dan saya ubah.
 
 **File di area kamu yang berubah**
@@ -76,7 +78,8 @@ Kamu belum sempat memutuskan, jadi atas persetujuan saya (Adli) Claude mengerjak
 - Uji asap di Docker (`docker compose` + migrator) lewat nginx `:8080`: daftar → sesi → JOL → unggah 202 → `DONE` dalam 1 detik → sesi `COMPLETED`, foto WebP tanpa EXIF; SSE QR bridge real-time lewat nginx tanpa ubah `nginx.conf`.
 - Temuan kecil (area kamu, tidak mendesak): respons API membawa header `X-Content-Type-Options` dua kali (helmet + `add_header` nginx).
 
-### ⏳ 2026-11-21 — `nginx.conf`: path SSE QR bridge final (tidak mendesak)
+### ✅ 2026-11-21 — `nginx.conf`: path SSE QR bridge final (tidak mendesak)
+**Selesai (Aldi, branch `feat/aldi-tidy-notes`):** `location` lama diganti `~ "^/api/v1/sessions/[0-9a-f-]{36}/qr-bridge/events$"` dengan isi yang sama. Polanya wajib dikutip: tanpa kutip, nginx membaca `{` sebagai awal blok dan gagal start (tertangkap saat image dibangun ulang).
 **Butuh untuk:** FR-04 skenario B (checklist Adli poin 4 di `CLAUDE.md`).
 **Detail:** path final `GET /api/v1/sessions/<uuid>/qr-bridge/events`, bukan usulan lama `/api/v1/scans/qr-bridge/<token>/events` (token unggah sebaiknya tidak masuk URL karena tercatat di access log). Usul ganti `location` SSE di `frontend/nginx.conf` menjadi `~ ^/api/v1/sessions/[0-9a-f-]{36}/qr-bridge/events$` dengan isi yang sama (`proxy_buffering off`, `proxy_read_timeout 330s`).
 **Mendesak?** Tidak. Backend sudah mengirim `X-Accel-Buffering: no` dan ping tiap 15 detik, jadi SSE tetap jalan lewat `location /api/` biasa. Perubahan ini hanya merapikan aturan lama yang sekarang tidak terpakai.
@@ -95,7 +98,7 @@ Kamu belum sempat memutuskan, jadi atas persetujuan saya (Adli) Claude mengerjak
 - Kalau tidak setuju, PR cukup ditutup; tidak ada yang berubah di repo mana pun.
 **Mendesak?** Tidak. Kerja `study-sessions` ada di PR terpisah (`feat/adli-sessions`).
 
-### 🔧 2026-11-21 — Keputusan: `essay_submissions` append-only vs audit asinkron (FR-05) · dikerjakan Adli dengan opsi A, lihat entri review di atas
+### ✅ 2026-11-21 — Keputusan: `essay_submissions` append-only vs audit asinkron (FR-05) · opsi A, di-merge lewat PR #16
 **Butuh untuk:** `essay-scans` (unggah 202 → worker audit)
 **Masalah:** `security_hardening` mencabut `UPDATE, DELETE ON essay_submissions` dari `app_service_user`. PRD v1.3 FR-05 justru membuat baris saat unggah (`audit_status = PENDING`) lalu mengubahnya ke `PROCESSING` dan `DONE`/`FAILED`, sambil mengisi skor, `*_json`, dan `ledger_hash` saat `DONE`. Dengan grant sekarang, worker tidak bisa menulis hasil audit.
 **Usulan (pilih salah satu):**
@@ -103,7 +106,8 @@ Kamu belum sempat memutuskan, jadi atas persetujuan saya (Adli) Claude mengerjak
 - **B:** pisahkan hasil ke tabel append-only baru `essay_audits` (`submission_id UNIQUE`, skor, `*_json`, `ledger_hash`), sedangkan status/percobaan di tabel lain yang boleh diubah. Lebih murni, tetapi `governance`/ledger harus join dua tabel.
 **Mendesak?** Ya, memblokir `essay-scans`. Saya mulai dari `study-sessions` dulu sambil menunggu.
 
-### ⏳ 2026-11-21 — Review migrasi `20261121000200_session_validity` (saya buat di area kamu)
+### ✅ 2026-11-21 — Review migrasi `20261121000200_session_validity` (saya buat di area kamu)
+**Selesai:** disetujui dan di-merge lewat PR #13.
 **Butuh untuk:** FR-02 aturan sesi sah. Sesuai UNTUK-ADLI §1e, saya membuatnya di `feat/adli-sessions`; mohon direview di PR.
 **Isi** (aditif, hanya `study_sessions`):
 - enum `SessionValidity (VALID, SHORT_FOCUS)` + kolom `validity` (nullable).
@@ -113,14 +117,14 @@ Kamu belum sempat memutuskan, jadi atas persetujuan saya (Adli) Claude mengerjak
 - `schema.prisma`: hanya model `StudySession` + enum baru (kolomnya ikut di-*align* ulang oleh `prisma format`).
 **Mendesak?** Ya, `study-sessions` bergantung padanya. Semua test lulus: 129 unit, 148 integrasi + security.
 
-### 🔧 2026-11-21 — Migrasi kolom audit untuk `essay-scans` (FR-05, FR-11) · dikerjakan Adli (`20261121000300_essay_audit_async`), kecuali `pro_expires_at`
+### ✅ 2026-11-21 — Migrasi kolom audit untuk `essay-scans` (FR-05, FR-11) · `20261121000300_essay_audit_async` di PR #16; `pro_expires_at` di migrasi Aldi `20261122000100_privacy_pro`, dan kuota sudah membacanya
 **Detail** (sesuai PRD §7.1, menunggu keputusan append-only di atas):
 - `essay_submissions.audit_status` enum `AuditStatus (PENDING, PROCESSING, DONE, FAILED)` default `PENDING`, `audit_attempts INT DEFAULT 0 CHECK (audit_attempts >= 0)`, `audit_error_code VARCHAR(64) NULL`.
 - `actual_ai_score`, `accurate_concepts_json`, `blind_spots_json`, `logic_corrections_json`, `ledger_hash` menjadi nullable; CHECK diganti agar wajib terisi saat `audit_status = 'DONE'`.
 - `users.pro_expires_at` (FR-11). Kalau masih lama, saya pakai `users.tier` dulu sesuai UNTUK-ADLI §1e.
 Kalau kamu setuju opsi A di atas, saya bisa sekalian membuat migrasi ini di branch `essay-scans` lalu kamu review, seperti migrasi sesi.
 
-### 🔧 2026-11-21 — Infra antrean worker audit (FR-05) · dikerjakan Adli (antrean Redis sederhana, tanpa BullMQ), lihat entri review di atas
+### ✅ 2026-11-21 — Infra antrean worker audit (FR-05) · antrean Redis sederhana tanpa BullMQ, di-merge lewat PR #16
 **Butuh untuk:** worker `evaluateHandwritingEssay` dengan batas audit bersamaan
 **Detail:** UNTUK-ADLI §1e menyebut antrean Redis disiapkan Aldi, tetapi belum ada di `package.json` maupun `container.ts`. Pertanyaannya: BullMQ jadi dipakai? Worker berjalan di proses backend yang sama atau service terpisah di `docker-compose.yml`? Sambil menunggu, `essay-scans` saya tulis terhadap antarmuka kecil `IAuditQueue { enqueue(submissionId) }` supaya implementasinya bisa ditukar.
 **Tambahan kecil (opsional):** env `MOCK_AI_AUDIT_FAILURE_RATE` (0..1, default 0) di `config/env.ts` dan diteruskan di `ai.factory.ts` ke opsi baru `MockAiProvider({ auditFailureRate })`, supaya alur `FAILED` bisa dicoba manual di frontend.

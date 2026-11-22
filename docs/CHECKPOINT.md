@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, rencana kerja urut sampai pasca-MVP (Aldi, branch `feat/aldi-work-plan`)
+**Checkpoint terakhir:** 22 November 2026, Fase A selesai (Aldi, branch `feat/aldi-tidy-notes`)
 
 ---
 
@@ -16,6 +16,13 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #31 · Fase A selesai · branch `feat/aldi-photo-privacy-tip` (PR #31) dan `feat/aldi-tidy-notes`
+
+- **A1.** Pengingat foto tanpa nama di langkah foto laptop dan halaman unggah HP. Konflik dengan catatan Gemini dari PR #29 diselesaikan; contoh "NIS" diganti "NIM" karena pengguna 18+.
+- **A2.** Catatan Adli di `UNTUK-ALDI.md` yang sudah beres ditandai ✅, termasuk persetujuan skor Stage 2 dihitung server. `location` SSE QR bridge di `nginx.conf` memakai path final. Header `X-Content-Type-Options` ganda ternyata sudah beres sejak `map` header di `nginx.conf`; dicek dengan `curl` (respons `/api/` hanya membawa header helmet).
+- **Keputusan:** latihan ulang H+3/H+7 (B3) tidak memotong kuota foto harian. Dicatat di `PRD.md` FR-06 dan `SISA-ALDI.md`.
+- **Hasil:** A1 lulus typecheck, 59 unit frontend, E2E 14/14. A2: Gerbang Kecil sempat gagal karena pola regex `{36}` di `nginx.conf` tidak dikutip, sehingga nginx gagal start; setelah dikutip, image frontend dibangun ulang, `nginx -t` lulus, E2E 14/14 (QR bridge lewat `location` SSE baru).
 
 ### #30 · Rencana kerja urut · branch `feat/aldi-work-plan`
 
@@ -435,9 +442,9 @@ Branch ini dibuat **di atas** `feat/adli-essay-scans` (PR belum di-merge), jadi 
 
 Urutan kerja lengkap, gerbang uji, dan checkpoint ada di [SISA-ALDI.md](SISA-ALDI.md). Langkah terdekat:
 
-1. A1: PR tips foto tanpa nama (`feat/aldi-photo-privacy-tip`), konflik dengan `main` diselesaikan dulu
-2. A2: tandai catatan ⏳ Adli yang sudah beres, rapikan `nginx.conf`
-3. B1 sampai B3: riwayat hasil cek, tren kalibrasi Pro, latihan ulang yang dinilai AI, lalu CP-1
+1. B1: riwayat hasil cek
+2. B2: tren kalibrasi Pro
+3. B3: latihan ulang yang dinilai AI (tanpa memotong kuota), lalu CP-1
 4. Pantau `docs/UNTUK-ALDI.md` untuk permintaan dari Adli
 
 ## Catatan teknis yang perlu diingat
