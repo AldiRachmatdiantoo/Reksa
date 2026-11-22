@@ -45,10 +45,16 @@ function reviewDate(fromIso: string, days: number) {
   return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
+const checkedFormat = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+function formatCheckedAt(iso: string) {
+  return checkedFormat.format(new Date(iso));
+}
+
 type Poll = { scan: Scan | null; error: ApiError | Error | null; slow: boolean };
 
 /** Memantau satu hasil cek sampai DONE/FAILED. Setelah 90 detik berhenti sendiri (`slow`); `restart` memulai lagi. */
-function useScanPolling(submissionId: string | null) {
+export function useScanPolling(submissionId: string | null) {
   const [poll, setPoll] = useState<Poll>({ scan: null, error: null, slow: false });
   const [round, setRound] = useState(0);
 
@@ -230,7 +236,12 @@ export function ResultPage() {
   return <AuditResult scan={scan} materialTitle={session?.materialTitle ?? ''} onStartOver={leave} />;
 }
 
-function AuditResult({ scan, materialTitle, onStartOver }: { scan: Scan; materialTitle: string; onStartOver: () => Promise<void> }) {
+type AuditResultProps =
+  | { scan: Scan; materialTitle: string; from?: 'session'; onStartOver: () => Promise<void> }
+  /** Dibuka dari Riwayat: tanpa penanda langkah, tombol bawah kembali ke daftar riwayat. */
+  | { scan: Scan; materialTitle: string; from: 'history'; onStartOver?: undefined };
+
+export function AuditResult({ scan, materialTitle, from = 'session', onStartOver }: AuditResultProps) {
   const auth = useAuth();
   const { state: speech, toggle: toggleSpeech } = useSpeech();
   const audit = scan.result!;
@@ -254,9 +265,19 @@ function AuditResult({ scan, materialTitle, onStartOver }: { scan: Scan; materia
 
   return (
     <>
-      <AppHeader subtitle="Hasil Cek Catatan" />
+      <AppHeader subtitle={from === 'history' ? 'Riwayat' : 'Hasil Cek Catatan'} />
       <motion.main {...pageTransition} className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
-        <StepIndicator current={3} />
+        {from === 'history' ? (
+          <Link
+            to="/belajar/riwayat"
+            className="inline-flex min-h-11 items-center gap-1 self-start text-label-lg text-teal hover:underline"
+          >
+            <Icon name="arrow_back" />
+            Kembali ke riwayat
+          </Link>
+        ) : (
+          <StepIndicator current={3} />
+        )}
 
         <motion.section
           initial={{ opacity: 0, scale: 0.97 }}
@@ -270,7 +291,8 @@ function AuditResult({ scan, materialTitle, onStartOver }: { scan: Scan; materia
               {message.title}
             </h1>
             <p className="text-body-lg opacity-90 text-pretty">{message.body}</p>
-            <p className="text-body-md opacity-90">{materialTitle}</p>
+            {materialTitle && <p className="text-body-md opacity-90">{materialTitle}</p>}
+            {from === 'history' && <p className="text-body-sm opacity-90">Dicek {formatCheckedAt(auditedAt)}</p>}
             {/* Visual pembanding; angkanya sudah ada di daftar sebelah, jadi disembunyikan dari pembaca layar. */}
             <div aria-hidden="true" className="flex flex-col gap-2.5 pt-2">
               {[
@@ -441,9 +463,15 @@ function AuditResult({ scan, materialTitle, onStartOver }: { scan: Scan; materia
 
             {auth.status === 'authenticated' && isEffectivePro(auth.user) && <LedgerPdfButton submissionId={scan.id} />}
 
-            <Button variant="accent" size="lg" onClick={() => setConfirmNew(true)}>
-              Mulai sesi belajar baru
-            </Button>
+            {onStartOver ? (
+              <Button variant="accent" size="lg" onClick={() => setConfirmNew(true)}>
+                Mulai sesi belajar baru
+              </Button>
+            ) : (
+              <ButtonLink to="/belajar" variant="accent" size="lg">
+                Mulai sesi belajar baru
+              </ButtonLink>
+            )}
           </aside>
         </div>
       </motion.main>
@@ -455,7 +483,7 @@ function AuditResult({ scan, materialTitle, onStartOver }: { scan: Scan; materia
         confirmLabel="Ya, mulai baru"
         cancelLabel="Tetap di hasil"
         onCancel={() => setConfirmNew(false)}
-        onConfirm={() => void onStartOver()}
+        onConfirm={() => void onStartOver?.()}
       >
         Hasil ini tetap tersimpan di akunmu, termasuk jadwal latihan ulang. Layar ini akan kembali ke pemilihan materi.
       </ConfirmDialog>

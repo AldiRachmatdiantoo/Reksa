@@ -6,6 +6,12 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: riwayat hasil cek dan tren kalibrasi Pro (branch `feat/aldi-results-history`)
+
+- Modul baru milik Aldi `backend/src/features/history/`: `GET /history?cursor=&limit=` (foto milik sendiri, terbaru dulu, cursor milik orang lain dijawab halaman kosong) dan `GET /history/calibration` (khusus Pro, 403 `PRO_REQUIRED` untuk Free dan Pro kedaluwarsa). Hanya membaca `essay_submissions` dan `study_sessions`; tidak ada migrasi dan tidak ada perubahan di `essay-scans`.
+- Di areamu: unit test baru `backend/tests/unit/features/history/history.service.test.ts` dan E2E baru `frontend/tests/e2e/history.spec.ts`. Spec lain tidak diubah; menu pelajar kini punya 5 item (Riwayat di antara Ulang dan Kelas), dan `mobile-layout.spec.ts` tetap lulus di 320px dan 375px.
+- `ResultPage.tsx` kini mengekspor `useScanPolling` dan `AuditResult` (dengan `from="history"`) supaya hasil lama bisa dibuka di `/belajar/riwayat/:submissionId`.
+
 ## 22 Nov 2026: catatanmu di `UNTUK-ALDI.md` sudah kutandai (branch `feat/aldi-tidy-notes`)
 
 - ✅ Keputusan skor Stage 2 dihitung server: disetujui, tetap seperti `mapStage2Output`.

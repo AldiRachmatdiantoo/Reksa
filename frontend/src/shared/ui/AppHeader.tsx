@@ -15,10 +15,12 @@ const STUDENT_NAV = [
     label: 'Belajar',
     icon: 'edit_note',
     match: (p: string) =>
-      p.startsWith('/belajar') && !['/belajar/materi', '/belajar/kelas', '/belajar/ulang'].some((other) => p.startsWith(other)),
+      p.startsWith('/belajar') &&
+      !['/belajar/materi', '/belajar/kelas', '/belajar/ulang', '/belajar/riwayat'].some((other) => p.startsWith(other)),
   },
   { to: '/belajar/materi', label: 'Materi', icon: 'menu_book', match: (p: string) => p.startsWith('/belajar/materi') },
   { to: '/belajar/ulang', label: 'Ulang', icon: 'event_repeat', match: (p: string) => p.startsWith('/belajar/ulang') },
+  { to: '/belajar/riwayat', label: 'Riwayat', icon: 'history', match: (p: string) => p.startsWith('/belajar/riwayat') },
   { to: '/belajar/kelas', label: 'Kelas', icon: 'groups', match: (p: string) => p.startsWith('/belajar/kelas') },
 ];
 

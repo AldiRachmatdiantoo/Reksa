@@ -28,6 +28,9 @@ import { PrismaLedgerExportRepository } from './features/governance/ledgerExport
 import { LedgerExportService } from './features/governance/ledgerExport.service.js';
 import { PrismaSpacedRepository } from './features/spaced-repetition/spaced.repository.js';
 import { createSpacedRouter } from './features/spaced-repetition/spaced.routes.js';
+import { PrismaHistoryRepository } from './features/history/history.repository.js';
+import { createHistoryRouter } from './features/history/history.routes.js';
+import { HistoryService } from './features/history/history.service.js';
 import { SpacedService } from './features/spaced-repetition/spaced.service.js';
 import { PrismaMaterialsRepository } from './features/materials/materials.repository.js';
 import { createMaterialsRouter } from './features/materials/materials.routes.js';
@@ -147,6 +150,10 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
       service: new SpacedService({ repo: new PrismaSpacedRepository(deps.prisma) }),
       signer,
       redis: deps.redis,
+    }),
+    '/history': createHistoryRouter({
+      service: new HistoryService({ repo: new PrismaHistoryRepository(deps.prisma) }),
+      signer,
     }),
     '/classes': createClassesRouter({ service: classesService, signer, redis: deps.redis }),
     '/sessions': createSessionsRouter({ service: sessionsService, signer, redis: deps.redis }),
