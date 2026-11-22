@@ -131,7 +131,7 @@ export function createAuthRouter({ service, signer, redis }: AuthRouterDeps): Ro
 
 /**
  * PATCH /me            { fullName }
- * POST  /me/consent    { acceptTerms: true, birthYear?, guardianConsent? }; setuju versi dokumen terbaru (FR-13)
+ * POST  /me/consent    { acceptTerms: true, birthYear?, adultConfirmed? }; setuju versi dokumen terbaru (FR-13)
  * PATCH /me/password   { currentPassword, newPassword }; 5/15 menit per user; perangkat lain dikeluarkan
  */
 export function createMeRouter({ service, signer, redis }: AuthRouterDeps): Router {

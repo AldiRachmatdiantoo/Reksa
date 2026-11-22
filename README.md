@@ -73,7 +73,7 @@ Landasan ilmiah: *retrieval practice*, *generation effect*, *dual-coding*, *judg
 | :--- | :--- | :--- |
 | FR-11 | Tier Free/Pro & kuota | Free 3 scan/hari (reset 00.00 WIB), Pro lewat kode aktivasi; payment gateway pasca-MVP |
 | FR-12 | Ekspor PDF *Proof of Understanding* | PDF milik sendiri (Pro) lewat *signed URL*, verifikasi publik `ledger_hash` tanpa data pribadi |
-| FR-13 | Privasi & data anak | Kebijakan Privasi & Syarat Layanan berversi, tahun lahir + izin orang tua, unduh data, hapus akun, aturan penyimpanan |
+| FR-13 | Privasi & batas usia | Kebijakan Privasi & Syarat Layanan berversi, tahun lahir dengan batas usia 18+, unduh data, hapus akun, aturan penyimpanan |
 | FR-14 | Akun dasar | Verifikasi email, lupa password tanpa enumerasi akun, ganti password, ubah nama |
 
 ### Peran (RBAC)
@@ -129,7 +129,7 @@ export interface IAiService {
 
 `AI_PROVIDER_MODE=mock` mengembalikan JSON statis yang lolos skema Zod, sehingga seluruh alur dan test berjalan tanpa API key dan tanpa biaya token. Di Fase 3, `AI_PROVIDER_MODE=gemini` mengganti provider tanpa mengubah controller, repository, maupun frontend.
 
-**Menyalakan Gemini:** buat API key di [Google AI Studio](https://aistudio.google.com/apikey), isi `GEMINI_API_KEY` dan `AI_PROVIDER_MODE=gemini` di `.env`, lalu `docker compose up -d --build backend`. Free tier gratis, tapi kuota harian per model kecil (cek di [halaman rate limit](https://aistudio.google.com/rate-limit)) dan Google boleh memakai data yang dikirim; Kebijakan Privasi sudah menyebut ini. Kalau kuota habis, rubrik dan saran kelas bisa dipindah ke model lain lewat `GEMINI_TEXT_MODEL`. Rubrik di-cache per isi materi, jadi materi yang sama tidak memanggil Gemini lagi. Ketentuan Gemini API juga membatasi aplikasi untuk pengguna di bawah 18 tahun; lihat `docs/CHECKPOINT.md` #28.
+**Menyalakan Gemini:** buat API key di [Google AI Studio](https://aistudio.google.com/apikey), isi `GEMINI_API_KEY` dan `AI_PROVIDER_MODE=gemini` di `.env`, lalu `docker compose up -d --build backend`. Free tier gratis, tapi kuota harian per model kecil (cek di [halaman rate limit](https://aistudio.google.com/rate-limit)) dan Google boleh memakai data yang dikirim; Kebijakan Privasi sudah menyebut ini. Kalau kuota habis, rubrik dan saran kelas bisa dipindah ke model lain lewat `GEMINI_TEXT_MODEL`. Rubrik di-cache per isi materi, jadi materi yang sama tidak memanggil Gemini lagi. Ketentuan Gemini API juga melarang aplikasi untuk pengguna di bawah 18 tahun, jadi REKSA hanya menerima pendaftar 18+ (`docs/CHECKPOINT.md` #29).
 
 ### Jaringan container
 

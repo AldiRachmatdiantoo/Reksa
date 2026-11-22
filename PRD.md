@@ -186,13 +186,13 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
   * PDF dibuat di server, disimpan sementara di bucket privat dengan prefix `exports`, lalu diberikan lewat *Signed URL* 300 detik. File dihapus otomatis setelah 24 jam. Rate limit 5 ekspor per jam per user.
   * Setiap halaman memuat tautan/QR verifikasi `GET /ledger/verify/:hash`. Endpoint publik ini hanya menjawab apakah hash valid beserta tanggal sesi, tanpa nama, skor, atau foto, supaya tidak membocorkan data pribadi.
 
-#### **FR-13: Privasi & Perlindungan Data Anak**
-* **User Story:** Sebagai pelajar atau orang tua, saya ingin tahu data apa yang dikumpulkan REKSA, siapa yang bisa melihatnya, dan bisa meminta data itu diunduh atau dihapus.
-* **Catatan:** Pengguna utama REKSA kemungkinan besar di bawah 18 tahun, sehingga UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi (UU PDP) berlaku, termasuk ketentuan data anak. Butir di bawah adalah rancangan produk, **bukan nasihat hukum**, dan perlu ditinjau orang yang paham hukum sebelum rilis publik.
+#### **FR-13: Privasi, Data Pengguna & Batas Usia**
+* **User Story:** Sebagai pelajar, saya ingin tahu data apa yang dikumpulkan REKSA, siapa yang bisa melihatnya, dan bisa meminta data itu diunduh atau dihapus.
+* **Catatan:** Awalnya pengguna utama REKSA diperkirakan di bawah 18 tahun. **Diputuskan 22 Nov 2026:** REKSA hanya untuk usia 18+, karena ketentuan tambahan Gemini API (berlaku 23 Maret 2026) melarang memakai layanannya di aplikasi yang ditujukan untuk, atau kemungkinan diakses oleh, pengguna di bawah 18 tahun. UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi (UU PDP) tetap berlaku. Butir di bawah adalah rancangan produk, **bukan nasihat hukum**, dan perlu ditinjau orang yang paham hukum sebelum rilis publik.
 * **Acceptance Criteria:**
   * Halaman publik **Kebijakan Privasi** (`/privasi`) dan **Syarat Layanan** (`/syarat`), masing-masing bernomor versi. Isinya minimal: data yang dikumpulkan, tujuan, siapa yang bisa melihat (guru hanya untuk kelas yang diikuti, admin hanya agregat), penyimpanan, hak pengguna, dan kontak.
   * Saat mendaftar, pengguna wajib mencentang persetujuan dan mengisi **tahun lahir**. Server menyimpan `terms_version`, `privacy_version`, `consented_at`, dan `birth_year`. Jika versi dokumen naik, pengguna diminta menyetujui ulang saat masuk.
-  * Pengguna di bawah 18 tahun wajib menyatakan sudah mendapat izin orang tua atau wali. **Diputuskan (v1.3):** untuk MVP cukup **pernyataan mandiri** berupa centang saat mendaftar, disimpan di `guardian_consent`. Konfirmasi lewat email orang tua masuk pasca-MVP (§4.5) dan sebaiknya ditinjau ulang bersama ahli hukum sebelum rilis publik.
+  * **Batas usia 18+ (22 Nov 2026, menggantikan pernyataan izin orang tua/wali dari v1.3).** Karena yang disimpan hanya tahun lahir, pendaftar yang lahir setelah `tahun ini - 18` ditolak (`400 AGE_RESTRICTED`), dan yang lahir tepat di `tahun ini - 18` wajib mencentang pernyataan sudah berumur 18 tahun (`adultConfirmed`; tanpa centang `400 ADULT_CONFIRMATION_REQUIRED`). Aturan yang sama berlaku saat persetujuan ulang. Kolom `guardian_consent` tidak dipakai lagi (selalu `false`).
   * Data seminimal mungkin: email, nama, tahun lahir, dan data belajar. Foto catatan dibersihkan dari EXIF/GPS sebelum disimpan (§9.1). Tidak ada pelacak iklan atau analitik pihak ketiga.
   * **Pemrosesan oleh AI pihak ketiga** dicantumkan di Kebijakan Privasi: teks materi dan foto catatan dikirim ke penyedia AI untuk dinilai. Gunakan paket dan ketentuan penyedia yang tidak memakai data untuk melatih model; ini wajib diperiksa ulang sebelum Fase 3. **Catatan 22 Nov 2026:** selama masa lomba dipakai free tier Gemini, yang boleh memakai data untuk mengembangkan produk Google. Kebijakan Privasi menyebutnya terang-terangan dan meminta pengguna tidak menulis data pribadi. Sebelum dipakai pengguna sungguhan, pindah ke paket berbayar, lalu perbarui teks dan versi dokumen.
   * **Unduh data saya:** `POST /me/export` menyiapkan arsip (JSON data akun, sesi, hasil audit, plus foto) di bucket privat, diberikan lewat *Signed URL* 300 detik, dihapus otomatis setelah 24 jam. Rate limit 1 kali per hari.
@@ -215,7 +215,7 @@ Landasan ilmiah REKSA menghindari mitos pengotakan gaya belajar VARK yang telah 
 * **Interleaving Engine:** Penggabungan dua topik materi berbeda secara otomatis dalam satu sesi evaluasi esai.
 * **Offline-First PWA:** Penyimpanan lokal (*IndexedDB*) untuk timer Pomodoro dan antrean foto tulisan tangan saat perangkat kehilangan koneksi internet.
 * **Ganti email** dengan verifikasi ke alamat baru (lanjutan FR-14).
-* **Konfirmasi izin orang tua lewat email** untuk pengguna di bawah 18 tahun, menggantikan pernyataan mandiri dari FR-13.
+* **Pengguna di bawah 18 tahun**, hanya setelah ada penyedia AI yang ketentuannya mengizinkan, lengkap dengan konfirmasi izin orang tua lewat email.
 * **Pembayaran Pro langsung:** integrasi payment gateway (misal Midtrans atau Xendit) dengan webhook bertanda tangan, menggantikan kode aktivasi manual dari FR-11.
 
 ---

@@ -16,7 +16,7 @@ Centang `[x]` saat selesai dan catat di `docs/CHECKPOINT.md`.
 
 - [x] **FR-13 Privasi & data anak** (branch `feat/aldi-privacy-pro`)
   - Persetujuan Kebijakan Privasi & Syarat Layanan saat daftar, kolom `birth_year`, `terms_version`, `privacy_version`, `consented_at`, `guardian_consent`
-  - Centang pernyataan izin orang tua atau wali untuk pengguna di bawah 18 tahun
+  - Batas usia 18+ (ketentuan Gemini API): pendaftar di bawah 18 ditolak, yang lahir tepat 18 tahun lalu menyatakan sudah 18. Alur izin orang tua atau wali dihapus (CHECKPOINT #29)
   - `POST /me/consent` saat versi kebijakan berubah
   - `POST /me/export`: arsip data pribadi lewat Signed URL, 1 kali per hari
   - `DELETE /me`: hapus akun dan seluruh datanya, dengan konfirmasi kata sandi
@@ -43,7 +43,7 @@ Centang `[x]` saat selesai dan catat di `docs/CHECKPOINT.md`.
 - [x] **FR-08 Peta blind spot kelas** (branch `feat/aldi-cohort-blind-spots`), dengan `MockAiProvider`
 - [x] **Gemini Stage 3 (`clusterCohortBlindSpots`)** (branch `feat/aldi-gemini-text`, belum diuji dengan API key)
 - [ ] **Uji Gemini asli:** isi `GEMINI_API_KEY`, jalankan `gemini.text.live.test.ts` dan `gemini.live.test.ts`, lalu coba alur unggah materi, foto, dan peta kelas di stack lokal
-- [ ] **Keputusan batas usia Gemini API:** ketentuan Gemini API melarang aplikasi yang ditujukan atau kemungkinan diakses pengguna di bawah 18 tahun (lihat CHECKPOINT #28)
+- [x] **Keputusan batas usia Gemini API:** REKSA dibatasi untuk usia 18+ (CHECKPOINT #29)
 - [ ] **Sambungkan frontend studio ke backend Adli:** sesi belajar, unggah foto, hasil audit asli (ganti `SAMPLE_AUDIT`), QR bridge laptop ke HP
 
 ## Temuan QA 22 November 2026

@@ -6,6 +6,13 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 22 Nov 2026: REKSA hanya untuk usia 18+ (branch `feat/aldi-gemini-text`)
+
+- Alasannya ketentuan Gemini API: layanannya tidak boleh dipakai di aplikasi untuk pengguna di bawah 18 tahun. Detail di CHECKPOINT #29.
+- `POST /auth/register` dan `POST /me/consent`: field `guardianConsent` diganti `adultConfirmed` (boolean, default `false`). Lahir setelah `tahun ini - 18` ditolak `400 AGE_RESTRICTED`; lahir tepat di tahun itu wajib `adultConfirmed: true` (`400 ADULT_CONFIRMATION_REQUIRED`). Body yang masih mengirim `guardianConsent` ditolak 400 karena skema strict. `CONSENT` di `testContext.ts` dan helper E2E `registerStudent` memakai tahun lahir 2000, jadi tidak perlu diubah.
+- Tes di areamu: di `auth.service.test.ts`, tes izin wali kuganti tes batas usia. Di `frontend/tests/e2e/account-privacy.spec.ts`, tes pendaftar anak dengan izin wali kuganti tes pendaftar 15 tahun yang ditolak dan pendaftar di tahun batas yang mencentang usia. Spec lain tidak berubah.
+- Kalau kamu menulis tes yang mendaftarkan user, pakai tahun lahir yang pasti 18+ (misal 2000).
+
 ## 22 Nov 2026: Gemini Stage 1 dan 3 (branch `feat/aldi-gemini-text`)
 
 - `geminiAi.provider.ts` (filemu): stub `extractRubric` dan `clusterCohortBlindSpots` kuisi dengan delegasi ke `geminiRubric.ts` dan `geminiCohort.ts`, plus opsi baru `textModel`. Stage 2 tidak berubah.

@@ -6,16 +6,20 @@
 export const TERMS_VERSION = '2026-11-22';
 export const PRIVACY_VERSION = '2026-11-22';
 
-export const ADULT_AGE = 18;
-export const MIN_AGE = 6;
+/**
+ * REKSA hanya untuk usia 18 tahun ke atas (ketentuan Gemini API melarang aplikasi untuk pengguna di bawah 18).
+ * Harus sama dengan MIN_USER_AGE di backend/src/config/policies.ts.
+ */
+export const MIN_USER_AGE = 18;
 
-/** Sama dengan isPossiblyMinor di backend: dianggap mungkin di bawah 18 jika ulang tahun tahun ini belum lewat. */
-export function isPossiblyMinor(birthYear: number, now = new Date()): boolean {
-  return now.getFullYear() - birthYear - 1 < ADULT_AGE;
+/** Tahun lahir paling muda yang masih mungkin sudah 18 tahun. */
+export function maxBirthYear(now = new Date()): number {
+  return now.getFullYear() - MIN_USER_AGE;
 }
 
-export function maxBirthYear(now = new Date()): number {
-  return now.getFullYear() - MIN_AGE;
+/** Lahir tepat di `maxBirthYear`: umurnya 17 atau 18 tergantung tanggal lahir, jadi diminta pernyataan sudah 18. */
+export function needsAdultConfirmation(birthYear: number, now = new Date()): boolean {
+  return birthYear === maxBirthYear(now);
 }
 
 export function formatVersion(version: string): string {

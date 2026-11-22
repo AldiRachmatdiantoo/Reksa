@@ -127,10 +127,11 @@ function PrivacyBody() {
         </List>
       </Section>
 
-      <Section title="Pengguna di bawah 18 tahun">
+      <Section title="Batas usia">
         <p>
-          Kalau umurmu di bawah 18 tahun, kamu perlu izin orang tua atau wali sebelum mendaftar. Saat ini izin itu berupa pernyataan yang
-          kamu centang sendiri. Orang tua atau wali boleh meminta datamu diunduh atau dihapus lewat akunmu.
+          REKSA saat ini hanya untuk usia 18 tahun ke atas. Penyedia AI yang kami pakai (Google Gemini) tidak mengizinkan layanannya dipakai
+          di aplikasi untuk pengguna di bawah 18 tahun. Tahun lahir dipakai untuk memeriksa batas ini, dan yang lahir tepat 18 tahun lalu
+          diminta menyatakan sudah berumur 18 tahun.
         </p>
       </Section>
 
@@ -166,7 +167,7 @@ function TermsBody() {
         <List>
           <li>Satu akun untuk satu orang. Jaga kata sandimu dan jangan bagikan ke orang lain.</li>
           <li>Isi data dengan benar, termasuk tahun lahir.</li>
-          <li>Kalau umurmu di bawah 18 tahun, pastikan orang tua atau wali sudah mengizinkan.</li>
+          <li>REKSA hanya untuk usia 18 tahun ke atas. Jangan mendaftar kalau umurmu belum 18 tahun.</li>
         </List>
       </Section>
 

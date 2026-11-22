@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 22 November 2026, Gemini Stage 1 dan Stage 3 (Aldi, branch `feat/aldi-gemini-text`)
+**Checkpoint terakhir:** 22 November 2026, REKSA dibatasi untuk usia 18+ (Aldi, branch `feat/aldi-gemini-text`)
 
 ---
 
@@ -13,9 +13,18 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Langkah 0 | ✅ Selesai, di `main` (PR #1) | ⏳ Belum mulai (bagian frontend diambil alih Aldi) |
 | Fase 1 | ✅ Selesai: `auth` (PR #2, #3), CI + branch protection (PR #4) | — |
 | Fase 2 | ✅ Storage (PR #6) · ✅ `materials` (PR #8) · ✅ PRD v1.3 (PR #9) · ✅ `classes` FR-09 (PR #10) · 🟡 akun dasar FR-14 (branch `feat/aldi-account`) · 🟡 Frontend di [reksa-frontend](https://github.com/AldiRachmatdiantoo/reksa-frontend) | ✅ Variasi `MockAiProvider` + `study-sessions` (PR #13) · ✅ monorepo frontend (PR #14) · 🟡 `essay-scans` lengkap: foto, kuota, QR bridge, unggah + audit asinkron (branch `feat/adli-essay-scans`, menunggu review Aldi) |
-| Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
+| Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #29 · Batas usia 18+ · branch `feat/aldi-gemini-text`
+
+- **Alasan.** Ketentuan tambahan Gemini API melarang memakai layanannya di aplikasi yang ditujukan untuk, atau kemungkinan diakses oleh, pengguna di bawah 18 tahun (lihat #28). Pilihan yang diambil: REKSA hanya untuk usia 18+, jadi sasaran utamanya mahasiswa beserta dosennya, bukan lagi siswa SMA.
+- **Aturan (`config/policies.ts`).** Yang disimpan hanya tahun lahir, jadi umur pengguna bisa salah satu dari dua angka. Lahir setelah `tahun ini - 18` pasti di bawah 18 dan ditolak `400 AGE_RESTRICTED`. Lahir tepat di `tahun ini - 18` wajib mencentang "Aku sudah berumur 18 tahun." (`adultConfirmed: true`); tanpa centang, `400 ADULT_CONFIRMATION_REQUIRED`. Penolakan terjadi sebelum password di-hash dan sebelum ada data tersimpan. Aturan yang sama berlaku di `POST /me/consent`, jadi akun yang tahun lahirnya tersimpan di bawah 18 tidak bisa menyetujui ulang.
+- **Alur izin wali dihapus.** `guardianConsent` diganti `adultConfirmed` di `RegisterSchema` dan `ConsentSchema` (strict, jadi body yang masih mengirim `guardianConsent` ditolak 400). Kolom `guardian_consent` tetap ada tapi selalu `false`; tidak ada migrasi. Alur lamanya ada di riwayat git kalau suatu saat dibutuhkan.
+- **Frontend.** Form daftar dan layar persetujuan ulang memeriksa aturan yang sama sebelum mengirim (`features/auth/consent.ts`); centang usia hanya muncul untuk tahun batas. Subjudul halaman daftar, FAQ dan footer beranda, Kebijakan Privasi (bagian "Batas usia"), dan Syarat Layanan menyebut batas 18 tahun beserta alasannya.
+- **Akun lokal lama.** Akun yang dulu mendaftar sebagai anak dengan izin wali tidak diblokir otomatis, karena versi dokumen tidak dinaikkan (teks berubah di hari yang sama dan belum ada deploy). Hapus dari database lokal kalau perlu.
+- **Hasil:** backend 599 lulus (6 skip: test live Gemini). Unit dan integration baru untuk penolakan di bawah 18, pernyataan di tahun batas, dan persetujuan ulang. Frontend 59 unit (baru: `consent.test.ts`), typecheck, build. E2E 14/14; `account-privacy.spec.ts` kini menguji pendaftar 15 tahun yang ditolak tanpa request ke server dan pendaftar di tahun batas yang wajib mencentang usia.
 
 ### #28 · Gemini Stage 1 dan Stage 3 · branch `feat/aldi-gemini-text`
 
@@ -26,7 +35,7 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 - **`maxOutputTokens`.** Token berpikir Gemini 2.5 ikut dihitung di batas ini, jadi Stage 1 memakai 16.384 dan Stage 3 8.192. Stage 2 masih 4.096 (bawaan `geminiClient.ts`); usulan ke Adli ada di `UNTUK-ADLI.md`.
 - **Teks privasi untuk masa lomba (free tier).** Kebijakan Privasi, pemberitahuan cookie, dan catatan di langkah foto kini menyebut bahwa materi dan foto dikirim ke Google Gemini, bahwa di versi gratis Google boleh memakai data itu dan petugas peninjau bisa membacanya, dan meminta pengguna tidak menulis data pribadi. Versi dokumen tetap `2026-11-22` karena teks berubah di hari yang sama dan belum ada deploy; perubahan berikutnya wajib menaikkan versi di `policies.ts` dan `policyVersions.ts`.
 - **Belum dicoba dengan Gemini asli** (butuh `GEMINI_API_KEY`). Test live opt-in: `gemini.text.live.test.ts` (Stage 1/3) dan `gemini.live.test.ts` (Stage 2).
-- **Perlu keputusan: batas usia di ketentuan Gemini API.** Ketentuan tambahan Gemini API (berlaku 23 Maret 2026) mewajibkan pengembang berusia 18+ dan melarang memakai layanannya di aplikasi yang ditujukan untuk, atau kemungkinan diakses oleh, pengguna di bawah 18 tahun. Larangan ini tidak dibedakan antara paket gratis dan berbayar. REKSA menyasar siswa SMA. Pilihannya: batasi mode Gemini untuk pengguna 18+ (mahasiswa), pakai penyedia lain, atau cek ketentuan Vertex AI. Belum diputuskan.
+- **Batas usia di ketentuan Gemini API.** Ketentuan tambahan Gemini API (berlaku 23 Maret 2026) mewajibkan pengembang berusia 18+ dan melarang memakai layanannya di aplikasi yang ditujukan untuk, atau kemungkinan diakses oleh, pengguna di bawah 18 tahun. Larangan ini tidak dibedakan antara paket gratis dan berbayar. REKSA menyasar siswa SMA. Diputuskan: REKSA dibatasi untuk usia 18+ (lihat #29).
 - **Hasil:** backend 598 lulus (6 skip: 3 live Stage 2, 3 live Stage 1/3). Unit baru untuk Stage 1, Stage 3, factory, env model, dan unggah materi saat AI gagal; integration baru untuk `503 AI_UNAVAILABLE`. Frontend 53 unit, typecheck, build. Teks privasi dicek di stack lokal (`/privasi` dan pemberitahuan cookie).
 
 ### #27 · Catatan kualitas QA · branch `fix/aldi-qa-bugs`

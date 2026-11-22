@@ -16,27 +16,41 @@ test('legal pages are public and accessible', async ({ page }) => {
   await expectAccessible(page, '/syarat');
 });
 
-test('a minor registers with guardian consent, exports data, then deletes the account', async ({ page }) => {
+// REKSA hanya untuk 18+ (ketentuan Gemini API). Yang lahir tepat 18 tahun lalu menyatakan sudah 18.
+test('someone under 18 cannot register; someone born 18 years ago confirms their age, exports data, then deletes the account', async ({
+  page,
+}) => {
   const email = `e2e-privasi-${Date.now()}@reksa.test`;
-  const minorYear = String(new Date().getFullYear() - 15);
+  const thisYear = new Date().getFullYear();
+  const registerCalls: string[] = [];
+  page.on('request', (r) => r.url().endsWith('/api/v1/auth/register') && registerCalls.push(r.method()));
 
   await page.goto('/daftar');
   await dismissCookieNotice(page);
-  await page.getByLabel('Nama lengkap').fill('Siswa Privasi');
+  await expect(page.getByText('Gratis, untuk usia 18 tahun ke atas.', { exact: false })).toBeVisible();
+  await page.getByLabel('Nama lengkap').fill('Mahasiswa Privasi');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Kata sandi', { exact: true }).fill(PASSWORD);
-  await page.getByLabel('Tahun lahir').fill(minorYear);
 
-  // Tanpa centang: dua pesan error muncul dan tidak ada request.
+  // Di bawah 18: ditolak di formulir, tanpa request, dan tidak ada centang usia yang bisa dipakai untuk lolos.
+  await page.getByLabel('Tahun lahir').fill(String(thisYear - 15));
+  await expect(page.getByLabel('Aku sudah berumur 18 tahun.')).toHaveCount(0);
   await page.getByRole('button', { name: 'Buat akun' }).click();
-  await expect(page.getByText('Centang pernyataan izin orang tua atau wali dulu.')).toBeVisible();
+  await expect(page.getByText('REKSA saat ini hanya untuk usia 18 tahun ke atas.')).toBeVisible();
   await expect(page.getByText('Setujui Syarat Layanan dan Kebijakan Privasi untuk lanjut.')).toBeVisible();
-  await expectAccessible(page, '/daftar dengan error persetujuan');
+  await expectAccessible(page, '/daftar dengan error usia');
 
-  await page.getByLabel(/orang tua atau waliku sudah mengizinkan/).check();
+  // Lahir tepat 18 tahun lalu: wajib centang pernyataan sudah 18.
+  await page.getByLabel('Tahun lahir').fill(String(thisYear - 18));
   await page.getByLabel(/setuju dengan/).check();
   await page.getByRole('button', { name: 'Buat akun' }).click();
+  await expect(page.getByText('Centang pernyataan bahwa kamu sudah berumur 18 tahun.')).toBeVisible();
+  expect(registerCalls).toEqual([]);
+
+  await page.getByLabel('Aku sudah berumur 18 tahun.').check();
+  await page.getByRole('button', { name: 'Buat akun' }).click();
   await expect(page).toHaveURL(/\/belajar$/);
+  expect(registerCalls).toEqual(['POST']);
 
   await page.goto('/akun');
   await expect(page.getByText('Gratis, 3 foto catatan per hari.')).toBeVisible();

@@ -26,10 +26,10 @@ export type RegisterInput = {
   role: 'STUDENT' | 'EDUCATOR';
   birthYear: number;
   acceptTerms: true;
-  guardianConsent: boolean;
+  adultConfirmed: boolean;
 };
 
-export type ConsentInput = { acceptTerms: true; birthYear?: number; guardianConsent: boolean };
+export type ConsentInput = { acceptTerms: true; birthYear?: number; adultConfirmed: boolean };
 
 export type ProStatus = { tier: 'FREE' | 'PRO'; proExpiresAt: string | null };
 
