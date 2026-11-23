@@ -48,7 +48,8 @@ async function main(): Promise<void> {
       });
       if (existing) {
         // Peran tidak diubah diam-diam: akun yang perannya lain kemungkinan bukan akun demo yang dimaksud.
-        if (existing.role !== role) throw new Error(`Akun ${email.data} sudah ada dengan peran ${existing.role}, bukan ${role}. Tidak diubah.`);
+        if (existing.role !== role)
+          throw new Error(`Akun ${email.data} sudah ada dengan peran ${existing.role}, bukan ${role}. Tidak diubah.`);
         await tx.user.update({
           where: { id: existing.id },
           data: { passwordHash, emailVerifiedAt: existing.emailVerifiedAt ?? new Date() },
