@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 23 November 2026, D2 backend hidup di Azure Container Apps (Aldi, PR #47)
+**Checkpoint terakhir:** 23 November 2026, D3 frontend hidup di Vercel (Aldi, PR #49)
 
 ---
 
@@ -16,6 +16,15 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #46 · D3 frontend hidup di Vercel · PR #49 `fix/aldi-vercel-azure`
+
+- **Alamat aplikasi:** `https://reksa-brown.vercel.app` (proyek Vercel `reksa`, root `frontend`, setelan dari `frontend/vercel.json`, tanpa env var). Nama `reksa.vercel.app` sudah dipakai orang lain.
+- **Deploy otomatis:** setiap merge ke `main` membangun ulang frontend; PR dapat preview deploy sendiri (dilindungi login Vercel).
+- **Rewrite (PR #49):** `/api/:path*` diteruskan ke backend Azure, jadi browser tetap satu origin dan cookie `__Host-` `SameSite=Strict` jalan.
+- **Azure:** `CORS_ORIGIN` dan `APP_URL` diganti ke `https://reksa-brown.vercel.app` (revisi baru, image tetap `bd4bb5996fde`).
+- **Bukti:** halaman memuat tanpa error konsol; header CSP dan `X-Frame-Options` terkirim; `/api/v1/health` lewat Vercel 200; login akun karangan lewat Vercel 401; `Access-Control-Allow-Origin` = URL Vercel.
+- **Belum (D4, butuh akun sungguhan):** daftar + email verifikasi Brevo, unggah materi PDF dan foto lewat rewrite Vercel (batas ukuran body), SSE QR bridge, audit Gemini end-to-end, cek `TRUST_PROXY_HOPS=2` dengan login gagal dari dua jaringan.
 
 ### #45 · D2 backend hidup di Azure · PR #47 `fix/aldi-db-tls`
 
