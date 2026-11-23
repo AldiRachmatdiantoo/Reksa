@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 23 November 2026, Gemini lewat relay Vercel, rubrik jalan di produksi (Aldi, PR #51)
+**Checkpoint terakhir:** 23 November 2026, maskot pemandu Risa/Rasi/Risu + panduan sambutan + pop up pujian (Aldi, branch `feat/aldi-maskot-pemandu`)
 
 ---
 
@@ -16,6 +16,17 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #48 · Maskot pemandu, panduan sambutan, pop up pujian · branch `feat/aldi-maskot-pemandu`
+
+- **Sebelumnya (sudah merge):** PR #53 tombol "Buka PDF asli" di layar Fokus & Tulis; PR #54 animasi Lottie (gratis, Lottie Simple License, kredit di `frontend/public/lottie/KREDIT.md`) saat catatan dicek dan selesai dicek.
+- **Maskot:** `frontend/src/shared/mascot/Mascot.tsx`, SVG + `motion`. Risa (kertas, pemandu utama), Rasi (pensil, fokus dan ulang), Risu (buku berkacamata, materi). Ekspresi `idle`, `think`, `happy`, `cheer`, `sleep`. Garis luar memakai `--mascot-line` supaya terlihat di mode gelap.
+- **Panduan sambutan:** `frontend/src/features/onboarding/`. Muncul sekali setelah login di `/belajar*`, `/guru`, `/akun`, setelah pop up cookie ditutup dan persetujuan syarat selesai. Isi per peran (pelajar, guru, admin institusi), disapa dengan nama depan. Selesai atau dilewati sama-sama memanggil `POST /api/v1/me/onboarding`. Bisa dibuka lagi dari Akun > Panduan REKSA.
+- **Backend:** kolom `users.onboarded_at` (migrasi `20261123000000_user_onboarded_at`, nullable, aman dijalankan sebelum image baru), field `onboardingRequired` di semua respons user, endpoint idempoten `POST /api/v1/me/onboarding` (body kosong `.strict()`). Disimpan di server, bukan localStorage, karena izin penyimpanan preferensi default mati.
+- **Pop up pujian:** `frontend/src/shared/mascot/celebration.tsx`, tidak modal, `role="status"`, hilang sendiri 6 detik (berhenti saat disorot atau difokus). Dipicu saat timer fokus habis (Rasi), materi tersimpan (Risu), hasil cek baru selesai (Risa; sesi ulang: Rasi). Pujian hasil cek memakai skor dan jumlah konsep terlewat yang asli.
+- **Akun lama:** semua akun yang sudah ada punya `onboarded_at` null, jadi panduan muncul sekali untuk mereka juga.
+- **Uji:** backend unit 417 lolos, integration `onboarding.test.ts` 4 skenario (termasuk 401 tanpa sesi dan 400 field asing); frontend 115 test lolos; dicek di browser lokal (gelap, terang, layar HP).
+- **Rollout produksi (urutan wajib):** 1) Aldi menjalankan `npx prisma migrate deploy` dengan `MIGRATION_DATABASE_URL` Session pooler user `postgres`; 2) revisi Azure baru dengan image dari commit merge; 3) Vercel ikut terbangun otomatis.
 
 ### #47 · Gemini lewat relay Vercel · PR #51 `feat/aldi-gemini-relay`
 
