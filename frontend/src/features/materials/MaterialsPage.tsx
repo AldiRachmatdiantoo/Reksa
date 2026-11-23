@@ -9,7 +9,7 @@ import { Button } from '@/shared/ui/Button';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { Icon } from '@/shared/ui/Icon';
 import { LoadingBlock, StateBlock } from '@/shared/ui/StateBlock';
-import { formatMaterialDate, materialsApi, useMaterials, type CreateMaterialResult, type MaterialSummary } from './materialsApi';
+import { formatMaterialDate, materialsApi, openMaterialPdf, useMaterials, type CreateMaterialResult, type MaterialSummary } from './materialsApi';
 import { RubricPreview } from './RubricPreview';
 import { UploadMaterialForm } from './UploadMaterialForm';
 
@@ -41,22 +41,8 @@ export function MaterialsPage() {
   const openPdf = async (m: MaterialSummary) => {
     setListError('');
     setOpeningId(m.id);
-    // Tab dibuka sinkron (sebelum await) supaya tidak diblokir pemblokir pop up.
-    const tab = window.open('about:blank', '_blank');
-    try {
-      const { url } = await materialsApi.fileUrl(m.id);
-      if (tab) {
-        tab.opener = null;
-        tab.location.href = url;
-      } else {
-        window.location.href = url;
-      }
-    } catch {
-      tab?.close();
-      setListError('PDF gagal dibuka. Coba lagi.');
-    } finally {
-      setOpeningId(null);
-    }
+    if (!(await openMaterialPdf(m.id))) setListError('PDF gagal dibuka. Coba lagi.');
+    setOpeningId(null);
   };
 
   const confirmDelete = async () => {

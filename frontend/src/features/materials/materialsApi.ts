@@ -50,6 +50,27 @@ export const materialsApi = {
   remove: (id: string) => apiRequest<void>(`/materials/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 };
 
+/**
+ * Buka PDF asli materi di tab baru lewat signed URL (berlaku 5 menit). Tab dibuka sinkron sebelum await supaya
+ * tidak diblokir pemblokir pop up. Mengembalikan false bila URL gagal diambil (tab kosong ditutup lagi).
+ */
+export async function openMaterialPdf(id: string, getUrl: (id: string) => Promise<{ url: string }> = materialsApi.fileUrl): Promise<boolean> {
+  const tab = window.open('about:blank', '_blank');
+  try {
+    const { url } = await getUrl(id);
+    if (tab) {
+      tab.opener = null;
+      tab.location.href = url;
+    } else {
+      window.location.href = url;
+    }
+    return true;
+  } catch {
+    tab?.close();
+    return false;
+  }
+}
+
 /** Pesan untuk user dari error unggah. Pesan backend dipakai untuk 415/422 karena sudah spesifik. */
 export function uploadErrorMessage(err: unknown): string {
   if (!(err instanceof ApiError)) return 'Materi gagal dikirim. Coba lagi.';
