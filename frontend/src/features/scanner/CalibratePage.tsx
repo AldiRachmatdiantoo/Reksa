@@ -229,7 +229,7 @@ export function CalibratePage() {
                   Menurutmu, berapa nilai catatanmu?
                 </h1>
                 <p className="text-body-md text-ink-muted text-pretty">
-                  Tebak dulu sebelum catatanmu dicek. Selisih tebakan dan hasil asli melatihmu mengenali kapan kamu benar-benar paham.
+                  Tebak dulu sebelum catatanmu dicek. Selisih tebakan dan hasil asli membantumu mengenali kapan kamu benar-benar paham.
                 </p>
               </header>
 

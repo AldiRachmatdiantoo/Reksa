@@ -11,6 +11,7 @@ import { Icon } from '@/shared/ui/Icon';
 import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 import { Mascot } from '@/shared/mascot/Mascot';
 import { MascotTrio } from './MascotTrio';
+import { MethodBasis } from './MethodBasis';
 import { StoryTour } from './StoryTour';
 
 /** Hanya pertanyaan yang jawabannya sudah benar untuk versi saat ini. */
@@ -45,7 +46,7 @@ const TEACHER_POINTS = [
   {
     icon: 'verified_user',
     title: 'Bukti belajar asli siswa',
-    body: 'Lama waktu fokus dan foto tulisan tangan menunjukkan siswa benar-benar berpikir, bukan menyalin dari internet.',
+    body: 'Lama waktu fokus, tebakan nilai, dan foto tulisan tangan memperlihatkan proses belajar siswa, bukan hanya jawaban akhirnya.',
   },
   {
     icon: 'analytics',
@@ -162,6 +163,8 @@ export function LandingPage() {
 
         <StoryTour />
 
+        <MethodBasis />
+
         <section id="guru" aria-labelledby="guru-title" className="border-y border-line-soft bg-card px-4 py-14 sm:px-6 lg:py-20">
           <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-12">
             <Reveal className="flex flex-col gap-3 lg:col-span-5">
@@ -169,8 +172,8 @@ export function LandingPage() {
                 Lihat proses belajar siswa, bukan hanya jawaban akhirnya
               </h2>
               <p className="text-body-lg text-ink-muted text-pretty">
-                Tugas yang dikerjakan dari ingatan di atas kertas susah disalin dari internet. Guru bisa melihat buktinya dan bagian materi
-                yang paling sering terlewat di kelas.
+                Tugas yang ditulis dari ingatan di atas kertas lebih sulit disalin begitu saja dari internet. Guru bisa melihat buktinya dan
+                bagian materi yang paling sering terlewat di kelas.
               </p>
               <p className="text-body-sm text-ink-muted">
                 Membuat kelas dan membagikan materi sudah bisa dipakai. Dua fitur ini menyusul bertahap.
