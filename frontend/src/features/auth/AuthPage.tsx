@@ -130,7 +130,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             transition={{ duration: 0.9, delay: 0.1, ease: EASE_OUT }}
             src="/assets/inclusive-learning.jpg"
-            alt="Kertas berisi peta konsep dengan panah, pensil, dan HP yang memotret catatan itu"
+            alt="Kertas berisi peta pikiran dengan panah, pensil, dan HP yang memotret catatan itu"
             width={1024}
             height={1024}
             className="aspect-square w-full max-w-md rounded-lg border border-line-soft object-cover"

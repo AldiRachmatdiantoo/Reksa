@@ -81,7 +81,7 @@ export function MaterialsPage() {
         <div className="flex flex-col gap-3">
           <h1 className="font-display text-headline-lg-mobile text-ink sm:text-headline-lg">Materi belajarmu</h1>
           <p className="max-w-prose text-body-lg text-ink-muted text-pretty">
-            REKSA menyusun konsep kunci dari materimu. Konsep inilah yang jadi patokan saat foto catatanmu dicek nanti.
+            REKSA menyusun poin penting dari materimu. Poin inilah yang jadi patokan saat foto catatanmu dicek nanti.
           </p>
         </div>
 
@@ -112,8 +112,8 @@ export function MaterialsPage() {
                       </h2>
                       <p className="text-body-sm text-ink-muted">
                         {created.rubricCached
-                          ? 'Materi yang sama pernah diunggah, jadi konsep kuncinya langsung diambil dari simpanan.'
-                          : 'Konsep kunci selesai disusun.'}
+                          ? 'Materi yang sama pernah diunggah, jadi poin pentingnya langsung diambil dari simpanan.'
+                          : 'Poin penting selesai disusun.'}
                       </p>
                     </div>
                   </div>
@@ -207,7 +207,7 @@ export function MaterialsPage() {
                                 {m.source === 'PDF' ? 'PDF' : 'Teks'}
                               </span>
                               <span aria-hidden="true">·</span>
-                              <span>{m.conceptCount} konsep</span>
+                              <span>{m.conceptCount} poin</span>
                               <span aria-hidden="true">·</span>
                               <span>{formatMaterialDate(m.createdAt)}</span>
                             </p>

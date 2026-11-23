@@ -77,8 +77,8 @@ function PrivacyBody() {
       <Section title="Data yang kami simpan">
         <List>
           <li>Email, nama lengkap, peran (pelajar atau guru), dan tahun lahir.</li>
-          <li>Kata sandi, dalam bentuk hash Argon2id. Kami tidak bisa membaca kata sandimu.</li>
-          <li>Materi yang kamu unggah dan rubrik yang dibuat darinya.</li>
+          <li>Kata sandi, yang sudah diacak (Argon2id) sebelum disimpan. Kami pun tidak bisa membaca kata sandimu.</li>
+          <li>Materi yang kamu unggah dan daftar poin penting yang dibuat darinya.</li>
           <li>Sesi belajar: durasi fokus, tebakan nilaimu sebelum dinilai, dan hasil penilaian.</li>
           <li>Foto catatan tulisan tanganmu. Data lokasi dan info kamera di foto dihapus sebelum disimpan.</li>
           <li>Kelas yang kamu ikuti, jadwal pengulangan, dan catatan persetujuan dokumen ini.</li>
@@ -88,7 +88,7 @@ function PrivacyBody() {
 
       <Section title="Untuk apa data itu dipakai">
         <List>
-          <li>Menilai catatanmu dan menunjukkan konsep yang terlewat.</li>
+          <li>Menilai catatanmu dan menunjukkan poin yang terlewat.</li>
           <li>Menjadwalkan latihan ulang supaya materinya tidak cepat lupa.</li>
           <li>Menampilkan bukti belajar ke guru kelas yang kamu ikuti.</li>
           <li>Mengirim email akun: verifikasi email dan atur ulang kata sandi.</li>
@@ -108,8 +108,8 @@ function PrivacyBody() {
 
       <Section title="Penyedia AI pihak ketiga">
         <p>
-          Untuk menyusun konsep kunci dari materi dan menilai catatanmu, teks materi dan foto catatanmu dikirim ke Google Gemini. Nama,
-          email, dan tahun lahirmu tidak ikut dikirim. Saran untuk guru dibuat dari daftar konsep yang terlewat, tanpa nama siswa.
+          Untuk menyusun poin penting dari materi dan menilai catatanmu, teks materi dan foto catatanmu dikirim ke Google Gemini. Nama,
+          email, dan tahun lahirmu tidak ikut dikirim. Saran untuk guru dibuat dari daftar poin yang terlewat, tanpa nama siswa.
         </p>
         <p>
           Selama masa lomba, REKSA memakai Gemini versi gratis. Di versi ini Google boleh memakai data yang dikirim untuk mengembangkan

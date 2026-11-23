@@ -88,7 +88,7 @@ export async function expectResult(page: Page) {
   // exact: pop up pujian maskot juga bisa memuat kata "Tebakanmu".
   await expect(page.getByText('Tebakanmu', { exact: true })).toBeVisible();
   await expect(page.getByText(/Hasil contoh/)).toHaveCount(0);
-  await expect(page.getByText(/Rencana latihan ulang|Tidak ada konsep yang terlewat/)).toBeVisible();
+  await expect(page.getByText(/Rencana latihan ulang|Tidak ada poin yang terlewat/)).toBeVisible();
 }
 
 /** Mailpit di docker compose (port 8025 hanya di 127.0.0.1). CI ikut menyalakannya bersama stack. */

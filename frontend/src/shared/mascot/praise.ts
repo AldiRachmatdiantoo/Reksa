@@ -9,7 +9,7 @@ export type Celebration = {
 
 /**
  * Pujian setelah catatan selesai dicek. Selalu berdasarkan angka asli dari hasil cek, bukan pujian kosong:
- * banyak konsep terlewat dapat semangat, bukan "hebat".
+ * banyak poin terlewat dapat semangat, bukan "hebat".
  */
 export function resultPraise(input: { score: number; missed: number; guess: number; review: boolean }): Celebration {
   const { score, missed, guess, review } = input;
@@ -21,8 +21,8 @@ export function resultPraise(input: { score: number; missed: number; guess: numb
     return {
       mascot,
       mood: 'cheer',
-      title: review ? 'Sesi ulang tuntas!' : 'Semua konsep tercakup!',
-      text: `Nilai catatanmu ${score}, tanpa konsep yang terlewat.${guessNote}`,
+      title: review ? 'Sesi ulang tuntas!' : 'Semua poin tercakup!',
+      text: `Nilai catatanmu ${score}, tanpa poin yang terlewat.${guessNote}`,
     };
   }
   if (score >= 70) {
@@ -30,14 +30,14 @@ export function resultPraise(input: { score: number; missed: number; guess: numb
       mascot,
       mood: 'happy',
       title: review ? 'Ingatanmu makin kuat' : 'Kerja bagus!',
-      text: `Nilai catatanmu ${score}. Tinggal ${missed} konsep lagi yang perlu dibaca ulang.${guessNote}`,
+      text: `Nilai catatanmu ${score}. Tinggal ${missed} poin lagi yang perlu dibaca ulang.${guessNote}`,
     };
   }
   return {
     mascot,
     mood: 'idle',
     title: 'Langkah pertama sudah jalan',
-    text: `Ada ${missed} konsep yang terlewat. Baca lagi bagian itu, nanti di sesi ulang pasti lebih banyak yang nempel.${guessNote}`,
+    text: `Ada ${missed} poin yang terlewat. Baca lagi bagian itu, nanti di sesi ulang pasti lebih banyak yang nempel.${guessNote}`,
   };
 }
 
@@ -55,6 +55,6 @@ export function materialAddedPraise(title: string): Celebration {
     mascot: 'risu',
     mood: 'happy',
     title: 'Materi tersimpan',
-    text: `Konsep kunci "${title}" sudah kubaca. Cek rubriknya, lalu mulai belajar.`,
+    text: `Poin penting dari "${title}" sudah siap. Cek dulu daftarnya, lalu mulai belajar.`,
   };
 }

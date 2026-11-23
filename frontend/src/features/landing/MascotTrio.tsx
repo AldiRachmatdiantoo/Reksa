@@ -15,7 +15,7 @@ const TRIO: { name: MascotName; label: string; kind: string; job: string }[] = [
     name: 'risu',
     label: 'Risu',
     kind: 'Buku berkacamata',
-    job: 'Membaca materimu dan menyusun konsep kunci yang jadi patokan saat catatan dicek.',
+    job: 'Membaca materimu dan menyusun poin penting yang jadi patokan saat catatan dicek.',
   },
 ];
 

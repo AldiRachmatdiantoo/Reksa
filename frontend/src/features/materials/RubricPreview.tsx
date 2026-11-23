@@ -13,7 +13,7 @@ function WeightMeter({ weight }: { weight: number }) {
 }
 
 /**
- * Daftar konsep kunci + hubungan sebab-akibat. Inilah patokan saat foto catatan dicek,
+ * Daftar poin penting + hubungan sebab-akibat. Inilah patokan saat foto catatan dicek,
  * jadi ditampilkan apa adanya supaya user tahu apa yang akan dinilai.
  */
 export function RubricPreview({ rubric, animate = 'mount' }: { rubric: Rubric; animate?: 'mount' | 'view' }) {
@@ -22,8 +22,8 @@ export function RubricPreview({ rubric, animate = 'mount' }: { rubric: Rubric; a
     <div className="flex flex-col gap-5">
       <p className="text-body-md text-ink-muted text-pretty">{rubric.summary}</p>
 
-      <section aria-label="Konsep kunci" className="flex flex-col gap-2">
-        <h3 className="text-label-lg text-ink">Konsep kunci ({rubric.keyConcepts.length})</h3>
+      <section aria-label="Poin penting" className="flex flex-col gap-2">
+        <h3 className="text-label-lg text-ink">Poin penting ({rubric.keyConcepts.length})</h3>
         <Stagger as="dl" trigger={animate} gap={0.05} className="flex flex-col divide-y divide-line-soft border-y border-line-soft">
           {rubric.keyConcepts.map((c) => (
             <StaggerItem key={c.id} className="grid gap-1 py-3 sm:grid-cols-[11rem_1fr] sm:gap-4">

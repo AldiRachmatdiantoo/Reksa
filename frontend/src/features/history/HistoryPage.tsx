@@ -181,7 +181,7 @@ function HistoryRow({ item }: { item: HistoryItem }) {
           {item.auditStatus === 'DONE' && item.blindSpotCount > 0 && (
             <>
               <span aria-hidden="true">·</span>
-              <span>{item.blindSpotCount} konsep terlewat</span>
+              <span>{item.blindSpotCount} poin terlewat</span>
             </>
           )}
         </span>

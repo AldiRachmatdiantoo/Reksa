@@ -31,7 +31,7 @@ function formatBytes(n: number) {
 export function UploadMaterialForm({
   onCreated,
   classId,
-  submitLabel = 'Susun konsep kunci',
+  submitLabel = 'Susun poin penting',
 }: {
   onCreated: (result: CreateMaterialResult) => void;
   classId?: string;
@@ -81,7 +81,7 @@ export function UploadMaterialForm({
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const next: typeof errors = {};
-    if (!title.trim()) next.title = 'Beri judul materi, misalnya "Bab 3 Homeostasis".';
+    if (!title.trim()) next.title = 'Beri judul materi, misalnya "Bab 3 Suhu Tubuh".';
     if (mode === 'teks' && !content.trim()) next.content = 'Tempel isi materi yang mau kamu pelajari.';
     if (mode === 'pdf' && !file) next.file = 'Pilih file PDF materimu.';
     setErrors(next);
@@ -137,7 +137,7 @@ export function UploadMaterialForm({
       <TextField
         id="material-title"
         label="Judul materi"
-        placeholder="Bab 3 Homeostasis"
+        placeholder="Bab 3 Suhu Tubuh"
         value={title}
         maxLength={200}
         onChange={(e) => setTitle(e.target.value)}
@@ -275,7 +275,7 @@ export function UploadMaterialForm({
             <motion.span className="flex" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
               <Icon name="progress_activity" />
             </motion.span>
-            Menyusun konsep kunci...
+            Menyusun poin penting...
           </>
         ) : (
           <>
@@ -289,7 +289,7 @@ export function UploadMaterialForm({
 }
 
 /**
- * Sisa kuota materi baru hari ini. Kuota habis tidak mengunci form karena materi yang rubriknya sudah pernah
+ * Sisa kuota materi baru hari ini. Kuota habis tidak mengunci form karena materi yang daftar poinnya sudah pernah
  * disusun tetap bisa ditambahkan; penyimpanan penuh mengunci tombol kirim.
  */
 function QuotaNote({ quota }: { quota: MaterialQuota }) {

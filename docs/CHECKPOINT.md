@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 23 November 2026, Beranda pelajar diganti jadi halaman langkah berikutnya (Aldi, branch `feat/aldi-beranda-langkah`)
+**Checkpoint terakhir:** 23 November 2026, copy UI disederhanakan jadi bahasa yang mudah dipahami anak (Aldi, branch `feat/aldi-copy-sederhana`)
 
 ---
 
@@ -17,7 +17,16 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 
 ## Riwayat checkpoint
 
-### #51 · Beranda jadi halaman langkah berikutnya · branch `feat/aldi-beranda-langkah`
+### #52 · Copy UI pakai bahasa yang mudah dipahami anak · branch `feat/aldi-copy-sederhana`
+
+- **Kenapa:** permintaan Aldi: istilah seperti "homeostasis" diganti kata yang gampang ditelan anak kecil, berlaku ke semua copy UI, dengan aturan antislop (tanpa em dash, tanpa fakta karangan).
+- **Istilah yang diganti:** "konsep kunci" jadi "poin penting", "konsep" jadi "poin", "rubrik" jadi "daftar poin penting", "peta konsep" jadi "peta pikiran", "Kalibrasi: meremehkan diri 25 poin" jadi "Tebakannya 25 lebih rendah dari nilai asli", "dikunci dengan hash" jadi "dikunci, jadi tidak bisa diubah diam-diam". Kebijakan privasi tetap menyebut Argon2id di dalam kurung supaya tetap akurat.
+- **Contoh materi:** contoh "Bab 3 Homeostasis" (reseptor, efektor, umpan balik negatif) di landing, placeholder form materi, dan `sampleAudit.ts` diganti "Bab 3 Suhu Tubuh": kulit merasakan panas, otak memberi perintah, keringat keluar, keringat mendinginkan tubuh.
+- **Backend (area Aldi):** pesan error penyusun rubrik di `materials.service.ts`, judul bagian PDF bukti belajar (`ledgerPdf.ts`), dan teks cadangan klaster kelas (`geminiCohort.ts`). `ledgerPdf.test.ts` di `backend/tests/unit/` (area Adli) ikut disesuaikan satu baris karena menguji judul PDF tadi.
+- **Belum diubah:** teks cadangan Stage 2 di `geminiVision.ts` ("Konsep ini belum terlihat di catatanmu") dan isi dummy `mockAi.fixtures.ts` masih memakai istilah lama, karena area Adli. Judul materi di data uji E2E ("Homeostasis E2E") bukan copy UI, jadi dibiarkan.
+- **Rollout:** frontend + backend (pesan teks saja, tanpa migrasi).
+
+### #51 · Beranda jadi halaman langkah berikutnya · PR #65
 
 - **Kenapa:** kartu pintasan di #50 terasa mubazir di desktop, karena mengulang menu yang ada tepat di header. Beranda sekarang menjawab "aku harus ngapain sekarang?", bukan daftar menu.
 - **Isi:** satu kartu langkah berikutnya (lembar bergaris, satu-satunya aksen ember) yang dipilih dari keadaan akun dengan urutan: sesi berjalan (lihat hasil, foto catatan, lanjutkan fokus), latihan ulang yang sudah waktunya, materi pertama, lalu sesi baru. Di bawahnya "Perlu kamu tahu", hanya tampil kalau ada isinya: email belum diverifikasi (memakai `VerifyEmailNotice`), catatan yang sedang dicek, hasil cek dalam 24 jam terakhir dengan nilainya, kuota materi baru habis. Terakhir kartu Panduan REKSA. Kartu Materi, Ulang, Riwayat, Kelas, dan Akun dibuang.

@@ -201,7 +201,7 @@ export class GeminiCohortClusterer {
       return {
         totalStudentsAnalyzed: prepared.studentCount,
         clusters: [],
-        curriculumRecommendation: 'Belum ada konsep yang terlewat di data kelas ini.',
+        curriculumRecommendation: 'Belum ada poin yang terlewat di data kelas ini.',
       };
     }
     const raw = await this.options.client.generateJson({

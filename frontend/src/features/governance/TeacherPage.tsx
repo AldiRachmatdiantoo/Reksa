@@ -28,7 +28,7 @@ export function TeacherPage() {
           <p className="max-w-prose text-body-lg text-ink-muted text-pretty">
             {isEducator
               ? 'Buat kelas, bagikan kodenya ke siswa, lalu bagikan materi yang perlu mereka pelajari.'
-              : 'Undang pengajar, lihat kelas di institusimu, dan konsep yang paling sering terlewat.'}
+              : 'Undang pengajar, lihat kelas di institusimu, dan poin yang paling sering terlewat.'}
           </p>
         </header>
 

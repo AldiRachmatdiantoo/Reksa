@@ -38,11 +38,11 @@ const CHAPTERS: Chapter[] = [
     label: 'Langkah 1',
     title: 'Mulai dari materi yang memang kamu pelajari',
     body: [
-      'Tempel teks dari buku atau catatan guru, atau unggah PDF babnya. REKSA menyusun konsep kunci dan hubungan sebab-akibat di dalamnya.',
+      'Tempel teks dari buku atau catatan guru, atau unggah PDF babnya. REKSA menyusun poin penting dan hubungan sebab-akibat di dalamnya.',
       'Daftar itulah patokan saat catatanmu dicek nanti, jadi dari awal kamu sudah tahu apa yang dinilai.',
     ],
     visual: () => <RubricCard />,
-    guide: { name: 'risu', mood: 'happy', line: 'Kirim materimu, aku susun konsep kuncinya.' },
+    guide: { name: 'risu', mood: 'happy', line: 'Kirim materimu, aku susun poin pentingnya.' },
   },
   {
     id: 'fokus',
@@ -72,7 +72,7 @@ const CHAPTERS: Chapter[] = [
     title: 'Foto catatanmu, coretan tetap dihitung',
     body: [
       'Potret kertasnya langsung dengan kamera belakang HP, atau unggah fotonya dari laptop.',
-      'Yang dicek adalah ide dan hubungan antarkonsep, bukan kerapian tulisan. Singkatan, panah, dan coretan dibaca sebagai ide.',
+      'Yang dicek adalah ide dan hubungan antaride, bukan kerapian tulisan. Singkatan, panah, dan coretan dibaca sebagai ide.',
     ],
     visual: () => <NotePhoto />,
     guide: { name: 'risa', mood: 'idle', line: 'Coretan dan panah tetap kubaca.' },
@@ -82,7 +82,7 @@ const CHAPTERS: Chapter[] = [
     label: 'Langkah 5',
     title: 'Lihat yang sudah tepat dan yang terlewat',
     body: [
-      'Hasil cek menaruh tebakanmu di samping nilai hasil cek, lalu memisahkan konsep yang sudah kamu tulis dengan benar dari yang belum muncul di catatan.',
+      'Hasil cek menaruh tebakanmu di samping nilai hasil cek, lalu memisahkan poin yang sudah kamu tulis dengan benar dari yang belum muncul di catatan.',
       'Kalau lebih nyaman mendengar, tekan Bacakan hasil.',
     ],
     visual: () => <ResultCard />,
@@ -93,7 +93,7 @@ const CHAPTERS: Chapter[] = [
     label: 'Langkah 6',
     title: 'Ulangi sebentar di hari ke-3 dan ke-7',
     body: [
-      'Konsep yang terlewat masuk rencana latihan singkat, 3 sampai 5 menit, tiga hari dan tujuh hari setelah sesi.',
+      'Poin yang terlewat masuk rencana latihan singkat, 3 sampai 5 menit, tiga hari dan tujuh hari setelah sesi.',
       'Mengingat lagi dengan jeda seperti ini membantu materi bertahan lebih lama. Saat jatuh tempo, latihannya muncul di menu Ulang.',
     ],
     visual: () => <ReviewStrip />,
@@ -257,11 +257,11 @@ function HighlightedPage() {
 }
 
 const SAMPLE_CONCEPTS = [
-  { name: 'Homeostasis', weight: 5 },
-  { name: 'Reseptor', weight: 3 },
-  { name: 'Pusat kontrol', weight: 4 },
-  { name: 'Efektor', weight: 3 },
-  { name: 'Umpan balik negatif', weight: 5 },
+  { name: 'Suhu tubuh tetap pas', weight: 5 },
+  { name: 'Kulit merasakan panas', weight: 3 },
+  { name: 'Otak memberi perintah', weight: 4 },
+  { name: 'Keringat keluar', weight: 3 },
+  { name: 'Keringat mendinginkan tubuh', weight: 5 },
 ];
 
 function RubricCard() {
@@ -272,8 +272,8 @@ function RubricCard() {
           <Icon name="task_alt" fill />
         </span>
         <div>
-          <p className="text-title-md text-ink">Bab 3 Homeostasis</p>
-          <p className="text-body-sm text-ink-muted">5 konsep kunci disusun</p>
+          <p className="text-title-md text-ink">Bab 3 Suhu Tubuh</p>
+          <p className="text-body-sm text-ink-muted">5 poin penting disusun</p>
         </div>
       </div>
       <ul className="flex flex-col divide-y divide-line-soft border-y border-line-soft">
@@ -289,9 +289,9 @@ function RubricCard() {
         ))}
       </ul>
       <p className="rounded-md bg-wash px-3 py-2 text-body-sm text-ink">
-        <strong className="font-semibold">Reseptor</strong> <span className="text-ink-muted">→</span>{' '}
-        <strong className="font-semibold">Pusat kontrol</strong>
-        <span className="block text-ink-muted">Reseptor mengirim sinyal perubahan ke pusat kontrol.</span>
+        <strong className="font-semibold">Kulit merasakan panas</strong> <span className="text-ink-muted">→</span>{' '}
+        <strong className="font-semibold">Otak memberi perintah</strong>
+        <span className="block text-ink-muted">Kulit memberi tahu otak bahwa tubuh mulai panas.</span>
       </p>
     </Frame>
   );
@@ -350,7 +350,7 @@ function NotePhoto() {
       />
       <figcaption className="flex items-center gap-2 text-body-sm text-ink-muted">
         <Icon name="photo_camera" className="text-[18px] text-teal" />
-        Peta konsep dengan panah tetap dibaca sebagai ide.
+        Peta pikiran dengan panah tetap dibaca sebagai ide.
       </figcaption>
     </figure>
   );
@@ -379,14 +379,14 @@ function ResultCard() {
             <Icon name="check_circle" className="text-[18px]" fill />
             Sudah tepat
           </p>
-          <p className="text-body-sm text-ink">Homeostasis, Efektor</p>
+          <p className="text-body-sm text-ink">Suhu tubuh tetap pas, Keringat keluar</p>
         </div>
         <div className="flex flex-col gap-1.5">
           <p className="flex items-center gap-1.5 text-label-lg text-ember-ink">
             <Icon name="error" className="text-[18px]" fill />
             Terlewat
           </p>
-          <p className="text-body-sm text-ink">Umpan balik negatif, Reseptor</p>
+          <p className="text-body-sm text-ink">Keringat mendinginkan tubuh, Kulit merasakan panas</p>
         </div>
       </div>
     </Frame>
@@ -416,7 +416,7 @@ function ReviewStrip() {
       <ul className="flex flex-col gap-2 text-body-sm text-ink">
         <li className="flex items-center gap-2">
           <Icon name="event" className="text-[18px] text-teal" />
-          Hari ke-3: tulis ulang Umpan balik negatif, 3 sampai 5 menit
+          Hari ke-3: tulis ulang soal keringat yang mendinginkan tubuh, 3 sampai 5 menit
         </li>
         <li className="flex items-center gap-2">
           <Icon name="event" className="text-[18px] text-teal" />

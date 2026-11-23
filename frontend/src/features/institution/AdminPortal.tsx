@@ -27,7 +27,7 @@ function RetryAlert({ text, onRetry }: { text: string; onRetry: () => void }) {
   );
 }
 
-/** Portal admin institusi (FR-10): pengajar, kode undangan, kelas, dan konsep tersulit. Tanpa data individu siswa. */
+/** Portal admin institusi (FR-10): pengajar, kode undangan, kelas, dan poin tersulit. Tanpa data individu siswa. */
 export function AdminPortal() {
   const overview = useLoad((signal) => institutionApi.overview(signal), []);
 
@@ -48,7 +48,7 @@ export function AdminPortal() {
     <div className="flex flex-col gap-8">
       <p className="max-w-prose text-body-md text-ink-muted text-pretty">
         Kamu mengelola <strong className="font-semibold text-ink">{data.institution.name}</strong>. Di sini hanya ada angka gabungan per
-        kelas dan per konsep. Foto, catatan, skor, dan nama siswa tidak pernah tampil, dan kelompok dengan kurang dari {data.minGroupSize}{' '}
+        kelas dan per poin. Foto, catatan, skor, dan nama siswa tidak pernah tampil, dan kelompok dengan kurang dari {data.minGroupSize}{' '}
         siswa tidak ditampilkan angkanya.
       </p>
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
@@ -293,14 +293,14 @@ function ConceptsCard({ minGroupSize }: { minGroupSize: number }) {
     <section aria-labelledby="inst-concepts-title" className={CARD}>
       <div className="flex flex-col gap-1">
         <h2 id="inst-concepts-title" className="font-title text-title-lg text-ink">
-          Konsep yang paling sering terlewat
+          Poin yang paling sering terlewat
         </h2>
         <p className="text-body-md text-ink-muted">
           Dari hasil cek terakhir setiap siswa, untuk materi kelas yang sudah dicek minimal {minGroupSize} siswa.
         </p>
       </div>
       {concepts.state.status === 'loading' && <p className="text-body-md text-ink-muted">Menghitung...</p>}
-      {concepts.state.status === 'error' && <RetryAlert text="Data konsep gagal dimuat." onRetry={concepts.reload} />}
+      {concepts.state.status === 'error' && <RetryAlert text="Data poin gagal dimuat." onRetry={concepts.reload} />}
       {concepts.state.status === 'ready' &&
         (concepts.state.data.concepts.length === 0 ? (
           <p className="text-body-md text-ink-muted">Belum ada materi dengan cukup siswa untuk ditampilkan.</p>

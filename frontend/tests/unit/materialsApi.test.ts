@@ -26,7 +26,7 @@ describe('uploadErrorMessage', () => {
   });
 
   it('memakai pesan backend saat penyusun konsep kunci (AI) sibuk atau mati', () => {
-    const msg = 'Penyusun konsep kunci sedang sibuk. Tunggu sebentar, lalu kirim lagi.';
+    const msg = 'Penyusun poin penting sedang sibuk. Tunggu sebentar, lalu kirim lagi.';
     expect(uploadErrorMessage(new ApiError(503, 'AI_UNAVAILABLE', msg))).toBe(msg);
   });
 

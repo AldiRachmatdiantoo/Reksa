@@ -218,10 +218,10 @@ export async function renderLedgerPdf(input: LedgerPdfInput): Promise<Buffer> {
     }
     w.gap(12);
 
-    w.text('Konsep yang sudah tepat', { size: 12, bold: true });
+    w.text('Poin yang sudah tepat', { size: 12, bold: true });
     w.bullets(item.accurateConcepts, 'Tidak ada.');
     w.gap(8);
-    w.text('Konsep yang terlewat', { size: 12, bold: true });
+    w.text('Poin yang terlewat', { size: 12, bold: true });
     w.bullets(
       item.blindSpots.map((b) => (b.explanation ? `${b.concept}: ${b.explanation}` : b.concept)),
       'Tidak ada.',

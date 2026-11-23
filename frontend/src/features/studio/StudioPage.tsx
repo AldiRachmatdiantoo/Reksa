@@ -145,7 +145,7 @@ function MaterialPicker() {
             </ButtonLink>
           }
         >
-          Tempel teks atau unggah PDF bab yang mau kamu pelajari. REKSA menyusun konsep kuncinya untukmu.
+          Tempel teks atau unggah PDF bab yang mau kamu pelajari. REKSA menyusun poin pentingnya untukmu.
         </StateBlock>
       )}
       {state.status === 'ready' && state.data.length > 0 && (
@@ -159,7 +159,7 @@ function MaterialPicker() {
               >
                 <span className="flex items-center gap-2 text-body-sm text-ink-muted">
                   <Icon name={m.source === 'PDF' ? 'picture_as_pdf' : 'notes'} className="text-[18px] text-teal" />
-                  {m.conceptCount} konsep · {formatMaterialDate(m.createdAt)}
+                  {m.conceptCount} poin · {formatMaterialDate(m.createdAt)}
                 </span>
                 <span className="text-title-md text-ink">{m.title}</span>
                 <span className="mt-auto inline-flex items-center gap-1 pt-1 text-label-lg text-teal">
@@ -281,8 +281,8 @@ function FocusSession({ material }: { material: Material }) {
                   {isReview ? (
                     <>
                       <p className="max-w-sm text-body-md text-ink-muted">
-                        Jelaskan konsep {concepts.length > 0 ? 'berikut' : 'yang terlewat'} dari{' '}
-                        <strong className="text-ink">{material.title}</strong> dengan kata-katamu sendiri. Hanya konsep ini yang dicek.
+                        Jelaskan poin {concepts.length > 0 ? 'berikut' : 'yang terlewat'} dari{' '}
+                        <strong className="text-ink">{material.title}</strong> dengan kata-katamu sendiri. Hanya poin ini yang dicek.
                       </p>
                       {concepts.length > 0 && (
                         <ul className="flex flex-wrap justify-center gap-2">
@@ -297,7 +297,7 @@ function FocusSession({ material }: { material: Material }) {
                   ) : (
                     <p className="max-w-sm text-body-md text-ink-muted">
                       Tulis semua yang kamu ingat tentang <MaterialNames material={material} second={session?.secondMaterial} /> di kertas.{' '}
-                      {session?.secondMaterial ? 'Tulis bergantian atau campur, asal jelas konsep mana milik materi mana. ' : ''}
+                      {session?.secondMaterial ? 'Tulis bergantian atau campur, asal jelas poin mana milik materi mana. ' : ''}
                       Bacaan terbuka lagi kalau kamu menekan Ulangi.
                     </p>
                   )}
@@ -581,7 +581,7 @@ function OpenPdfButton({ materialId }: { materialId: string }) {
 
 /**
  * F3 interleaving: sebelum waktu fokus dimulai, pelajar boleh mencampur satu materi lain. Bacaan kedua tampil
- * di bawah bacaan pertama, keduanya ditutup bersama, dan hasil cek menilai konsep dari kedua materi.
+ * di bawah bacaan pertama, keduanya ditutup bersama, dan hasil cek menilai poin dari kedua materi.
  */
 function InterleavePicker({ session }: { session: StudySession }) {
   const { setSecondMaterial } = useStudySession();
@@ -606,8 +606,8 @@ function InterleavePicker({ session }: { session: StudySession }) {
             Campur dengan materi lain
           </h2>
           <p className="text-body-md text-ink-muted text-pretty">
-            Belajar dua topik sekaligus melatihmu membedakan konsep yang mirip. Catatanmu dicek terhadap konsep kedua materi, dan bagian
-            yang terlewat dijadwalkan ulang di materinya masing-masing.
+            Belajar dua topik sekaligus melatihmu membedakan hal yang mirip. Catatanmu dicek terhadap poin kedua materi, dan bagian yang
+            terlewat dijadwalkan ulang di materinya masing-masing.
           </p>
         </div>
         <label htmlFor="second-material" className="text-label-lg text-ink">

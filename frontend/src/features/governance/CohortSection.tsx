@@ -25,7 +25,7 @@ function RetryAlert({ text, onRetry }: { text: string; onRetry: () => void }) {
   );
 }
 
-/** Peta bagian sulit satu kelas (FR-08): konsep yang paling sering terlewat dan saran bahan ajar. */
+/** Peta bagian sulit satu kelas (FR-08): poin yang paling sering terlewat dan saran bahan ajar. */
 export function CohortSection() {
   const classes = useClasses();
   const owned = classes.state.status === 'ready' ? classes.state.data.filter((c) => c.access === 'OWNER') : [];
@@ -39,7 +39,7 @@ export function CohortSection() {
           Peta bagian sulit
         </h2>
         <p className="max-w-prose text-body-md text-ink-muted text-pretty">
-          Berapa banyak siswa yang melewatkan tiap konsep, dihitung dari hasil cek terakhir setiap siswa. Nama siswa tidak ditampilkan di
+          Berapa banyak siswa yang melewatkan tiap poin, dihitung dari hasil cek terakhir setiap siswa. Nama siswa tidak ditampilkan di
           sini.
         </p>
       </div>
@@ -153,7 +153,7 @@ function CohortMap({ classId, materialId }: { classId: string; materialId: strin
         {map.concepts.length === 0 ? (
           <p className="flex items-start gap-2 text-body-md text-ink">
             <Icon name="task_alt" className="mt-px text-[20px] text-teal" />
-            Tidak ada konsep yang terlewat di hasil cek terakhir siswa.
+            Tidak ada poin yang terlewat di hasil cek terakhir siswa.
           </p>
         ) : (
           <ol className="flex flex-col gap-4">
@@ -189,7 +189,7 @@ function Recommendation({ map }: { map: CohortBlindSpots }) {
     return (
       <p className="rounded-lg border border-line-soft bg-card px-5 py-4 text-body-md text-ink-muted">
         {map.concepts.length === 0
-          ? 'Saran perbaikan muncul kalau ada konsep yang terlewat.'
+          ? 'Saran perbaikan muncul kalau ada poin yang terlewat.'
           : `Saran perbaikan muncul setelah minimal ${map.minStudentsForRecommendation} siswa mengecek catatan untuk materi ini.`}
       </p>
     );
@@ -197,7 +197,7 @@ function Recommendation({ map }: { map: CohortBlindSpots }) {
   if (map.recommendationStatus === 'UNAVAILABLE' || !map.recommendation) {
     return (
       <p className="rounded-lg border border-line-soft bg-card px-5 py-4 text-body-md text-ink-muted">
-        Saran perbaikan sedang tidak bisa dibuat. Persentase per konsep tetap akurat. Buka lagi nanti untuk sarannya.
+        Saran perbaikan sedang tidak bisa dibuat. Persentase per poin tetap akurat. Buka lagi nanti untuk sarannya.
       </p>
     );
   }
@@ -211,7 +211,7 @@ function Recommendation({ map }: { map: CohortBlindSpots }) {
       </h3>
       {rec.sample && (
         <p className="rounded-md bg-wash px-4 py-3 text-body-sm text-ink">
-          Contoh: server masih memakai AI tiruan, jadi saran di bawah ini teks tetap, belum dibaca dari data kelasmu. Persentase per konsep
+          Contoh: server masih memakai AI tiruan, jadi saran di bawah ini teks tetap, belum dibaca dari data kelasmu. Persentase per poin
           sudah asli.
         </p>
       )}
@@ -225,7 +225,7 @@ function Recommendation({ map }: { map: CohortBlindSpots }) {
                 {IMPORTANCE[cluster.severity].label}
               </span>
             </span>
-            <span className="text-body-sm text-ink-muted">Konsep: {cluster.memberConcepts.join(', ')}</span>
+            <span className="text-body-sm text-ink-muted">Poin: {cluster.memberConcepts.join(', ')}</span>
             <span className="text-body-md text-ink text-pretty">{cluster.remediationSuggestion}</span>
           </li>
         ))}

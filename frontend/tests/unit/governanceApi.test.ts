@@ -3,10 +3,10 @@ import { conceptShareLabel, formatMinutes, jolDeltaLabel } from '@/features/gove
 
 describe('governanceApi helpers', () => {
   it('describes the JOL calibration in words', () => {
-    expect(jolDeltaLabel(0)).toBe('tebakannya tepat');
-    expect(jolDeltaLabel(-10)).toBe('tebakannya tepat');
-    expect(jolDeltaLabel(25)).toBe('meremehkan diri 25 poin');
-    expect(jolDeltaLabel(-15)).toBe('terlalu yakin 15 poin');
+    expect(jolDeltaLabel(0)).toBe('Tebakannya tepat');
+    expect(jolDeltaLabel(-10)).toBe('Tebakannya tepat');
+    expect(jolDeltaLabel(25)).toBe('Tebakannya 25 lebih rendah dari nilai asli');
+    expect(jolDeltaLabel(-15)).toBe('Tebakannya 15 lebih tinggi dari nilai asli');
   });
 
   it('formats durations in whole minutes', () => {

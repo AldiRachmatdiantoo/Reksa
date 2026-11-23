@@ -11,7 +11,7 @@ import { LoadingBlock, StateBlock } from '@/shared/ui/StateBlock';
 import { useStudySession } from '@/features/studio/studySession';
 import { formatReviewDay, IMPORTANCE_LABEL, overdueLabel, spacedApi, startReviewErrorMessage, type ScheduleItem } from './spacedApi';
 
-/** Latihan ulang H+3/H+7 untuk konsep yang terlewat (FR-06). */
+/** Latihan ulang H+3/H+7 untuk poin yang terlewat (FR-06). */
 export function ReviewPage() {
   const { state, reload } = useLoad((signal) => spacedApi.due(signal), []);
 
@@ -26,7 +26,7 @@ export function ReviewPage() {
         <div className="flex flex-col gap-3">
           <h1 className="font-display text-headline-lg-mobile text-ink sm:text-headline-lg">Latihan ulang</h1>
           <p className="max-w-prose text-body-lg text-ink-muted text-pretty">
-            Konsep yang terlewat saat dicek muncul lagi di sini 3 dan 7 hari kemudian. Tulis ulang dari ingatan selama 5 menit, lalu foto
+            Poin yang terlewat saat dicek muncul lagi di sini 3 dan 7 hari kemudian. Tulis ulang dari ingatan selama 5 menit, lalu foto
             catatanmu untuk dicek. Latihan ulang tidak memotong jatah cek harian.
           </p>
         </div>
@@ -55,7 +55,7 @@ function ReviewLists({ due, upcoming, onChanged }: { due: ScheduleItem[]; upcomi
           </ButtonLink>
         }
       >
-        Jadwal dibuat otomatis setelah catatanmu dicek dan ada konsep yang terlewat.
+        Jadwal dibuat otomatis setelah catatanmu dicek dan ada poin yang terlewat.
       </StateBlock>
     );
   }
@@ -154,7 +154,7 @@ function DueCard({ item, onCompleted }: { item: ScheduleItem; onCompleted: () =>
         </div>
       </header>
 
-      <ul className="flex flex-wrap gap-2" aria-label="Konsep yang dilatih">
+      <ul className="flex flex-wrap gap-2" aria-label="Poin yang dilatih">
         {item.blindSpots.map((spot, i) => (
           <li key={i} className="rounded-md bg-wash px-3 py-1.5 text-body-md text-ink">
             {spot.concept}
@@ -184,7 +184,7 @@ function DueCard({ item, onCompleted }: { item: ScheduleItem; onCompleted: () =>
         <div id={panelId} className="flex flex-col gap-4">
           <ol className="flex list-decimal flex-col gap-1 pl-5 text-body-md text-ink marker:text-ink-muted">
             <li>Tutup catatan dan materimu.</li>
-            <li>Di kertas, tulis apa yang kamu ingat tentang konsep di bawah. Pakai kata-katamu sendiri.</li>
+            <li>Di kertas, tulis apa yang kamu ingat tentang poin di bawah. Pakai kata-katamu sendiri.</li>
             <li>Setelah selesai, buka penjelasannya dan cocokkan sendiri.</li>
           </ol>
           <ul className="flex flex-col gap-2">

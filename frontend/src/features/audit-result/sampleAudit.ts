@@ -18,34 +18,32 @@ export const SAMPLE_AUDIT: EssayAudit = {
   actualScore: 62,
   accurateConcepts: [
     {
-      concept: 'Homeostasis',
-      evidenceFromHandwriting: '"homeostasis = tubuh jaga kondisi dalam tetap stabil" (baris pertama, dilingkari)',
+      concept: 'Suhu tubuh tetap pas',
+      evidenceFromHandwriting: '"tubuh jaga suhunya biar nggak kepanasan" (baris pertama, dilingkari)',
     },
     {
-      concept: 'Efektor',
-      evidenceFromHandwriting: 'Panah dari "otak" ke "kelenjar keringat → keringat keluar → suhu turun"',
+      concept: 'Keringat keluar',
+      evidenceFromHandwriting: 'Panah dari "otak" ke "keringat keluar → suhu turun"',
     },
   ],
   blindSpots: [
     {
-      concept: 'Umpan balik negatif',
+      concept: 'Keringat mendinginkan tubuh',
       importanceLevel: 'HIGH',
-      explanation:
-        'Kamu menuliskan contoh berkeringat, tetapi belum menjelaskan bahwa respons ini melawan arah perubahan sehingga suhu kembali ke titik setel.',
+      explanation: 'Kamu sudah menulis soal berkeringat, tapi belum menjelaskan kenapa keringat bikin tubuh dingin lagi.',
     },
     {
-      concept: 'Reseptor',
+      concept: 'Kulit merasakan panas',
       importanceLevel: 'MEDIUM',
-      explanation: 'Belum disebutkan bagian yang pertama kali mendeteksi kenaikan suhu (termoreseptor di kulit).',
+      explanation: 'Belum ada bagian yang pertama kali merasakan tubuh mulai panas, yaitu kulit.',
     },
   ],
   logicCorrections: [
     {
       studentStatement: '"otak langsung bikin keringat"',
-      correction:
-        'Hipotalamus bertindak sebagai pusat kontrol: ia menerima sinyal dari reseptor dulu, baru kemudian mengaktifkan kelenjar keringat sebagai efektor.',
+      correction: 'Kulit merasakan panas dulu dan memberi tahu otak. Baru setelah itu otak menyuruh tubuh berkeringat.',
     },
   ],
   encouragingSummary:
-    'Kerangka besarnya sudah kamu tangkap, terutama peran efektor. Fokuskan latihan berikutnya pada urutan reseptor → pusat kontrol → efektor dan alasan mekanismenya disebut "negatif".',
+    'Gambaran besarnya sudah kamu tangkap. Latihan berikutnya, tulis urutannya: kulit merasakan panas, otak memberi perintah, keringat keluar, lalu tubuh jadi dingin lagi.',
 };

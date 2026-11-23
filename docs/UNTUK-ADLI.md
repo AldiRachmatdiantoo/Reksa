@@ -6,6 +6,11 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 23 Nov 2026: copy UI pakai bahasa anak, "konsep" jadi "poin" (branch `feat/aldi-copy-sederhana`)
+
+- Semua teks UI sekarang memakai "poin penting" (bukan "konsep kunci" / "rubrik") dan contoh "Bab 3 Suhu Tubuh" (bukan "Homeostasis"). ⏳ menunggu: kalau setuju, samakan teks cadangan di `common/ai/geminiVision.ts` ("Konsep ini belum terlihat di catatanmu...") dan contoh di `mockAi.fixtures.ts`. Aku tidak menyentuh keduanya.
+- Satu baris di `backend/tests/unit/features/governance/ledgerPdf.test.ts` kuubah karena judul PDF jadi "Poin yang sudah tepat".
+
 ## 23 Nov 2026: kuota harian materi baru (branch `feat/aldi-kuota-materi`)
 
 - Materi baru yang memanggil AI dibatasi Gratis 3 / Pro 20 per hari, materi tersimpan Gratis 50 / Pro 300. Error baru `429 MATERIAL_QUOTA_EXCEEDED` (beda dari `QUOTA_EXCEEDED` scan milikmu) dan `409 MATERIAL_LIMIT_REACHED`. Endpoint baru `GET /api/v1/materials/quota`.

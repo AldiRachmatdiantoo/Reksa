@@ -37,7 +37,7 @@ function calibrationMessage(guess: number, actual: number) {
   if (diff > 0)
     return {
       title: 'Kamu merasa lebih paham dari hasilnya',
-      body: 'Ini wajar. Bagian di bawah menunjukkan konsep yang terasa sudah hafal tapi belum tertulis.',
+      body: 'Ini wajar. Bagian di bawah menunjukkan poin yang terasa sudah hafal tapi belum tertulis.',
     };
   return { title: 'Kamu lebih paham dari yang kamu kira', body: 'Pemahamanmu lebih kuat dari tebakanmu. Percaya diri saja.' };
 }
@@ -477,7 +477,7 @@ export function AuditResult({ scan, materialTitle, review = false, from = 'sessi
                 <Icon name="task_alt" className="text-teal" />
                 <p className="text-body-md text-ink">
                   Latihan ulang ini sudah tercatat selesai dan tidak membuat jadwal baru.{' '}
-                  {audit.blindSpots.length > 0 && 'Konsep yang masih terlewat bisa kamu baca lagi di materinya.'}
+                  {audit.blindSpots.length > 0 && 'Poin yang masih terlewat bisa kamu baca lagi di materinya.'}
                 </p>
               </section>
             ) : audit.blindSpots.length > 0 ? (
@@ -509,7 +509,7 @@ export function AuditResult({ scan, materialTitle, review = false, from = 'sessi
             ) : (
               <section className="flex items-start gap-3 rounded-lg border border-line-soft bg-card p-5 sm:p-6">
                 <Icon name="celebration" className="text-teal" />
-                <p className="text-body-md text-ink">Tidak ada konsep yang terlewat, jadi tidak perlu latihan ulang untuk materi ini.</p>
+                <p className="text-body-md text-ink">Tidak ada poin yang terlewat, jadi tidak perlu latihan ulang untuk materi ini.</p>
               </section>
             )}
 

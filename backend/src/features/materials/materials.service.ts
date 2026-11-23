@@ -46,9 +46,9 @@ export type UploadedPdf = { buffer: Buffer; size: number };
 
 /** Kode error 503 saat rubrik gagal dibuat AI; frontend menampilkan pesannya apa adanya. */
 export const AI_UNAVAILABLE_CODE = 'AI_UNAVAILABLE';
-export const AI_BUSY_MESSAGE = 'Penyusun konsep kunci sedang sibuk. Tunggu sebentar, lalu kirim lagi.';
-export const AI_DOWN_MESSAGE = 'Penyusun konsep kunci sedang tidak bisa dipakai. Coba lagi nanti.';
-export const AI_QUOTA_MESSAGE = 'Jatah penyusun konsep kunci untuk hari ini sudah habis. Coba kirim lagi besok.';
+export const AI_BUSY_MESSAGE = 'Penyusun poin penting sedang sibuk. Tunggu sebentar, lalu kirim lagi.';
+export const AI_DOWN_MESSAGE = 'Penyusun poin penting sedang tidak bisa dipakai. Coba lagi nanti.';
+export const AI_QUOTA_MESSAGE = 'Jatah penyusun poin penting untuk hari ini sudah habis. Coba kirim lagi besok.';
 
 function aiErrorKind(err: unknown): 'TRANSIENT' | 'INVALID_OUTPUT' | 'FATAL' | 'QUOTA_EXHAUSTED' {
   if (err instanceof AiProviderError) return err.kind;
@@ -112,7 +112,7 @@ export class MaterialsService {
       );
     }
     if (text.length > MATERIAL_MAX_PDF_TEXT_CHARS) {
-      throw new UnprocessableEntityError('PDF terlalu panjang. Unggah per bab supaya rubriknya lebih tajam.');
+      throw new UnprocessableEntityError('PDF terlalu panjang. Unggah per bab supaya poin pentingnya lebih tepat.');
     }
 
     const contentHash = sha256Hex(text);

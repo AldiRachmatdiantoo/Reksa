@@ -404,7 +404,7 @@ function ClassDetail({ cls, onChanged, onDeleted }: DetailProps) {
                   <span className="truncate text-body-lg text-ink">{m.title}</span>
                 </span>
                 <span className="shrink-0 text-body-sm text-ink-muted">
-                  {m.conceptCount} konsep · {formatMaterialDate(m.createdAt)}
+                  {m.conceptCount} poin · {formatMaterialDate(m.createdAt)}
                 </span>
               </li>
             ))}
