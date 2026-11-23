@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 23 November 2026, kuota harian materi baru hidup di produksi (Aldi, PR #59, #60, #61)
+**Checkpoint terakhir:** 23 November 2026, Beranda pelajar berisi kartu pintasan (Aldi, branch `feat/aldi-dasbor-beranda`)
 
 ---
 
@@ -16,6 +16,16 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #50 · Beranda pelajar berisi kartu pintasan · branch `feat/aldi-dasbor-beranda`
+
+- **Kenapa:** setelah masuk, pelajar langsung dilempar ke ruang Belajar tanpa gambaran fitur lain. Sketsa Aldi: 4 kartu kecil di atas, 3 kartu lebar di bawah, isinya pintasan seperti navbar tapi lebih mudah dipahami. (Versi pertama berisi angka dan grafik dibuang karena salah tafsir, tidak pernah di-commit.)
+- **Rute:** `/belajar/beranda` (`frontend/src/features/home/`), di dalam `StudentArea` supaya sesi belajar yang berjalan tidak hilang. `homePathFor('STUDENT')` sekarang ke Beranda, jadi masuk, daftar, logo, dan verifikasi email mendarat di sana. Educator dan admin tetap ke `/guru`.
+- **Kartu kecil:** Materi (jumlah materi tersimpan dan sisa kuota baru hari ini dari `GET /materials/quota`), Ulang (jumlah latihan yang sudah waktunya dari `GET /spaced/due`), Riwayat, Kelas. Kalau data gagal dimuat, kartu tetap tampil dengan keterangan umum.
+- **Kartu lebar:** Belajar (satu-satunya aksen ember; mengikuti sesi berjalan: lanjutkan, foto catatan, atau lihat hasil), Panduan REKSA (membuka panduan maskot lagi), Akun. Kartu Belajar memakai motif lembar bergaris.
+- **Navbar:** menu Beranda ditambahkan (6 menu). Menu sebaris di header kini mulai dari layar 1280px, di bawahnya pakai baris menu bertumpuk dengan label 11px di HP, supaya tidak ada geser ke samping di 320px sampai 1024px. Panduan maskot pelajar mendapat langkah "Mulai dari Beranda".
+- **Uji:** unit frontend 129 (logika kartu, redirect, langkah panduan); E2E 21 lolos, termasuk `home.spec.ts` baru (masuk lewat form mendarat di Beranda, tiap kartu membuka halamannya, kartu Panduan membuka panduan, axe tanpa pelanggaran) dan `mobile-layout` untuk Beranda. Dicek di browser lokal: desktop terang, HP 375px gelap, 320px.
+- **Rollout:** frontend saja, tanpa migrasi dan tanpa perubahan backend.
 
 ### #49 · Kuota harian materi baru + batas simpan · PR #59, #60, #61
 

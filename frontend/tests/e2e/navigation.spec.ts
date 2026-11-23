@@ -20,12 +20,13 @@ test('student menu navigation renders every page, with no CSP violations', async
   await expect(page.getByRole('heading', { level: 1, name: 'Materi belajarmu' })).toBeVisible();
 
   const menu = page.getByRole('navigation', { name: 'Menu pelajar' });
-  const visit = async (link: string, heading: string) => {
+  const visit = async (link: string, heading: string | RegExp) => {
     await menu.getByRole('link', { name: link, exact: true }).click();
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible({ timeout: 5_000 });
     await expect(page.locator('main')).toHaveCount(1);
   };
   await visit('Kelas', 'Kelasmu');
+  await visit('Beranda', /^Halo/);
   await visit('Belajar', 'Mau belajar materi apa?');
   await visit('Materi', 'Materi belajarmu');
   await visit('Kelas', 'Kelasmu');
