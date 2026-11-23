@@ -14,6 +14,7 @@ import { Button, ButtonLink } from '@/shared/ui/Button';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { Icon } from '@/shared/ui/Icon';
 import { LoadingBlock, StateBlock } from '@/shared/ui/StateBlock';
+import { LottieAnimation } from '@/shared/ui/LottieAnimation';
 import { StepIndicator } from '@/features/studio/StepIndicator';
 import { sessionTitle, useStudySession } from '@/features/studio/studySession';
 import type { ImportanceLevel } from './sampleAudit';
@@ -99,6 +100,10 @@ export function ResultPage() {
   const { scan, error, slow, restart } = useScanPolling(submissionId);
   const [retrying, setRetrying] = useState(false);
   const [retryError, setRetryError] = useState('');
+  // Animasi "selesai dicek" hanya diputar bila pengguna ikut menunggu di halaman ini, bukan saat membuka hasil lama.
+  const sawWaiting = useRef(false);
+  const [celebrationDone, setCelebrationDone] = useState(false);
+  const finishCelebration = useCallback(() => setCelebrationDone(true), []);
 
   useEffect(() => {
     document.title = 'Hasil Cek Catatan · REKSA';
@@ -206,6 +211,8 @@ export function ResultPage() {
   }
 
   if (!scan || scan.auditStatus !== 'DONE' || !scan.result) {
+    // Scan belum termuat (null) tidak dihitung: bisa saja itu hasil lama yang sudah selesai.
+    if (scan) sawWaiting.current = true;
     return shell(
       <StateBlock
         icon={slow ? 'hourglass_top' : 'fact_check'}
@@ -226,12 +233,21 @@ export function ResultPage() {
               ? 'Koneksi sempat terputus. REKSA terus mencoba memeriksa hasilmu.'
               : 'Pemeriksa membaca tulisan, panah, dan coretanmu. Biasanya selesai dalam beberapa detik.'}
         </span>
-        {!slow && (
-          <span
-            className="mx-auto mt-4 block size-8 animate-spin rounded-full border-[3px] border-line-soft border-t-teal motion-reduce:animate-none"
-            aria-hidden="true"
-          />
-        )}
+        <LottieAnimation
+          src="/lottie/pemindai-catatan.json"
+          loop
+          speed={slow ? 0.5 : 1}
+          className="mx-auto mt-4 aspect-[2/1] w-full max-w-56"
+        />
+      </StateBlock>,
+    );
+  }
+
+  if (sawWaiting.current && !celebrationDone) {
+    return shell(
+      <StateBlock icon="task_alt" title="Catatanmu selesai dicek">
+        <span aria-live="polite">Menyiapkan hasilmu...</span>
+        <LottieAnimation src="/lottie/cek-selesai.json" onComplete={finishCelebration} className="mx-auto mt-2 size-32" />
       </StateBlock>,
     );
   }
