@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 23 November 2026, kuota harian materi baru (Aldi, branch `feat/aldi-kuota-materi`, belum di produksi)
+**Checkpoint terakhir:** 23 November 2026, kuota harian materi baru hidup di produksi (Aldi, PR #59, #60, #61)
 
 ---
 
@@ -17,7 +17,7 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 
 ## Riwayat checkpoint
 
-### #49 · Kuota harian materi baru + batas simpan · branch `feat/aldi-kuota-materi`
+### #49 · Kuota harian materi baru + batas simpan · PR #59, #60, #61
 
 - **Kenapa:** sebelumnya unggah materi hanya dibatasi 20 per jam, jadi satu akun bisa menghabiskan kuota Gemini bersama dan storage. Rencana lengkap di `docs/RENCANA-KUOTA-MATERI.md` (PR #59).
 - **Aturan:** materi baru yang memanggil AI dibatasi Gratis 3 / Pro 20 per hari (reset 00.00 WIB, sama dengan kuota scan). Rubrik dari cache tidak dihitung. Materi tersimpan dibatasi Gratis 50 / Pro 300. Kuota dikembalikan bila AI gagal menyusun rubrik.
@@ -25,6 +25,8 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 - **Frontend:** form unggah (halaman Materi dan portal guru) menampilkan sisa kuota; kuota habis atau simpanan penuh tampil sebagai catatan Risu. Kuota habis tidak mengunci form (materi dari cache tetap boleh), simpanan penuh mengunci tombol kirim. Teks panduan maskot, Akun > Paket, dan Syarat (bagian Paket Gratis dan Pro) diperbarui. Versi Syarat tidak dinaikkan karena hanya batas pemakaian.
 - **Uji:** unit backend (kebijakan, service kuota, integrasi di MaterialsService); integration 6 skenario termasuk 5 unggahan paralel hanya meloloskan 3, kuota per akun, 401; uji rate limit 20/jam diubah memakai isi yang sama. Frontend 122 test. Dicek di browser lokal dengan backend Docker baru.
 - **Rollout produksi (urutan wajib):** 1) Aldi menjalankan `npx prisma migrate deploy` (Session pooler, user `postgres`); 2) revisi Azure baru dengan image dari commit merge; 3) Vercel otomatis. Kalau frontend terbit sebelum backend, `GET /materials/quota` 404 dan catatan kuota hanya tidak tampil.
+- **Status produksi (23 Nov):** migrasi `20261123000100_material_daily_quota` sudah dijalankan Aldi di Supabase (setelah reset password `postgres`); revisi Azure `reksa-api--latest` memakai image `1ded0940ad39`, status Berjalan. Belum dicek dengan akun login di produksi.
+- **PR terkait:** #59 dokumen rencana; #60 bagian "Dasar metodenya" di landing (4 sumber riset) dan klaim berlebihan dilunakkan; E2E diperbaiki karena panduan maskot (sejak #58) menutupi tombol untuk akun uji, sekarang akun uji memanggil `POST /me/onboarding`.
 
 ### #48 · Maskot pemandu, panduan sambutan, pop up pujian · PR #55, #56
 
