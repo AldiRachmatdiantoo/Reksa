@@ -1,9 +1,18 @@
 import { expect, test } from '@playwright/test';
-import { createMaterial, dismissCookieNotice, expectAccessible, PASSWORD, registerStudent } from './helpers';
+import {
+  createMaterial,
+  dismissCookieNotice,
+  expectAccessible,
+  expectResult,
+  PASSWORD,
+  PHOTO,
+  reachPhotoStep,
+  registerStudent,
+} from './helpers';
 
-// Beranda pelajar: tujuan setelah masuk, berisi kartu pintasan ke tiap bagian REKSA.
+// Beranda pelajar: tujuan setelah masuk, berisi satu langkah berikutnya sesuai keadaan akun.
 
-test('login lands a student on Beranda, whose cards lead to every section', async ({ page, browser, baseURL }) => {
+test('login lands a student on Beranda, whose next step follows the account state', async ({ page, browser, baseURL }) => {
   // Daftar di konteks lain supaya halaman ini mulai tanpa sesi dan benar-benar lewat form masuk.
   const other = await browser.newContext({ baseURL });
   const email = await registerStudent(other.request, 'beranda');
@@ -17,28 +26,32 @@ test('login lands a student on Beranda, whose cards lead to every section', asyn
   await expect(page).toHaveURL(/\/belajar\/beranda$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Halo, Siswa' })).toBeVisible();
 
-  const cards = page.getByRole('navigation', { name: 'Pintasan Beranda' });
-  await expect(cards.getByRole('link', { name: /Materi.*Belum ada materi/ })).toBeVisible();
-  await expect(cards.getByRole('link', { name: /Ulang.*Belum ada yang waktunya/ })).toBeVisible();
-  await expectAccessible(page, 'beranda');
+  // Akun baru: belum ada materi, jadi langkahnya menambah materi. Email belum diverifikasi ikut diberi tahu.
+  await expect(page.getByRole('link', { name: /Tambah materi pertamamu/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Perlu kamu tahu' })).toBeVisible();
+  await expectAccessible(page, 'beranda (akun baru)');
 
-  // Kartu Panduan membuka panduan maskot lagi.
-  await cards.getByRole('button', { name: /Panduan REKSA/ }).click();
+  await page.getByRole('button', { name: /Panduan REKSA/ }).click();
   await expect(page.getByText('Halo, Siswa! Aku Risa.')).toBeVisible();
   await page.getByRole('button', { name: 'Lewati' }).click();
 
-  for (const [name, heading] of [
-    [/Riwayat/, 'Riwayat'],
-    [/Kelas/, 'Kelasmu'],
-    [/Akun/, 'Akun'],
-    [/Mulai sesi belajar/, 'Mau belajar materi apa?'],
-  ] as const) {
-    await page.goto('/belajar/beranda');
-    await cards.getByRole('link', { name }).click();
-    await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
-  }
-
+  // Punya materi: langkahnya mulai sesi, dan membawa ke ruang belajar.
   await createMaterial(page.request, 'Homeostasis Beranda');
   await page.goto('/belajar/beranda');
-  await expect(cards.getByRole('link', { name: /Materi.*1 materi tersimpan/ })).toBeVisible();
+  await page.getByRole('link', { name: /Mulai sesi belajar/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Mau belajar materi apa?' })).toBeVisible();
+
+  // Sesi menunggu foto: Beranda mengarahkan ke langkah foto.
+  await reachPhotoStep(page, 'Homeostasis Beranda', 60);
+  await page.goto('/belajar/beranda');
+  await page.getByRole('link', { name: /Tinggal foto catatanmu/ }).click();
+  await expect(page).toHaveURL(/\/belajar\/foto$/);
+
+  // Setelah dicek, hasil barunya muncul di "Perlu kamu tahu".
+  await page.locator('input[type=file]:not([capture])').setInputFiles(PHOTO);
+  await page.getByRole('button', { name: 'Kirim dan cek catatan' }).click();
+  await expectResult(page);
+  await page.goto('/belajar/beranda');
+  await expect(page.getByText(/Hasil cek Homeostasis Beranda sudah keluar/)).toBeVisible();
+  await expectAccessible(page, 'beranda (ada hasil)');
 });
