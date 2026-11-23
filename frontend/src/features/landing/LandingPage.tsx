@@ -9,6 +9,8 @@ import { Brand } from '@/shared/ui/Brand';
 import { ButtonLink } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { ThemeToggle } from '@/shared/ui/ThemeToggle';
+import { Mascot } from '@/shared/mascot/Mascot';
+import { MascotTrio } from './MascotTrio';
 import { StoryTour } from './StoryTour';
 
 /** Hanya pertanyaan yang jawabannya sudah benar untuk versi saat ini. */
@@ -156,6 +158,8 @@ export function LandingPage() {
           </div>
         </section>
 
+        <MascotTrio />
+
         <StoryTour />
 
         <section id="guru" aria-labelledby="guru-title" className="border-y border-line-soft bg-card px-4 py-14 sm:px-6 lg:py-20">
@@ -227,9 +231,12 @@ export function LandingPage() {
                 Siapkan selembar kertas dan pulpen. Siapkan materi, lalu sesi pertama selesai dalam 15 menit.
               </p>
             </div>
-            <ButtonLink to={user ? homePathFor(user.role) : '/daftar'} variant="accent" size="lg" className="shrink-0">
-              {user ? 'Buka ruang belajar' : 'Buat akun gratis'}
-            </ButtonLink>
+            <div className="flex shrink-0 items-end gap-4">
+              <Mascot name="risa" mood="cheer" className="hidden h-28 w-auto md:block" />
+              <ButtonLink to={user ? homePathFor(user.role) : '/daftar'} variant="accent" size="lg" className="shrink-0">
+                {user ? 'Buka ruang belajar' : 'Buat akun gratis'}
+              </ButtonLink>
+            </div>
           </motion.div>
         </section>
       </main>
