@@ -1,6 +1,8 @@
 import NumberFlow from '@number-flow/react';
 import { motion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCelebrate } from '@/shared/mascot/celebration';
+import { resultPraise } from '@/shared/mascot/praise';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/core/apiClient';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -104,6 +106,22 @@ export function ResultPage() {
   const sawWaiting = useRef(false);
   const [celebrationDone, setCelebrationDone] = useState(false);
   const finishCelebration = useCallback(() => setCelebrationDone(true), []);
+  const celebrate = useCelebrate();
+  const praised = useRef(false);
+  const doneResult = scan?.auditStatus === 'DONE' ? scan.result : null;
+  // Pujian maskot hanya untuk hasil yang baru selesai dicek di depan pengguna, setelah animasi selesai.
+  useEffect(() => {
+    if (!doneResult || !scan || !sawWaiting.current || !celebrationDone || praised.current) return;
+    praised.current = true;
+    celebrate(
+      resultPraise({
+        score: doneResult.actualScore,
+        missed: doneResult.blindSpots.length,
+        guess: scan.predictedJolScore,
+        review: session?.sessionType === 'SPACED_REVIEW',
+      }),
+    );
+  }, [doneResult, scan, celebrationDone, celebrate, session?.sessionType]);
 
   useEffect(() => {
     document.title = 'Hasil Cek Catatan · REKSA';

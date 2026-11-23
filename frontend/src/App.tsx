@@ -6,9 +6,11 @@ import { AuthProvider } from '@/features/auth/AuthProvider';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 import { LandingPage } from '@/features/landing/LandingPage';
 import { NotFoundPage } from '@/features/landing/NotFoundPage';
+import { GuideProvider } from '@/features/onboarding/OnboardingGuide';
 import { StudySessionProvider } from '@/features/studio/studySession';
 import { ScrollToTop } from '@/shared/ScrollToTop';
 import { ConsentProvider } from '@/shared/consent';
+import { CelebrationProvider } from '@/shared/mascot/celebration';
 import { ThemeProvider } from '@/shared/theme';
 import { CookieNotice } from '@/shared/ui/CookieNotice';
 import { LoadingBlock } from '@/shared/ui/StateBlock';
@@ -137,9 +139,13 @@ export default function App() {
         <ThemeProvider>
           <AuthProvider>
             <BrowserRouter>
-              <ScrollToTop />
-              <AnimatedRoutes />
-              <CookieNotice />
+              <CelebrationProvider>
+                <GuideProvider>
+                  <ScrollToTop />
+                  <AnimatedRoutes />
+                  <CookieNotice />
+                </GuideProvider>
+              </CelebrationProvider>
             </BrowserRouter>
           </AuthProvider>
         </ThemeProvider>

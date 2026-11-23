@@ -1,5 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
+import { useCelebrate } from '@/shared/mascot/celebration';
+import { materialAddedPraise } from '@/shared/mascot/praise';
 import { useNavigate } from 'react-router-dom';
 import { ApiError } from '@/core/apiClient';
 import { useStudySession } from '@/features/studio/studySession';
@@ -25,6 +27,7 @@ export function MaterialsPage() {
   const { session, selectMaterial } = useStudySession();
   const { state, reload } = useMaterials();
   const [created, setCreated] = useState<CreateMaterialResult | null>(null);
+  const celebrate = useCelebrate();
   const [toDelete, setToDelete] = useState<MaterialSummary | null>(null);
   const [listError, setListError] = useState('');
   const [openingId, setOpeningId] = useState<string | null>(null);
@@ -41,6 +44,7 @@ export function MaterialsPage() {
 
   const onCreated = (result: CreateMaterialResult) => {
     setCreated(result);
+    celebrate(materialAddedPraise(result.material.title));
     reload();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

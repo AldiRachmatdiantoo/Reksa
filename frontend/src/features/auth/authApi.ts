@@ -17,6 +17,8 @@ export type AuthUser = {
   birthYear: number | null;
   /** true jika user belum menyetujui versi syarat dan kebijakan privasi terbaru (FR-13). */
   consentRequired: boolean;
+  /** true sampai panduan sambutan maskot selesai atau dilewati sekali. */
+  onboardingRequired: boolean;
 };
 
 export type RegisterInput = {
@@ -60,6 +62,8 @@ export const authApi = {
     apiRequest<{ message: string }>('/me/email', { method: 'POST', body: { newEmail, currentPassword } }),
   confirmEmailChange: (token: string) => apiRequest<void>('/auth/email/confirm', { method: 'POST', body: { token } }),
   recordConsent: (input: ConsentInput) => apiRequest<UserResponse>('/me/consent', { method: 'POST', body: input }).then((r) => r.user),
+  /** Idempoten: menandai panduan sambutan selesai supaya tidak muncul lagi di perangkat mana pun. */
+  completeOnboarding: () => apiRequest<UserResponse>('/me/onboarding', { method: 'POST', body: {} }).then((r) => r.user),
   activatePro: (code: string) => apiRequest<{ pro: ProStatus }>('/me/activate-pro', { method: 'POST', body: { code } }).then((r) => r.pro),
   /** Arsip zip berisi data.json dan foto tulisan. Link berlaku 5 menit, file dihapus setelah 24 jam. */
   exportData: () => apiRequest<{ export: DataExport }>('/me/export', { method: 'POST', body: {} }).then((r) => r.export),
