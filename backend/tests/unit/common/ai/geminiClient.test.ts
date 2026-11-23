@@ -28,6 +28,26 @@ async function errorOf(promise: Promise<unknown>): Promise<AiProviderError> {
 }
 
 describe('GeminiClient request', () => {
+  it('sends the relay token header only when a relay is configured', async () => {
+    const direct = vi.fn<typeof fetch>(async () => answer('{"ok":true}'));
+    await clientWith(direct).generateJson(request);
+    expect((direct.mock.calls[0]![1]!.headers as Record<string, string>)['x-reksa-relay-token']).toBeUndefined();
+
+    const relayed = vi.fn<typeof fetch>(async () => answer('{"ok":true}'));
+    const client = new GeminiClient({
+      apiKey: API_KEY,
+      fetch: relayed,
+      baseUrl: 'https://reksa.example/api/gemini-relay',
+      relayToken: 'r'.repeat(40),
+    });
+    await client.generateJson(request);
+    const [url, init] = relayed.mock.calls[0]!;
+    expect(url).toBe('https://reksa.example/api/gemini-relay/models/gemini-2.5-flash:generateContent');
+    const headers = init!.headers as Record<string, string>;
+    expect(headers['x-reksa-relay-token']).toBe('r'.repeat(40));
+    expect(headers['x-goog-api-key']).toBe(API_KEY);
+  });
+
   it('posts to generateContent with the key in a header, system instruction separate from user data, JSON mode', async () => {
     const fetchImpl = vi.fn<typeof fetch>(async () => answer('{"ok":true}'));
     await expect(clientWith(fetchImpl).generateJson(request)).resolves.toEqual({ ok: true });

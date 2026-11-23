@@ -37,8 +37,14 @@ export type GeminiClientOptions = {
   fetch?: typeof fetch;
   /** Batas waktu satu permintaan; AuditService juga membatasi 60 detik dari luar. */
   timeoutMs?: number;
+  /** Bawaan GEMINI_API_BASE. Produksi Azure memakai relay Vercel karena Google menolak lokasi server Azure. */
   baseUrl?: string;
+  /** Dikirim sebagai header `x-reksa-relay-token` ke relay; relay menolak permintaan tanpa token yang cocok. */
+  relayToken?: string;
 };
+
+/** Header token relay Gemini; nama yang sama dibaca `frontend/api/gemini-relay.ts`. */
+export const RELAY_TOKEN_HEADER = 'x-reksa-relay-token';
 
 type GenerateContentResponse = {
   candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
@@ -93,7 +99,11 @@ export class GeminiClient {
       res = await this.fetchImpl(`${this.baseUrl}/models/${request.model}:generateContent`, {
         method: 'POST',
         // API key di header, bukan query string, supaya tidak tercatat di log URL mana pun.
-        headers: { 'content-type': 'application/json', 'x-goog-api-key': this.options.apiKey },
+        headers: {
+          'content-type': 'application/json',
+          'x-goog-api-key': this.options.apiKey,
+          ...(this.options.relayToken ? { [RELAY_TOKEN_HEADER]: this.options.relayToken } : {}),
+        },
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(this.timeoutMs),
       });

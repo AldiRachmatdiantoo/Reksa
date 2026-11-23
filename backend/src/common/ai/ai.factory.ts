@@ -4,7 +4,7 @@ import { GeminiAiProvider, type GeminiAiProviderOptions } from './geminiAi.provi
 import { MockAiProvider } from './mockAi.provider.js';
 
 export type AiFactoryEnv = Pick<Env, 'AI_PROVIDER_MODE' | 'MOCK_AI_LATENCY_MS'> &
-  Partial<Pick<Env, 'GEMINI_API_KEY' | 'GEMINI_TEXT_MODEL' | 'GEMINI_VISION_MODEL'>>;
+  Partial<Pick<Env, 'GEMINI_API_KEY' | 'GEMINI_TEXT_MODEL' | 'GEMINI_VISION_MODEL' | 'GEMINI_API_BASE_URL' | 'GEMINI_RELAY_TOKEN'>>;
 
 export type AiFactoryHooks = {
   /** Sinyal Stage 2 (instruksi mencurigakan di foto, klaim tanpa bukti). Hanya angka dan flag, tanpa isi. */
@@ -18,7 +18,11 @@ export function createAiService(env: AiFactoryEnv, hooks: AiFactoryHooks = {}): 
     case 'gemini':
       // loadEnv sudah mewajibkan GEMINI_API_KEY di mode ini; GeminiClient tetap menolak kunci kosong.
       return new GeminiAiProvider({
-        clientOptions: { apiKey: env.GEMINI_API_KEY ?? '' },
+        clientOptions: {
+          apiKey: env.GEMINI_API_KEY ?? '',
+          baseUrl: env.GEMINI_API_BASE_URL,
+          relayToken: env.GEMINI_RELAY_TOKEN,
+        },
         textModel: env.GEMINI_TEXT_MODEL,
         visionModel: env.GEMINI_VISION_MODEL,
         onSignal: hooks.onSignal,

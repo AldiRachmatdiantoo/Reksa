@@ -52,6 +52,14 @@ export const EnvSchema = z
     AI_PROVIDER_MODE: z.enum(['mock', 'gemini']).default('mock'),
     MOCK_AI_LATENCY_MS: z.coerce.number().int().min(0).max(10_000).default(300),
     GEMINI_API_KEY: z.string().optional(),
+    // Alamat API Gemini. Kosong = langsung ke Google. Produksi Azure Indonesia Central ditolak Google
+    // ("User location is not supported"), jadi diarahkan ke relay Vercel: https://<app>.vercel.app/api/gemini-relay
+    GEMINI_API_BASE_URL: z
+      .url({ protocol: /^https$/ })
+      .transform((v) => v.replace(/\/+$/, ''))
+      .optional(),
+    // Token bersama backend ↔ relay (minimal 32 karakter acak); wajib bila GEMINI_API_BASE_URL diisi.
+    GEMINI_RELAY_TOKEN: z.string().min(32).optional(),
     // Model per tahap, boleh daftar dipisah koma (maks. 4). Free tier punya kuota harian per model: saat kuota
     // model pertama habis, model berikutnya dipakai. Bawaan ada di geminiAi.provider.ts.
     GEMINI_TEXT_MODEL: geminiModelList.optional(),
@@ -63,6 +71,13 @@ export const EnvSchema = z
         code: 'custom',
         path: ['GEMINI_API_KEY'],
         message: 'GEMINI_API_KEY wajib diisi saat AI_PROVIDER_MODE=gemini',
+      });
+    }
+    if (env.GEMINI_API_BASE_URL && !env.GEMINI_RELAY_TOKEN) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['GEMINI_RELAY_TOKEN'],
+        message: 'GEMINI_RELAY_TOKEN wajib diisi bila GEMINI_API_BASE_URL dipakai (relay menolak tanpa token)',
       });
     }
     if (env.NODE_ENV === 'production' && !env.SMTP_URL) {
