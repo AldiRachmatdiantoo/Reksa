@@ -54,7 +54,10 @@ export const materialsApi = {
  * Buka PDF asli materi di tab baru lewat signed URL (berlaku 5 menit). Tab dibuka sinkron sebelum await supaya
  * tidak diblokir pemblokir pop up. Mengembalikan false bila URL gagal diambil (tab kosong ditutup lagi).
  */
-export async function openMaterialPdf(id: string, getUrl: (id: string) => Promise<{ url: string }> = materialsApi.fileUrl): Promise<boolean> {
+export async function openMaterialPdf(
+  id: string,
+  getUrl: (id: string) => Promise<{ url: string }> = materialsApi.fileUrl,
+): Promise<boolean> {
   const tab = window.open('about:blank', '_blank');
   try {
     const { url } = await getUrl(id);

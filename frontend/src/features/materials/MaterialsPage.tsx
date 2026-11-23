@@ -9,7 +9,14 @@ import { Button } from '@/shared/ui/Button';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { Icon } from '@/shared/ui/Icon';
 import { LoadingBlock, StateBlock } from '@/shared/ui/StateBlock';
-import { formatMaterialDate, materialsApi, openMaterialPdf, useMaterials, type CreateMaterialResult, type MaterialSummary } from './materialsApi';
+import {
+  formatMaterialDate,
+  materialsApi,
+  openMaterialPdf,
+  useMaterials,
+  type CreateMaterialResult,
+  type MaterialSummary,
+} from './materialsApi';
 import { RubricPreview } from './RubricPreview';
 import { UploadMaterialForm } from './UploadMaterialForm';
 
