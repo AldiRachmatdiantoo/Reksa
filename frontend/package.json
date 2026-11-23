@@ -19,6 +19,7 @@
     "@fontsource/radio-canada-big": "^5.3.0",
     "@fontsource/spline-sans-mono": "^5.3.0",
     "@number-flow/react": "^0.5.10",
+    "lottie-web": "5.13.0",
     "motion": "^12.23.24",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
