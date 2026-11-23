@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 23 November 2026, Beranda pelajar berisi kartu pintasan (Aldi, branch `feat/aldi-dasbor-beranda`)
+**Checkpoint terakhir:** 23 November 2026, Beranda pelajar berisi kartu pintasan hidup di produksi (Aldi, PR #63)
 
 ---
 
@@ -17,7 +17,7 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 
 ## Riwayat checkpoint
 
-### #50 · Beranda pelajar berisi kartu pintasan · branch `feat/aldi-dasbor-beranda`
+### #50 · Beranda pelajar berisi kartu pintasan · PR #63
 
 - **Kenapa:** setelah masuk, pelajar langsung dilempar ke ruang Belajar tanpa gambaran fitur lain. Sketsa Aldi: 4 kartu kecil di atas, 3 kartu lebar di bawah, isinya pintasan seperti navbar tapi lebih mudah dipahami. (Versi pertama berisi angka dan grafik dibuang karena salah tafsir, tidak pernah di-commit.)
 - **Rute:** `/belajar/beranda` (`frontend/src/features/home/`), di dalam `StudentArea` supaya sesi belajar yang berjalan tidak hilang. `homePathFor('STUDENT')` sekarang ke Beranda, jadi masuk, daftar, logo, dan verifikasi email mendarat di sana. Educator dan admin tetap ke `/guru`.
@@ -26,6 +26,7 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 - **Navbar:** menu Beranda ditambahkan (6 menu). Menu sebaris di header kini mulai dari layar 1280px, di bawahnya pakai baris menu bertumpuk dengan label 11px di HP, supaya tidak ada geser ke samping di 320px sampai 1024px. Panduan maskot pelajar mendapat langkah "Mulai dari Beranda".
 - **Uji:** unit frontend 129 (logika kartu, redirect, langkah panduan); E2E 21 lolos, termasuk `home.spec.ts` baru (masuk lewat form mendarat di Beranda, tiap kartu membuka halamannya, kartu Panduan membuka panduan, axe tanpa pelanggaran) dan `mobile-layout` untuk Beranda. Dicek di browser lokal: desktop terang, HP 375px gelap, 320px.
 - **Rollout:** frontend saja, tanpa migrasi dan tanpa perubahan backend.
+- **Status produksi (23 Nov):** PR #63 merge dengan 9 check lolos; Vercel `reksa-brown` sudah menyajikan bundle dengan rute `/belajar/beranda`. Belum dicek dengan akun login di produksi.
 
 ### #49 · Kuota harian materi baru + batas simpan · PR #59, #60, #61
 
