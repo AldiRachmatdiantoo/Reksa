@@ -10,33 +10,45 @@
  * dengan pendaftaran (min. 12 karakter, huruf besar, huruf kecil, angka). Sesi login lama akun itu dicabut.
  * Akun baru belum menyetujui syarat dan kebijakan privasi, jadi diminta setuju saat masuk pertama kali.
  */
-import { parseArgs } from 'node:util';
-import { Argon2PasswordHasher } from '../src/common/utils/passwordHasher.js';
-import { createPrismaClient } from '../src/config/prisma.js';
-import { EmailSchema, StrongPasswordSchema } from '../src/features/auth/auth.schema.js';
+import { parseArgs } from "node:util";
+import { Argon2PasswordHasher } from "../src/common/utils/passwordHasher.js";
+import { createPrismaClient } from "../src/config/prisma.js";
+import {
+  EmailSchema,
+  StrongPasswordSchema,
+} from "../src/features/auth/auth.schema.js";
 
-const ROLES = ['STUDENT', 'EDUCATOR'] as const;
+const ROLES = ["STUDENT", "EDUCATOR"] as const;
 type DemoRole = (typeof ROLES)[number];
 
 const { values } = parseArgs({
   options: {
-    email: { type: 'string' },
-    role: { type: 'string' },
-    name: { type: 'string' },
+    email: { type: "string" },
+    role: { type: "string" },
+    name: { type: "string" },
   },
 });
 
 async function main(): Promise<void> {
   const url = process.env.MIGRATION_DATABASE_URL;
-  if (!url) throw new Error('MIGRATION_DATABASE_URL wajib diisi (role pemilik skema)');
+  if (!url)
+    throw new Error("MIGRATION_DATABASE_URL wajib diisi (role pemilik skema)");
 
-  const email = EmailSchema.safeParse(values.email ?? '');
-  if (!email.success) throw new Error('--email tidak valid');
+  const email = EmailSchema.safeParse(values.email ?? "");
+  if (!email.success) throw new Error("--email tidak valid");
   const role = values.role as DemoRole;
-  if (!ROLES.includes(role)) throw new Error('--role harus STUDENT atau EDUCATOR');
-  const password = StrongPasswordSchema.safeParse(process.env.DEMO_PASSWORD ?? '');
-  if (!password.success) throw new Error(`DEMO_PASSWORD tidak memenuhi aturan: ${password.error.issues.map((i) => i.message).join(', ')}`);
-  const fullName = (values.name?.trim() || (role === 'STUDENT' ? 'Demo Pelajar' : 'Demo Guru')).slice(0, 100);
+  if (!ROLES.includes(role))
+    throw new Error("--role harus STUDENT atau EDUCATOR");
+  const password = StrongPasswordSchema.safeParse(
+    process.env.DEMO_PASSWORD ?? "",
+  );
+  if (!password.success)
+    throw new Error(
+      `DEMO_PASSWORD tidak memenuhi aturan: ${password.error.issues.map((i) => i.message).join(", ")}`,
+    );
+  const fullName = (
+    values.name?.trim() || (role === "STUDENT" ? "Demo Pelajar" : "Demo Guru")
+  ).slice(0, 100);
 
   const passwordHash = await new Argon2PasswordHasher().hash(password.data);
   const prisma = createPrismaClient(url);
@@ -48,16 +60,31 @@ async function main(): Promise<void> {
       });
       if (existing) {
         // Peran tidak diubah diam-diam: akun yang perannya lain kemungkinan bukan akun demo yang dimaksud.
-        if (existing.role !== role) throw new Error(`Akun ${email.data} sudah ada dengan peran ${existing.role}, bukan ${role}. Tidak diubah.`);
+        if (existing.role !== role)
+          throw new Error(
+            `Akun ${email.data} sudah ada dengan peran ${existing.role}, bukan ${role}. Tidak diubah.`,
+          );
         await tx.user.update({
           where: { id: existing.id },
-          data: { passwordHash, emailVerifiedAt: existing.emailVerifiedAt ?? new Date() },
+          data: {
+            passwordHash,
+            emailVerifiedAt: existing.emailVerifiedAt ?? new Date(),
+          },
         });
-        await tx.refreshToken.updateMany({ where: { userId: existing.id, isRevoked: false }, data: { isRevoked: true } });
+        await tx.refreshToken.updateMany({
+          where: { userId: existing.id, isRevoked: false },
+          data: { isRevoked: true },
+        });
         return { id: existing.id, created: false };
       }
       const user = await tx.user.create({
-        data: { email: email.data, passwordHash, fullName, role, emailVerifiedAt: new Date() },
+        data: {
+          email: email.data,
+          passwordHash,
+          fullName,
+          role,
+          emailVerifiedAt: new Date(),
+        },
         select: { id: true },
       });
       return { id: user.id, created: true };
