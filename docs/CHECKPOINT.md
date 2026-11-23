@@ -28,7 +28,7 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 - **Uji:** backend unit 417 lolos, integration `onboarding.test.ts` 4 skenario (termasuk 401 tanpa sesi dan 400 field asing); frontend 115 test lolos; dicek di browser lokal (gelap, terang, layar HP).
 - **Rollout produksi (urutan wajib):** 1) Aldi menjalankan `npx prisma migrate deploy` dengan `MIGRATION_DATABASE_URL` Session pooler user `postgres`; 2) revisi Azure baru dengan image dari commit merge; 3) Vercel ikut terbangun otomatis.
 - **Panduan bubble chat (PR #56):** panduan diubah dari pop up penuh menjadi pendamping ala game: maskot di pojok bawah bicara lewat balon teks (efek ketik, tekan pertama menampilkan kalimat utuh), halaman tetap bisa dipakai, bagian yang dijelaskan disorot bingkai oranye + panah (`Spotlight.tsx`, `useTypewriter.ts`). Hanya frontend.
-- **Status produksi (23 Nov 2026):** migrasi `20261123000000_user_onboarded_at` sudah dijalankan Aldi di Supabase; revisi Azure baru dengan image `3185c950d87f` berjalan; Aldi memastikan Risa menyapa setelah login di `reksa-brown.vercel.app`. Password `postgres` Supabase sudah diganti karena sempat tertempel di chat.
+- **Status produksi (23 Nov 2026):** migrasi `20261123000000_user_onboarded_at` sudah dijalankan Aldi di Supabase; revisi Azure baru dengan image `3185c950d87f` berjalan; Aldi memastikan Risa menyapa setelah login di `reksa-brown.vercel.app`. Password `postgres` Supabase sempat tertempel di chat; Aldi diminta menggantinya lewat Reset database password.
 
 ### #47 · Gemini lewat relay Vercel · PR #51 `feat/aldi-gemini-relay`
 
