@@ -5,6 +5,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/api/gemini-relay/models/:model", "destination": "/api/gemini-relay?model=:model" },
     { "source": "/api/:path*", "destination": "https://reksa-api.salmondesert-4d070d6d.indonesiacentral.azurecontainerapps.io/api/:path*" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],

@@ -75,4 +75,14 @@ describe('loadEnv', () => {
       expect((err as Error).message).not.toContain(secret);
     }
   });
+  it('requires a relay token when GEMINI_API_BASE_URL is set, and trims its trailing slash', () => {
+    expect(() => loadEnv({ ...validEnv, GEMINI_API_BASE_URL: 'https://reksa.example/api/gemini-relay' })).toThrow(/GEMINI_RELAY_TOKEN/);
+    const env = loadEnv({
+      ...validEnv,
+      GEMINI_API_BASE_URL: 'https://reksa.example/api/gemini-relay/',
+      GEMINI_RELAY_TOKEN: 't'.repeat(32),
+    });
+    expect(env.GEMINI_API_BASE_URL).toBe('https://reksa.example/api/gemini-relay');
+    expect(() => loadEnv({ ...validEnv, GEMINI_API_BASE_URL: 'http://reksa.example/x', GEMINI_RELAY_TOKEN: 't'.repeat(32) })).toThrow();
+  });
 });

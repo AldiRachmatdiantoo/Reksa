@@ -1,10 +1,19 @@
 # Catatan untuk Adli
 
 Dari: Aldi
-Terakhir diperbarui: 22 November 2026
+Terakhir diperbarui: 23 November 2026
 Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `materials` di PR `feat/aldi-materials` (lihat §1d). Frontend kini repo terpisah (lihat §0).
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
+
+## 23 Nov 2026: Gemini lewat relay Vercel di produksi (branch `feat/aldi-gemini-relay`)
+
+Google menolak panggilan Gemini dari server Azure Indonesia Central (`400 FAILED_PRECONDITION: User location is not supported for the API use`), padahal key yang sama jalan dari laptop. Jadi di produksi semua panggilan Gemini, termasuk Stage 2 Vision milikmu, lewat fungsi Vercel `frontend/api/gemini-relay.ts` (berjalan di AS).
+
+- **`common/ai/geminiClient.ts`:** opsi baru `relayToken`, dikirim sebagai header `x-reksa-relay-token` hanya kalau diisi. URL tetap `${baseUrl}/models/<model>:generateContent`.
+- **`common/ai/ai.factory.ts` + `config/env.ts`:** env opsional `GEMINI_API_BASE_URL` (https) dan `GEMINI_RELAY_TOKEN` (min. 32 karakter, wajib bila base URL diisi). Kosong = langsung ke Google seperti dulu, jadi lokal dan uji live-mu tidak berubah.
+- **`geminiAi.provider.ts` dan `geminiVision.ts` tidak diubah.**
+- **`tests/unit/common/ai/geminiClient.test.ts`:** satu test baru untuk header token relay.
 
 ## 22 Nov 2026: antrean audit pakai BRPOP (branch `feat/aldi-redis-brpop`)
 
