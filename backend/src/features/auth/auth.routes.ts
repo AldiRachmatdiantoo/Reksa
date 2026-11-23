@@ -11,6 +11,7 @@ import {
   ChangePasswordSchema,
   ConfirmEmailChangeSchema,
   ConsentSchema,
+  EmptyBodySchema,
   ForgotPasswordSchema,
   LoginSchema,
   RegisterSchema,
@@ -142,6 +143,7 @@ export function createAuthRouter({ service, signer, redis }: AuthRouterDeps): Ro
 /**
  * PATCH /me            { fullName }
  * POST  /me/consent    { acceptTerms: true, birthYear?, adultConfirmed? }; setuju versi dokumen terbaru (FR-13)
+ * POST  /me/onboarding {}; panduan sambutan maskot selesai atau dilewati (idempoten)
  * PATCH /me/password   { currentPassword, newPassword }; 5/15 menit per user; perangkat lain dikeluarkan
  * POST  /me/email      { newEmail, currentPassword }; selalu 202; 5/jam per user; tautan ke alamat baru (F1)
  */
@@ -152,6 +154,7 @@ export function createMeRouter({ service, signer, redis }: AuthRouterDeps): Rout
   router.use(requireAuth(signer));
   router.patch('/', validate({ body: UpdateProfileSchema }), controller.updateProfile);
   router.post('/consent', validate({ body: ConsentSchema }), controller.recordConsent);
+  router.post('/onboarding', validate({ body: EmptyBodySchema }), controller.completeOnboarding);
   router.patch(
     '/password',
     // Cegah tebak password lama lewat sesi yang tercuri.

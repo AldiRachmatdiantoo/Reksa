@@ -96,6 +96,8 @@ model User {
   guardianConsent Boolean   @default(false) @map("guardian_consent")
   /// FR-11: tier efektif PRO selama tanggal ini belum lewat.
   proExpiresAt    DateTime? @map("pro_expires_at") @db.Timestamptz(6)
+  /// Panduan sambutan maskot selesai dilihat. Null = tampilkan panduan saat masuk berikutnya.
+  onboardedAt     DateTime? @map("onboarded_at") @db.Timestamptz(6)
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   institution      Institution?        @relation(fields: [institutionId], references: [id], onDelete: SetNull)

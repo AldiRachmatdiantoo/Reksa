@@ -16,6 +16,7 @@ export type UserRecord = {
   privacyVersion: string | null;
   guardianConsent: boolean;
   proExpiresAt: Date | null;
+  onboardedAt: Date | null;
 };
 
 /** FR-13: catatan persetujuan yang disimpan saat daftar dan saat setuju ulang. */
@@ -46,6 +47,8 @@ export interface AuthRepository {
   createUser(data: { email: string; passwordHash: string; fullName: string; role: Role } & ConsentRecord): Promise<UserRecord>;
   recordConsent(userId: string, consent: ConsentRecord): Promise<UserRecord | null>;
   updateFullName(userId: string, fullName: string): Promise<UserRecord | null>;
+  /** Menandai panduan sambutan selesai. Waktu pertama dipertahankan bila dipanggil lagi. */
+  markOnboarded(userId: string, at: Date): Promise<UserRecord | null>;
   updatePasswordHash(userId: string, passwordHash: string): Promise<void>;
   /** Hanya mengisi bila masih kosong, supaya tanggal verifikasi pertama tidak tertimpa. */
   markEmailVerified(userId: string, at: Date): Promise<void>;
@@ -103,6 +106,7 @@ const userSelect = {
   privacyVersion: true,
   guardianConsent: true,
   proExpiresAt: true,
+  onboardedAt: true,
 } as const;
 
 export class PrismaAuthRepository implements AuthRepository {
@@ -133,6 +137,11 @@ export class PrismaAuthRepository implements AuthRepository {
   async updateFullName(userId: string, fullName: string): Promise<UserRecord | null> {
     const { count } = await this.db.user.updateMany({ where: { id: userId }, data: { fullName } });
     return count === 0 ? null : this.findUserById(userId);
+  }
+
+  async markOnboarded(userId: string, at: Date): Promise<UserRecord | null> {
+    await this.db.user.updateMany({ where: { id: userId, onboardedAt: null }, data: { onboardedAt: at } });
+    return this.findUserById(userId);
   }
 
   async recordConsent(userId: string, consent: ConsentRecord): Promise<UserRecord | null> {

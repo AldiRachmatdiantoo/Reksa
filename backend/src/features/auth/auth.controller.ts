@@ -6,6 +6,7 @@ import {
   ChangePasswordSchema,
   ConfirmEmailChangeSchema,
   ConsentSchema,
+  EmptyBodySchema,
   ForgotPasswordSchema,
   LoginSchema,
   RegisterSchema,
@@ -94,6 +95,11 @@ export class AuthController {
   recordConsent = async (_req: Request, res: Response): Promise<void> => {
     const { body } = getValidated(res, { body: ConsentSchema });
     res.json({ user: await this.service.recordConsent(getAuth(res).userId, body) });
+  };
+
+  completeOnboarding = async (_req: Request, res: Response): Promise<void> => {
+    getValidated(res, { body: EmptyBodySchema });
+    res.json({ user: await this.service.completeOnboarding(getAuth(res).userId) });
   };
 
   requestEmailChange = async (_req: Request, res: Response): Promise<void> => {
