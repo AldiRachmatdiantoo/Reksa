@@ -127,6 +127,20 @@ Remove-Item Env:MIGRATION_DATABASE_URL
 
 Kata sandi sementara admin dan kode Pro mentah hanya tampil sekali di terminal; simpan di password manager.
 
+Akun demo pelajar/guru (email langsung terverifikasi, kata sandi dipasang dari env, akun dibuat kalau belum ada):
+
+```powershell
+cd backend
+$env:MIGRATION_DATABASE_URL = "<session pooler URL, user postgres>"
+$env:DEMO_PASSWORD = "<kata sandi akun demo pelajar>"
+npx tsx scripts/set-demo-account.ts --email demopelajar@gmail.com --role STUDENT --name "Demo Pelajar"
+$env:DEMO_PASSWORD = "<kata sandi akun demo guru>"
+npx tsx scripts/set-demo-account.ts --email demoguru@gmail.com --role EDUCATOR --name "Demo Guru"
+Remove-Item Env:DEMO_PASSWORD, Env:MIGRATION_DATABASE_URL
+```
+
+Akun yang sudah ada dengan peran lain tidak diubah. Sesi login lama akun itu dicabut.
+
 ## 7. Yang wajib dicek di uji produksi (D4)
 
 Hal yang tidak bisa dibuktikan di lokal:
