@@ -6,6 +6,12 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 23 Nov 2026: field baru `onboardingRequired` di respons user (branch `feat/aldi-maskot-pemandu`)
+
+- Semua respons user (`/auth/register`, `/auth/login`, `/auth/me`, `/me`) sekarang punya `onboardingRequired: boolean`. Endpoint baru `POST /api/v1/me/onboarding` (body kosong) menandai panduan maskot selesai. Kalau kamu membuat objek user di test, tambahkan field ini.
+- Migrasi baru `20261123000000_user_onboarded_at`: jalankan `docker compose --profile tools run --rm migrate` setelah pull.
+- Di frontend aku menambah pop up pujian maskot di `StudioPage` (timer habis) dan `ResultPage` (hasil baru selesai dicek). Logika sesi dan polling tidak berubah.
+
 ## 23 Nov 2026: Gemini lewat relay Vercel di produksi (branch `feat/aldi-gemini-relay`)
 
 Google menolak panggilan Gemini dari server Azure Indonesia Central (`400 FAILED_PRECONDITION: User location is not supported for the API use`), padahal key yang sama jalan dari laptop. Jadi di produksi semua panggilan Gemini, termasuk Stage 2 Vision milikmu, lewat fungsi Vercel `frontend/api/gemini-relay.ts` (berjalan di AS).

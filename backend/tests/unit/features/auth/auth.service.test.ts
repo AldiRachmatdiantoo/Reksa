@@ -50,10 +50,10 @@ class InMemoryAuthRepository implements AuthRepository {
   async findUserById(id: string) {
     return this.users.find((u) => u.id === id) ?? null;
   }
-  async createUser(data: Omit<UserRecord, 'id' | 'tier' | 'emailVerifiedAt' | 'proExpiresAt'> & { consentedAt: Date }) {
+  async createUser(data: Omit<UserRecord, 'id' | 'tier' | 'emailVerifiedAt' | 'proExpiresAt' | 'onboardedAt'> & { consentedAt: Date }) {
     if (this.users.some((u) => u.email === data.email)) throw new ConflictError('Email sudah terdaftar');
     const { consentedAt: _consentedAt, ...rest } = data;
-    const user: UserRecord = { id: randomUUID(), tier: 'FREE', emailVerifiedAt: null, proExpiresAt: null, ...rest };
+    const user: UserRecord = { id: randomUUID(), tier: 'FREE', emailVerifiedAt: null, proExpiresAt: null, onboardedAt: null, ...rest };
     this.users.push(user);
     return user;
   }
@@ -62,6 +62,12 @@ class InMemoryAuthRepository implements AuthRepository {
     if (!user) return null;
     const { consentedAt: _consentedAt, ...rest } = consent;
     Object.assign(user, rest);
+    return user;
+  }
+  async markOnboarded(userId: string, at: Date) {
+    const user = this.users.find((u) => u.id === userId);
+    if (!user) return null;
+    user.onboardedAt ??= at;
     return user;
   }
   async updateFullName(userId: string, fullName: string) {
@@ -184,6 +190,7 @@ describe('AuthService', () => {
         tier: 'FREE',
         emailVerified: false,
         proExpiresAt: null,
+        onboardingRequired: true,
         birthYear: 2000,
         consentRequired: false,
       });
@@ -424,6 +431,31 @@ describe('AuthService', () => {
 
     it('rejects a user that no longer exists', async () => {
       await expect(service.getCurrentUser(randomUUID())).rejects.toBeInstanceOf(UnauthorizedError);
+    });
+  });
+
+  describe('onboarding (panduan sambutan)', () => {
+    it('akun baru wajib melihat panduan, lalu tidak lagi setelah selesai', async () => {
+      const { user } = await service.register(registerInput);
+      expect(user.onboardingRequired).toBe(true);
+
+      const done = await service.completeOnboarding(user.id);
+      expect(done.onboardingRequired).toBe(false);
+      expect(repo.users[0]?.onboardedAt).toEqual(now);
+      await expect(service.getCurrentUser(user.id)).resolves.toMatchObject({ onboardingRequired: false });
+    });
+
+    it('idempoten: waktu selesai pertama dipertahankan', async () => {
+      const { user } = await service.register(registerInput);
+      await service.completeOnboarding(user.id);
+      const first = now;
+      now = new Date(now.getTime() + 60_000);
+      await service.completeOnboarding(user.id);
+      expect(repo.users[0]?.onboardedAt).toEqual(first);
+    });
+
+    it('menolak user yang sudah tidak ada', async () => {
+      await expect(service.completeOnboarding(randomUUID())).rejects.toBeInstanceOf(UnauthorizedError);
     });
   });
 

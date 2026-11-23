@@ -71,6 +71,9 @@ export const ConsentSchema = z
   })
   .strict();
 
+/** Body kosong untuk aksi tanpa input (mis. POST /me/onboarding); field asing ditolak. */
+export const EmptyBodySchema = z.object({}).strict().default({});
+
 /** Respons publik data user. Jangan pernah sertakan passwordHash. */
 export const AuthUserResponseSchema = z
   .object({
@@ -86,6 +89,8 @@ export const AuthUserResponseSchema = z
     birthYear: z.number().int().nullable(),
     /** FR-13: true bila belum menyetujui versi dokumen terbaru; frontend menampilkan layar persetujuan. */
     consentRequired: z.boolean(),
+    /** true bila panduan sambutan maskot belum pernah diselesaikan; frontend menampilkannya sekali. */
+    onboardingRequired: z.boolean(),
   })
   .strict();
 

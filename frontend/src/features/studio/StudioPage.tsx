@@ -1,6 +1,8 @@
 import NumberFlow, { NumberFlowGroup } from '@number-flow/react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCelebrate } from '@/shared/mascot/celebration';
+import { focusDonePraise } from '@/shared/mascot/praise';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/core/apiClient';
 import { formatMaterialDate, openMaterialPdf, useMaterial, useMaterials, type Material } from '@/features/materials/materialsApi';
@@ -208,6 +210,16 @@ function FocusSession({ material }: { material: Material }) {
   const elapsed = running && session?.startedAt ? Math.min(totalSeconds, Math.floor((now - session.startedAt) / 1000)) : 0;
   const remaining = totalSeconds - elapsed;
   const timeUp = running && remaining === 0;
+  const celebrate = useCelebrate();
+  // Sekali per sesi, tepat saat timer menyentuh nol (bukan saat membuka lagi sesi yang waktunya sudah habis).
+  const sawCountdown = useRef(false);
+  useEffect(() => {
+    if (running && remaining > 0) sawCountdown.current = true;
+    if (timeUp && sawCountdown.current) {
+      sawCountdown.current = false;
+      celebrate(focusDonePraise(preset));
+    }
+  }, [running, remaining, timeUp, preset, celebrate]);
 
   const onFinish = () => {
     finishFocus(Math.max(elapsed, 1));

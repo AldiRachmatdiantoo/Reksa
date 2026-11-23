@@ -10,6 +10,8 @@ import { TextField } from '@/shared/ui/TextField';
 import { outbox } from '@/shared/offline/outbox';
 import { LedgerPdfSection } from '@/features/governance/LedgerPdfExport';
 import { InstitutionJoinSection } from '@/features/institution/InstitutionJoinSection';
+import { useGuide } from '@/features/onboarding/OnboardingGuide';
+import { Mascot } from '@/shared/mascot/Mascot';
 import { DataSection, PlanSection } from './AccountDataSections';
 import { useAuth } from './AuthProvider';
 import { authApi, isEffectivePro, ROLE_LABEL, type AuthUser } from './authApi';
@@ -38,6 +40,7 @@ export function AccountPage() {
         {auth.user.role === 'EDUCATOR' && <InstitutionJoinSection />}
         <EmailSection currentEmail={auth.user.email} />
         <PasswordSection onChanged={auth.updateUser} />
+        <GuideSection />
         <DataSection
           user={auth.user}
           onDeleted={() => {
@@ -143,6 +146,28 @@ function ProfileSection({ user, onSaved }: { user: AuthUser; onSaved: (user: Aut
 }
 
 /** F1: email akun berganti setelah tautan di alamat baru dibuka, jadi di sini hanya mengirim permintaan. */
+/** Membuka lagi panduan sambutan maskot. */
+function GuideSection() {
+  const { openGuide } = useGuide();
+  return (
+    <section aria-labelledby="guide-title" className="flex items-center gap-4 rounded-lg border border-line-soft bg-card p-5 sm:p-6">
+      <Mascot name="risa" className="h-16 w-auto shrink-0" />
+      <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h2 id="guide-title" className="font-title text-title-lg text-ink">
+            Panduan REKSA
+          </h2>
+          <p className="text-body-md text-ink-muted">Lupa fitur apa saja yang ada? Risa bisa jelasin lagi.</p>
+        </div>
+        <Button variant="outline" onClick={openGuide} className="self-start sm:self-auto">
+          <Icon name="tour" />
+          Lihat panduan lagi
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 function EmailSection({ currentEmail }: { currentEmail: string }) {
   const [newEmail, setNewEmail] = useState('');
   const [password, setPassword] = useState('');

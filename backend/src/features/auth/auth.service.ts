@@ -249,6 +249,15 @@ export class AuthService {
     this.deps.onSecurityEvent?.('PASSWORD_RESET', { userId });
   }
 
+  // ---------- Panduan sambutan ----------
+
+  /** Panduan sambutan selesai atau dilewati. Idempoten: memanggil lagi tidak mengubah waktu pertama. */
+  async completeOnboarding(userId: string): Promise<AuthUserResponse> {
+    const user = await this.deps.repo.markOnboarded(userId, this.now());
+    if (!user) throw new UnauthorizedError();
+    return this.toPublicUser(user);
+  }
+
   // ---------- FR-14: profil ----------
 
   async updateProfile(userId: string, fullName: string): Promise<AuthUserResponse> {
@@ -437,6 +446,7 @@ export class AuthService {
       proExpiresAt: user.proExpiresAt?.toISOString() ?? null,
       birthYear: user.birthYear,
       consentRequired: user.termsVersion !== TERMS_VERSION || user.privacyVersion !== PRIVACY_VERSION,
+      onboardingRequired: user.onboardedAt === null,
     };
   }
 
