@@ -1,6 +1,7 @@
 import { createContext, startTransition, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ApiError, onSessionExpired } from '@/core/apiClient';
 import { authApi, type AuthUser, type LoginInput, type RegisterInput } from './authApi';
+import { STUDY_SESSION_STORAGE_KEY } from '@/features/studio/storageKey';
 import { outbox } from '@/shared/offline/outbox';
 import { hasSessionHint } from './sessionHint';
 
@@ -73,6 +74,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async (then?: () => void) => {
     // F2: foto dan tebakan yang belum terkirim tidak ditinggal di perangkat (komputer bersama).
     void outbox.clear().catch(() => undefined);
+    // Materi yang sedang dipilih juga tidak ditinggal untuk akun berikutnya di tab ini.
+    try {
+      sessionStorage.removeItem(STUDY_SESSION_STORAGE_KEY);
+    } catch {
+      /* sessionStorage diblokir: tidak ada yang perlu dibuang */
+    }
     try {
       await authApi.logout();
     } finally {
