@@ -61,7 +61,7 @@ const CHAPTERS: Chapter[] = [
     title: 'Tebak dulu seberapa paham kamu',
     body: [
       'Sebelum catatan dicek, geser angka 0 sampai 100 sesuai keyakinanmu. Tebakan ini dikunci, jadi tidak bisa diubah setelah melihat hasil.',
-      'Dari sini kamu belajar membedakan merasa paham dan benar-benar paham. Langkah ini jarang ada di aplikasi belajar lain.',
+      'Dari sini kamu belajar membedakan merasa paham dan benar-benar paham. Yang terlalu yakin biasanya berhenti belajar lebih cepat dari seharusnya.',
     ],
     visual: () => <ConfidenceSlider />,
     guide: { name: 'risa', mood: 'think', line: 'Kira-kira berapa, ya? Jujur saja.' },

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { dismissCookieNotice, expectAccessible, PASSWORD } from './helpers';
+import { dismissCookieNotice, expectAccessible, PASSWORD, skipOnboarding } from './helpers';
 
 // FR-07 dan FR-08 dari sisi guru dan publik. Isi ledger dan peta (sesi siswa di kelas) diuji di backend
 // (tests/integration/governance.test.ts, cohort.test.ts) karena butuh siswa dengan email terverifikasi.
@@ -10,6 +10,7 @@ test('the teacher portal shows the ledger and blind-spot map sections for an own
     data: { email, password: PASSWORD, fullName: 'Guru Ledger', role: 'EDUCATOR', birthYear: 1990, acceptTerms: true },
   });
   expect(reg.status(), await reg.text()).toBe(201);
+  await skipOnboarding(page.request);
   expect((await page.request.post('/api/v1/classes', { data: { name: 'XI IPA Ledger' } })).status()).toBe(201);
 
   await page.goto('/guru');

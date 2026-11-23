@@ -12,7 +12,17 @@ export async function registerStudent(request: APIRequestContext, label: string)
     data: { email, password: PASSWORD, fullName: `Siswa ${label}`, birthYear: 2000, acceptTerms: true },
   });
   expect(res.status(), await res.text()).toBe(201);
+  await skipOnboarding(request);
   return email;
+}
+
+/**
+ * Akun baru melihat panduan maskot sekali (balon di bawah layar yang menutupi tombol). Uji alur belajar tidak
+ * menguji panduan itu, jadi tandai selesai lewat API, sama seperti saat pengguna menekan Lewati.
+ */
+export async function skipOnboarding(request: APIRequestContext) {
+  const res = await request.post('/api/v1/me/onboarding', { data: {} });
+  expect(res.status(), await res.text()).toBe(200);
 }
 
 export async function createMaterial(request: APIRequestContext, title: string) {
@@ -75,7 +85,8 @@ export async function reachPhotoStep(page: Page, materialTitle: string, jol = 70
 export async function expectResult(page: Page) {
   await expect(page).toHaveURL(/\/belajar\/hasil$/);
   await expect(page.getByRole('heading', { name: 'Ringkasan untukmu' })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByText('Tebakanmu')).toBeVisible();
+  // exact: pop up pujian maskot juga bisa memuat kata "Tebakanmu".
+  await expect(page.getByText('Tebakanmu', { exact: true })).toBeVisible();
   await expect(page.getByText(/Hasil contoh/)).toHaveCount(0);
   await expect(page.getByText(/Rencana latihan ulang|Tidak ada konsep yang terlewat/)).toBeVisible();
 }
