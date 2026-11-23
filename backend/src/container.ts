@@ -45,6 +45,8 @@ import { createScansRouter } from './features/essay-scans/scans.routes.js';
 import { SCAN_ALLOWED_MIME_TYPES } from './features/essay-scans/scans.schema.js';
 import { ScansService } from './features/essay-scans/scans.service.js';
 import { PrismaQuotaRepository } from './features/essay-scans/quota.repository.js';
+import { PrismaMaterialQuotaRepository } from './features/materials/materialQuota.repository.js';
+import { MaterialQuotaService } from './features/materials/materialQuota.service.js';
 import { createQuotaRouter } from './features/essay-scans/quota.routes.js';
 import { QuotaService } from './features/essay-scans/quota.service.js';
 import { PrismaPrivacyRepository } from './features/privacy/privacy.repository.js';
@@ -96,6 +98,7 @@ export function buildRoutes(deps: ContainerDeps): Record<string, Router> {
     repo: new PrismaMaterialsRepository(deps.prisma),
     ai: deps.ai,
     cache: new RedisRubricCache(deps.redis, (err, op) => deps.logger.warn({ err, op }, 'Rubric cache unavailable')),
+    quota: new MaterialQuotaService({ repo: new PrismaMaterialQuotaRepository(deps.prisma) }),
     storage: deps.storage,
     pdf: deps.pdf ?? new UnpdfTextExtractor(),
     onWarning: (message, data) => deps.logger.warn(data, message),

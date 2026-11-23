@@ -181,7 +181,9 @@ function TermsBody() {
 
       <Section title="Paket Gratis dan Pro">
         <p>
-          Paket Gratis punya batas foto per hari. Paket Pro membuka batas itu selama masa aktif kode aktivasi yang kamu pakai. Setelah masa
+          Paket Gratis bisa memeriksa 3 foto catatan dan menambah 3 materi baru per hari, dengan simpanan sampai 50 materi. Paket Pro
+          membuka batas foto, menaikkan batas materi baru jadi 20 per hari, dan simpanan jadi 300 materi selama masa aktif kode aktivasi
+          yang kamu pakai. Materi yang isinya sama persis dengan materi yang pernah diproses tidak dihitung dalam batas harian. Setelah masa
           aktif habis, akun kembali ke paket Gratis dan datamu tetap utuh.
         </p>
       </Section>

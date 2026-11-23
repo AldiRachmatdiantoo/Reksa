@@ -33,6 +33,18 @@ export type MaterialSummary = Omit<Material, 'rubric'> & { conceptCount: number 
 
 export type CreateMaterialResult = { material: Material; rubricCached: boolean };
 
+/** GET /materials/quota. Hanya materi yang rubriknya belum pernah disusun yang memotong kuota harian. */
+export type MaterialQuota = {
+  tier: 'FREE' | 'PRO';
+  used: number;
+  limit: number;
+  remaining: number;
+  /** Pukul 00.00 WIB berikutnya, ISO UTC. */
+  resetAt: string;
+  stored: number;
+  storedLimit: number;
+};
+
 export const materialsApi = {
   list: (signal?: AbortSignal) => apiRequest<{ materials: MaterialSummary[] }>('/materials', { signal }).then((r) => r.materials),
   get: (id: string, signal?: AbortSignal) =>
@@ -47,6 +59,7 @@ export const materialsApi = {
     return apiRequest<CreateMaterialResult>('/materials', { method: 'POST', body: form });
   },
   fileUrl: (id: string) => apiRequest<{ url: string; expiresInSec: number }>(`/materials/${encodeURIComponent(id)}/file`),
+  quota: (signal?: AbortSignal) => apiRequest<{ quota: MaterialQuota }>('/materials/quota', { signal }).then((r) => r.quota),
   remove: (id: string) => apiRequest<void>(`/materials/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 };
 
@@ -79,6 +92,8 @@ export function uploadErrorMessage(err: unknown): string {
   if (!(err instanceof ApiError)) return 'Materi gagal dikirim. Coba lagi.';
   // Penyusun konsep kunci (AI) sibuk atau mati: pesan backend sudah ramah dan tidak memuat detail teknis.
   if (err.code === 'AI_UNAVAILABLE') return err.message;
+  // Kuota harian materi baru habis atau penyimpanan penuh: pesan backend sudah menjelaskan langkah berikutnya.
+  if (err.code === 'MATERIAL_QUOTA_EXCEEDED' || err.code === 'MATERIAL_LIMIT_REACHED') return err.message;
   switch (err.status) {
     case 0:
       return 'Server REKSA tidak bisa dihubungi. Periksa koneksimu lalu coba lagi.';
@@ -96,6 +111,16 @@ export function uploadErrorMessage(err: unknown): string {
 
 export function useMaterials() {
   return useLoad((signal) => materialsApi.list(signal), []);
+}
+
+export function useMaterialQuota() {
+  return useLoad((signal) => materialsApi.quota(signal), []);
+}
+
+/** Jam reset kuota dalam WIB, mis. "00.00 WIB". Selalu tengah malam, tapi diformat dari data supaya tidak meleset. */
+export function formatResetTime(iso: string): string {
+  const time = new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
+  return `${time} WIB`;
 }
 
 export function useMaterial(id: string | null) {

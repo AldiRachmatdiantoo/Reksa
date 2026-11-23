@@ -22,6 +22,8 @@ import {
   sha256Hex,
 } from '../../../../src/features/materials/materials.service.js';
 import type { RubricCache } from '../../../../src/features/materials/rubricCache.js';
+import { MaterialQuotaService } from '../../../../src/features/materials/materialQuota.service.js';
+import { InMemoryMaterialQuotaRepository } from '../../../support/inMemoryMaterialQuota.js';
 import { buildPdf, SAMPLE_PDF_TEXT } from '../../../support/pdfFixture.js';
 
 class InMemoryMaterialsRepository implements MaterialsRepository {
@@ -101,6 +103,8 @@ describe('MaterialsService', () => {
   let ai: MockAiProvider;
   let store: ReturnType<typeof fakeStorage>;
   let pdf: PdfTextExtractor;
+  let quotaRepo: InMemoryMaterialQuotaRepository;
+  let quota: MaterialQuotaService;
   let service: MaterialsService;
 
   beforeEach(() => {
@@ -110,7 +114,9 @@ describe('MaterialsService', () => {
     vi.spyOn(ai, 'extractRubric');
     store = fakeStorage();
     pdf = { extract: vi.fn(async () => ({ text: SAMPLE_PDF_TEXT, pages: 1 })) };
-    service = new MaterialsService({ repo, ai, cache, storage: store.storage, pdf, transientRetryDelayMs: 0 });
+    quotaRepo = new InMemoryMaterialQuotaRepository((id) => repo.rows.filter((r) => r.uploaderId === id).length);
+    quota = new MaterialQuotaService({ repo: quotaRepo });
+    service = new MaterialsService({ repo, ai, cache, quota, storage: store.storage, pdf, transientRetryDelayMs: 0 });
   });
 
   describe('createFromText', () => {
@@ -183,7 +189,7 @@ describe('MaterialsService', () => {
     // Detail error masuk log, bukan ke respons.
     it('answers 503 with a friendly message when the AI stays busy, without caching', async () => {
       const onWarning = vi.fn();
-      service = new MaterialsService({ repo, ai, cache, storage: store.storage, pdf, onWarning, transientRetryDelayMs: 0 });
+      service = new MaterialsService({ repo, ai, cache, quota, storage: store.storage, pdf, onWarning, transientRetryDelayMs: 0 });
       vi.mocked(ai.extractRubric).mockRejectedValueOnce(new AiProviderError('TRANSIENT', 'Gemini menjawab HTTP 429'));
       vi.mocked(ai.extractRubric).mockRejectedValueOnce(new AiProviderError('TRANSIENT', 'Gemini menjawab HTTP 429'));
 
@@ -344,6 +350,67 @@ describe('MaterialsService', () => {
       expect(await service.list(outsider)).toEqual([]);
       await expect(service.get(outsider, material.id)).rejects.toBeInstanceOf(NotFoundError);
       await expect(service.getFileUrl(outsider, material.id)).rejects.toBeInstanceOf(NotFoundError);
+    });
+  });
+
+  describe('kuota materi baru', () => {
+    const texts = [
+      'Fotosintesis mengubah cahaya jadi energi kimia di kloroplas.',
+      'Respirasi sel memecah glukosa jadi ATP di mitokondria.',
+      'Osmosis memindahkan air lewat membran semipermeabel.',
+      'Difusi memindahkan zat dari konsentrasi tinggi ke rendah.',
+    ];
+
+    it('counts only materials that call the AI', async () => {
+      await service.createFromText(user, textInput);
+      await service.createFromText(user, { ...textInput, title: 'Salinan' });
+      expect(ai.extractRubric).toHaveBeenCalledOnce();
+      expect(await service.getQuota(user)).toMatchObject({ used: 1, remaining: 2, stored: 2 });
+    });
+
+    it('stops the 4th new material of the day before calling the AI', async () => {
+      for (const content of texts.slice(0, 3)) await service.createFromText(user, { title: 'x', content });
+      const err = await service.createFromText(user, { title: 'x', content: texts[3]! }).catch((e: unknown) => e);
+      expect(err).toMatchObject({ statusCode: 429, code: 'MATERIAL_QUOTA_EXCEEDED' });
+      expect(ai.extractRubric).toHaveBeenCalledTimes(3);
+      expect(repo.rows).toHaveLength(3);
+    });
+
+    it('still accepts a cached material when the daily quota is used up', async () => {
+      await service.createFromText(user, textInput);
+      for (const content of texts.slice(0, 2)) await service.createFromText(user, { title: 'x', content });
+      const { rubricCached } = await service.createFromText(user, { ...textInput, title: 'Lagi' });
+      expect(rubricCached).toBe(true);
+    });
+
+    it('gives the quota back when the AI fails', async () => {
+      vi.mocked(ai.extractRubric).mockRejectedValueOnce(new AiProviderError('FATAL', 'kunci salah'));
+      await expect(service.createFromText(user, textInput)).rejects.toBeInstanceOf(ServiceUnavailableError);
+      expect(await service.getQuota(user)).toMatchObject({ used: 0 });
+    });
+
+    it('rejects even a cached material once storage is full', async () => {
+      await service.createFromText(user, textInput);
+      quotaRepo = new InMemoryMaterialQuotaRepository(() => 50);
+      service = new MaterialsService({
+        repo,
+        ai,
+        cache,
+        quota: new MaterialQuotaService({ repo: quotaRepo }),
+        storage: store.storage,
+        pdf,
+      });
+      const err = await service.createFromText(user, { ...textInput, title: 'Lagi' }).catch((e: unknown) => e);
+      expect(err).toMatchObject({ statusCode: 409, code: 'MATERIAL_LIMIT_REACHED' });
+    });
+
+    it('does not store a PDF when the quota is used up', async () => {
+      for (const content of texts.slice(0, 3)) await service.createFromText(user, { title: 'x', content });
+      const file = buildPdf([SAMPLE_PDF_TEXT]);
+      await expect(service.createFromPdf(user, { title: 'Bab 1' }, { buffer: file, size: file.length })).rejects.toMatchObject({
+        code: 'MATERIAL_QUOTA_EXCEEDED',
+      });
+      expect(store.storage.putObject).not.toHaveBeenCalled();
     });
   });
 });

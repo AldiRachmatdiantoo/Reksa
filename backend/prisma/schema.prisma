@@ -78,27 +78,30 @@ model Institution {
 }
 
 model User {
-  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email           String    @db.VarChar(254)
-  passwordHash    String    @map("password_hash")
-  fullName        String    @map("full_name") @db.VarChar(100)
-  role            Role      @default(STUDENT)
-  tier            Tier      @default(FREE)
-  institutionId   String?   @map("institution_id") @db.Uuid
-  dailyScanCount  Int       @default(0) @map("daily_scan_count")
-  lastScanResetAt DateTime? @map("last_scan_reset_at") @db.Timestamptz(6)
-  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email               String    @db.VarChar(254)
+  passwordHash        String    @map("password_hash")
+  fullName            String    @map("full_name") @db.VarChar(100)
+  role                Role      @default(STUDENT)
+  tier                Tier      @default(FREE)
+  institutionId       String?   @map("institution_id") @db.Uuid
+  dailyScanCount      Int       @default(0) @map("daily_scan_count")
+  lastScanResetAt     DateTime? @map("last_scan_reset_at") @db.Timestamptz(6)
+  /// Kuota harian materi baru (hanya yang memanggil AI). Reset 00.00 WIB tanpa cron, sama seperti scan.
+  dailyMaterialCount  Int       @default(0) @map("daily_material_count")
+  lastMaterialResetAt DateTime? @map("last_material_reset_at") @db.Timestamptz(6)
+  emailVerifiedAt     DateTime? @map("email_verified_at") @db.Timestamptz(6)
   /// FR-13: persetujuan dokumen dan tahun lahir. Null pada akun sebelum FR-13 (wajib setuju ulang).
-  birthYear       Int?      @map("birth_year") @db.SmallInt
-  termsVersion    String?   @map("terms_version") @db.VarChar(32)
-  privacyVersion  String?   @map("privacy_version") @db.VarChar(32)
-  consentedAt     DateTime? @map("consented_at") @db.Timestamptz(6)
-  guardianConsent Boolean   @default(false) @map("guardian_consent")
+  birthYear           Int?      @map("birth_year") @db.SmallInt
+  termsVersion        String?   @map("terms_version") @db.VarChar(32)
+  privacyVersion      String?   @map("privacy_version") @db.VarChar(32)
+  consentedAt         DateTime? @map("consented_at") @db.Timestamptz(6)
+  guardianConsent     Boolean   @default(false) @map("guardian_consent")
   /// FR-11: tier efektif PRO selama tanggal ini belum lewat.
-  proExpiresAt    DateTime? @map("pro_expires_at") @db.Timestamptz(6)
+  proExpiresAt        DateTime? @map("pro_expires_at") @db.Timestamptz(6)
   /// Panduan sambutan maskot selesai dilihat. Null = tampilkan panduan saat masuk berikutnya.
-  onboardedAt     DateTime? @map("onboarded_at") @db.Timestamptz(6)
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  onboardedAt         DateTime? @map("onboarded_at") @db.Timestamptz(6)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   institution      Institution?        @relation(fields: [institutionId], references: [id], onDelete: SetNull)
   refreshTokens    RefreshToken[]

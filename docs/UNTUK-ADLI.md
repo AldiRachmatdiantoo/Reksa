@@ -6,6 +6,12 @@ Status: Langkah 0, `auth`, CI, dan storage service sudah di `main`. Modul `mater
 
 Hai Adli, ini ringkasan yang perlu kamu tahu sebelum mulai. Detail lengkapnya ada di [PRD.md §8.3](../PRD.md) dan [CLAUDE.md §1](../CLAUDE.md).
 
+## 23 Nov 2026: kuota harian materi baru (branch `feat/aldi-kuota-materi`)
+
+- Materi baru yang memanggil AI dibatasi Gratis 3 / Pro 20 per hari, materi tersimpan Gratis 50 / Pro 300. Error baru `429 MATERIAL_QUOTA_EXCEEDED` (beda dari `QUOTA_EXCEEDED` scan milikmu) dan `409 MATERIAL_LIMIT_REACHED`. Endpoint baru `GET /api/v1/materials/quota`.
+- Aku mengimpor `startOfWibDay`, `nextWibMidnight`, dan tipe `Tier` dari `essay-scans/quota.policy.ts`. Isi file itu tidak kuubah; kalau kamu mengganti nama atau signature-nya, kabari aku.
+- Kolom baru `users.daily_material_count` dan `last_material_reset_at`: jalankan `docker compose --profile tools run --rm migrate` setelah pull. Kalau test-mu membuat lebih dari 3 materi dengan isi berbeda untuk satu user, kena kuota; pakai isi yang sama (cache) atau akun lain.
+
 ## 23 Nov 2026: field baru `onboardingRequired` di respons user (branch `feat/aldi-maskot-pemandu`)
 
 - Semua respons user (`/auth/register`, `/auth/login`, `/auth/me`, `/me`) sekarang punya `onboardingRequired: boolean`. Endpoint baru `POST /api/v1/me/onboarding` (body kosong) menandai panduan maskot selesai. Kalau kamu membuat objek user di test, tambahkan field ini.

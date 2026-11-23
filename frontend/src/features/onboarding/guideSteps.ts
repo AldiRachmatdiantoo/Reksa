@@ -51,7 +51,7 @@ export function guideFor(role: Role, fullName: string): Guide {
           mood: 'idle',
           title: 'Mulai dari Materi',
           target: studentNav('/belajar/materi'),
-          text: 'Aku Risu. Unggah PDF atau tempel teks bahan bacaanmu di menu Materi. Aku susun konsep kuncinya, jadi catatanmu nanti bisa dicek.',
+          text: 'Aku Risu. Unggah PDF atau tempel teks bahan bacaanmu di menu Materi. Aku susun konsep kuncinya, jadi catatanmu nanti bisa dicek. Paket gratis bisa 3 materi baru per hari.',
         },
         {
           mascot: 'rasi',

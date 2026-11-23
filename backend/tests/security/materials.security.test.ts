@@ -132,16 +132,18 @@ describe('materials: injection', () => {
 describe('materials: rate limit', () => {
   it('allows 20 uploads per hour per user, then returns 429 with Retry-After', async () => {
     const { cookie } = await login('siswa@reksa.id');
+    // Isi yang sama: setelah unggahan pertama rubriknya dari cache, jadi kuota harian materi baru (3) tidak ikut menghentikan.
     for (let i = 0; i < 20; i++) {
       const ok = await request(ctx.app)
         .post('/api/v1/materials')
         .set('Cookie', cookie)
-        .send({ title: `Materi ${i}`, content: `Isi materi nomor ${i} tentang homeostasis.` });
+        .send({ title: `Materi ${i}`, content: 'Isi materi tentang homeostasis dan umpan balik negatif.' });
       expect(ok.status).toBe(201);
     }
     const blocked = await request(ctx.app).post('/api/v1/materials').set('Cookie', cookie).send({ title: 'Ke-21', content: 'Satu lagi.' });
     expect(blocked.status).toBe(429);
     expect(Number(blocked.headers['retry-after'])).toBeGreaterThan(0);
+    expect(blocked.body.error.code).not.toBe('MATERIAL_QUOTA_EXCEEDED');
 
     // Limit per user: pengguna lain dari IP yang sama tetap bisa mengunggah.
     const other = await login('teman@reksa.id');

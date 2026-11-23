@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { useRef, useState, type DragEvent, type FormEvent } from 'react';
+import { useRef, useState, type DragEvent, type FormEvent, type ReactNode } from 'react';
 import { ApiError } from '@/core/apiClient';
+import { Mascot } from '@/shared/mascot/Mascot';
 import { EASE_OUT } from '@/shared/motion';
 import { Button } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
@@ -9,9 +10,12 @@ import { TextField } from '@/shared/ui/TextField';
 import {
   MATERIAL_MAX_PDF_BYTES,
   MATERIAL_MAX_TEXT_CHARS,
+  formatResetTime,
   materialsApi,
   uploadErrorMessage,
+  useMaterialQuota,
   type CreateMaterialResult,
+  type MaterialQuota,
 } from './materialsApi';
 
 type Mode = 'teks' | 'pdf';
@@ -41,6 +45,9 @@ export function UploadMaterialForm({
   const [errors, setErrors] = useState<{ title?: string; content?: string; file?: string; form?: string }>({});
   const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { state: quotaState, reload: reloadQuota } = useMaterialQuota();
+  const quota = quotaState.status === 'ready' ? quotaState.data : null;
+  const storageFull = quota !== null && quota.stored >= quota.storedLimit;
 
   const pickFile = (picked: File | undefined) => {
     if (!picked) return;
@@ -104,6 +111,7 @@ export function UploadMaterialForm({
       }
     } finally {
       setSubmitting(false);
+      reloadQuota();
     }
   };
 
@@ -259,7 +267,9 @@ export function UploadMaterialForm({
         )}
       </AnimatePresence>
 
-      <Button type="submit" variant="accent" size="lg" disabled={submitting || overLimit}>
+      {quota && <QuotaNote quota={quota} />}
+
+      <Button type="submit" variant="accent" size="lg" disabled={submitting || overLimit || storageFull}>
         {submitting ? (
           <>
             <motion.span className="flex" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
@@ -275,5 +285,45 @@ export function UploadMaterialForm({
         )}
       </Button>
     </form>
+  );
+}
+
+/**
+ * Sisa kuota materi baru hari ini. Kuota habis tidak mengunci form karena materi yang rubriknya sudah pernah
+ * disusun tetap bisa ditambahkan; penyimpanan penuh mengunci tombol kirim.
+ */
+function QuotaNote({ quota }: { quota: MaterialQuota }) {
+  if (quota.stored >= quota.storedLimit) {
+    return (
+      <MascotNote mood="think">
+        Penyimpananmu penuh: {quota.stored} dari {quota.storedLimit} materi. Hapus materi yang tidak dipakai lagi dari daftar, lalu
+        tambahkan yang baru.
+      </MascotNote>
+    );
+  }
+  if (quota.remaining === 0) {
+    return (
+      <MascotNote mood="sleep">
+        Jatah {quota.limit} materi baru hari ini sudah terpakai. Terisi lagi pukul {formatResetTime(quota.resetAt)}. Materi yang isinya sama
+        persis dengan yang pernah diproses tetap bisa ditambahkan.
+      </MascotNote>
+    );
+  }
+  return (
+    <p className="text-body-sm text-ink-muted text-pretty">
+      <span className="font-semibold text-ink">
+        Sisa {quota.remaining} dari {quota.limit} materi baru hari ini.
+      </span>{' '}
+      Materi yang isinya sama persis dengan yang pernah diproses tidak dihitung.
+    </p>
+  );
+}
+
+function MascotNote({ mood, children }: { mood: 'think' | 'sleep'; children: ReactNode }) {
+  return (
+    <div role="status" className="flex items-center gap-3 rounded-md bg-teal-wash px-3 py-3">
+      <Mascot name="risu" mood={mood} className="h-14 w-auto shrink-0" />
+      <p className="text-body-md text-ink text-pretty">{children}</p>
+    </div>
   );
 }

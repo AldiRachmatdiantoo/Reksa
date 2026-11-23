@@ -24,6 +24,11 @@ export class MaterialsController {
     res.status(201).json(result);
   };
 
+  quota = async (_req: Request, res: Response): Promise<void> => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ quota: await this.service.getQuota(getAuth(res).userId) });
+  };
+
   list = async (_req: Request, res: Response): Promise<void> => {
     res.json({ materials: await this.service.list(getAuth(res).userId) });
   };
