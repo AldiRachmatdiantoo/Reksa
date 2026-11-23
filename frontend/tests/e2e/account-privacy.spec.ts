@@ -49,7 +49,7 @@ test('someone under 18 cannot register; someone born 18 years ago confirms their
 
   await page.getByLabel('Aku sudah berumur 18 tahun.').check();
   await page.getByRole('button', { name: 'Buat akun' }).click();
-  await expect(page).toHaveURL(/\/belajar$/);
+  await expect(page).toHaveURL(/\/belajar\/beranda$/);
   expect(registerCalls).toEqual(['POST']);
 
   await page.goto('/akun');

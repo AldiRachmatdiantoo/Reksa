@@ -47,6 +47,13 @@ export function guideFor(role: Role, fullName: string): Guide {
       steps: [
         greeting(name, 'pelajar', 'sini'),
         {
+          mascot: 'risa',
+          mood: 'idle',
+          title: 'Mulai dari Beranda',
+          target: studentNav('/belajar/beranda'),
+          text: 'Beranda berisi pintasan ke semua bagian REKSA, lengkap dengan keterangan singkat isinya. Bingung mau ke mana? Buka Beranda dulu.',
+        },
+        {
           mascot: 'risu',
           mood: 'idle',
           title: 'Mulai dari Materi',

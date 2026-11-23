@@ -5,7 +5,7 @@ import { dismissCookieNotice, registerStudent } from './helpers';
  * Halaman pelajar di HP kecil tidak boleh lebih lebar dari layar. Dulu menu Belajar/Materi/Ulang/Kelas
  * butuh 435px, jadi di layar 375px menu Kelas terpotong dan seluruh halaman bisa digeser ke samping.
  */
-const STUDENT_PAGES = ['/belajar', '/belajar/materi', '/belajar/ulang', '/belajar/kelas', '/akun'];
+const STUDENT_PAGES = ['/belajar/beranda', '/belajar', '/belajar/materi', '/belajar/ulang', '/belajar/kelas', '/akun'];
 
 async function overflowOf(page: Page) {
   return page.evaluate(() => {

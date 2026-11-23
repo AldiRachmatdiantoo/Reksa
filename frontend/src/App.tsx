@@ -40,6 +40,7 @@ const LegalPage = page(() => import('@/features/legal/LegalPage'), 'LegalPage');
 const CalibratePage = page(() => import('@/features/scanner/CalibratePage'), 'CalibratePage');
 const PhoneUploadPage = page(() => import('@/features/scanner/PhoneUploadPage'), 'PhoneUploadPage');
 const ReviewPage = page(() => import('@/features/spaced-repetition/ReviewPage'), 'ReviewPage');
+const HomePage = page(() => import('@/features/home/HomePage'), 'HomePage');
 const HistoryPage = page(() => import('@/features/history/HistoryPage'), 'HistoryPage');
 const HistoryDetailPage = page(() => import('@/features/history/HistoryDetailPage'), 'HistoryDetailPage');
 const StudioPage = page(() => import('@/features/studio/StudioPage'), 'StudioPage');
@@ -95,6 +96,7 @@ function AnimatedRoutes() {
           />
           <Route path="/belajar" element={<StudentArea />}>
             <Route index element={<StudioPage />} />
+            <Route path="beranda" element={<HomePage />} />
             <Route path="materi" element={<MaterialsPage />} />
             <Route path="kelas" element={<StudentClassesPage />} />
             <Route path="ulang" element={<ReviewPage />} />

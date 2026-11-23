@@ -80,7 +80,7 @@ export const PASSWORD_RULES = [
 ] as const;
 
 export function homePathFor(role: Role): string {
-  return role === 'STUDENT' ? '/belajar' : '/guru';
+  return role === 'STUDENT' ? '/belajar/beranda' : '/guru';
 }
 
 export const ROLE_LABEL: Record<Role, string> = {
