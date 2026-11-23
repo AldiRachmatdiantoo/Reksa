@@ -1,6 +1,6 @@
 # Rencana: kuota harian materi baru
 
-Status: **usulan, belum dikerjakan.** Menunggu keputusan Aldi di bagian "Keputusan yang dibutuhkan".
+Status: **dikerjakan** di branch `feat/aldi-kuota-materi` dengan pilihan bawaan: Gratis 3 / Pro 20 per hari, cache hit tidak dihitung, simpan maks 50 / 300 materi, fungsi WIB diimpor tanpa mengubah `essay-scans/`, belum wajib verifikasi email.
 
 ## Masalah
 

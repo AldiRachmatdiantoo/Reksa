@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/core/apiClient';
-import { openMaterialPdf, uploadErrorMessage } from '@/features/materials/materialsApi';
+import { formatResetTime, openMaterialPdf, uploadErrorMessage } from '@/features/materials/materialsApi';
 
 describe('uploadErrorMessage', () => {
   it('memberi pesan koneksi saat server tidak terjangkau', () => {
@@ -32,6 +32,19 @@ describe('uploadErrorMessage', () => {
 
   it('punya pesan umum untuk error non-API', () => {
     expect(uploadErrorMessage(new Error('boom'))).toBe('Materi gagal dikirim. Coba lagi.');
+  });
+});
+
+describe('kuota materi', () => {
+  it('shows the backend message for the daily material quota and full storage, not the hourly rate limit text', () => {
+    const daily = 'Jatah materi baru hari ini sudah habis. Terisi lagi pukul 00.00 WIB.';
+    expect(uploadErrorMessage(new ApiError(429, 'MATERIAL_QUOTA_EXCEEDED', daily))).toBe(daily);
+    const full = 'Kamu sudah menyimpan 50 materi, batas paketmu.';
+    expect(uploadErrorMessage(new ApiError(409, 'MATERIAL_LIMIT_REACHED', full))).toBe(full);
+  });
+
+  it('formats the reset time in WIB', () => {
+    expect(formatResetTime('2026-11-23T17:00:00.000Z')).toBe('00.00 WIB');
   });
 });
 

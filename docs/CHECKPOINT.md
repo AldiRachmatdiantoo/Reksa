@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 23 November 2026, maskot pemandu + panduan bubble chat hidup di produksi (Aldi, PR #55, #56)
+**Checkpoint terakhir:** 23 November 2026, kuota harian materi baru (Aldi, branch `feat/aldi-kuota-materi`, belum di produksi)
 
 ---
 
@@ -16,6 +16,15 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #49 · Kuota harian materi baru + batas simpan · branch `feat/aldi-kuota-materi`
+
+- **Kenapa:** sebelumnya unggah materi hanya dibatasi 20 per jam, jadi satu akun bisa menghabiskan kuota Gemini bersama dan storage. Rencana lengkap di `docs/RENCANA-KUOTA-MATERI.md` (PR #59).
+- **Aturan:** materi baru yang memanggil AI dibatasi Gratis 3 / Pro 20 per hari (reset 00.00 WIB, sama dengan kuota scan). Rubrik dari cache tidak dihitung. Materi tersimpan dibatasi Gratis 50 / Pro 300. Kuota dikembalikan bila AI gagal menyusun rubrik.
+- **Backend:** `features/materials/materialQuota.{policy,repository,service}.ts`. Kolom `users.daily_material_count` + `last_material_reset_at` (migrasi `20261123000100_material_daily_quota`, ber-default, aman dijalankan sebelum image baru). Potong kuota di transaksi `SELECT ... FOR UPDATE` sebelum AI dipanggil. Error baru `429 MATERIAL_QUOTA_EXCEEDED` (dengan `resetAt`) dan `409 MATERIAL_LIMIT_REACHED`. Endpoint baru `GET /api/v1/materials/quota`. Fungsi WIB diimpor dari `essay-scans/quota.policy.ts` tanpa mengubah file Adli.
+- **Frontend:** form unggah (halaman Materi dan portal guru) menampilkan sisa kuota; kuota habis atau simpanan penuh tampil sebagai catatan Risu. Kuota habis tidak mengunci form (materi dari cache tetap boleh), simpanan penuh mengunci tombol kirim. Teks panduan maskot, Akun > Paket, dan Syarat (bagian Paket Gratis dan Pro) diperbarui. Versi Syarat tidak dinaikkan karena hanya batas pemakaian.
+- **Uji:** unit backend (kebijakan, service kuota, integrasi di MaterialsService); integration 6 skenario termasuk 5 unggahan paralel hanya meloloskan 3, kuota per akun, 401; uji rate limit 20/jam diubah memakai isi yang sama. Frontend 122 test. Dicek di browser lokal dengan backend Docker baru.
+- **Rollout produksi (urutan wajib):** 1) Aldi menjalankan `npx prisma migrate deploy` (Session pooler, user `postgres`); 2) revisi Azure baru dengan image dari commit merge; 3) Vercel otomatis. Kalau frontend terbit sebelum backend, `GET /materials/quota` 404 dan catatan kuota hanya tidak tampil.
 
 ### #48 · Maskot pemandu, panduan sambutan, pop up pujian · PR #55, #56
 

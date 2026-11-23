@@ -207,3 +207,72 @@ describe('GET /materials, GET /materials/:id, DELETE /materials/:id', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('Kuota materi baru', () => {
+  const contents = [
+    'Fotosintesis mengubah cahaya jadi energi kimia di kloroplas daun.',
+    'Respirasi sel memecah glukosa jadi ATP di dalam mitokondria.',
+    'Osmosis memindahkan air lewat membran semipermeabel.',
+    'Difusi memindahkan zat dari konsentrasi tinggi ke konsentrasi rendah.',
+  ];
+  const post = (cookie: string, content: string, title = 'Bab') =>
+    request(ctx.app).post('/api/v1/materials').set('Cookie', cookie).send({ title, content });
+
+  it('allows 3 new materials a day on Free, then answers 429 MATERIAL_QUOTA_EXCEEDED', async () => {
+    const { cookie, userId } = await login();
+    for (const content of contents.slice(0, 3)) expect((await post(cookie, content)).status).toBe(201);
+
+    const res = await post(cookie, contents[3]!);
+    expect(res.status).toBe(429);
+    expect(res.body.error.code).toBe('MATERIAL_QUOTA_EXCEEDED');
+    expect(res.body.error.details.resetAt).toMatch(/T17:00:00.000Z$/);
+    expect(await ctx.owner.studyMaterial.count({ where: { uploaderId: userId } })).toBe(3);
+
+    const quota = await request(ctx.app).get('/api/v1/materials/quota').set('Cookie', cookie);
+    expect(quota.status).toBe(200);
+    expect(quota.body.quota).toMatchObject({ tier: 'FREE', used: 3, limit: 3, remaining: 0, stored: 3, storedLimit: 50 });
+  });
+
+  it('still accepts content whose rubric is already cached', async () => {
+    const a = await login('a@reksa.id');
+    const b = await login('b@reksa.id');
+    expect((await post(a.cookie, contents[3]!)).status).toBe(201);
+    for (const content of contents.slice(0, 3)) await post(b.cookie, content);
+
+    const res = await post(b.cookie, contents[3]!, 'Dari teman');
+    expect(res.status).toBe(201);
+    expect(res.body.rubricCached).toBe(true);
+  });
+
+  it('does not let parallel uploads pass the daily limit', async () => {
+    const { cookie, userId } = await login();
+    const results = await Promise.all(
+      contents
+        .map((content, i) => post(cookie, `${content} Bagian ${i + 10}.`))
+        .concat(post(cookie, 'Gaya gravitasi menarik benda ke pusat bumi.')),
+    );
+    expect(results.filter((r) => r.status === 201)).toHaveLength(3);
+    expect(results.filter((r) => r.status === 429)).toHaveLength(2);
+    expect(await ctx.owner.studyMaterial.count({ where: { uploaderId: userId } })).toBe(3);
+  });
+
+  it('gives the quota back when the AI fails', async () => {
+    const { cookie } = await login();
+    vi.spyOn(ctx.ai, 'extractRubric').mockRejectedValueOnce(new AiProviderError('FATAL', 'kunci salah'));
+    expect((await post(cookie, contents[0]!)).status).toBe(503);
+    const quota = await request(ctx.app).get('/api/v1/materials/quota').set('Cookie', cookie);
+    expect(quota.body.quota.used).toBe(0);
+  });
+
+  it('keeps quotas per account (one user using theirs up does not affect another)', async () => {
+    const a = await login('a@reksa.id');
+    const b = await login('b@reksa.id');
+    for (const content of contents.slice(0, 3)) await post(a.cookie, content);
+    const quota = await request(ctx.app).get('/api/v1/materials/quota').set('Cookie', b.cookie);
+    expect(quota.body.quota).toMatchObject({ used: 0, remaining: 3, stored: 0 });
+  });
+
+  it('requires login for the quota endpoint', async () => {
+    expect((await request(ctx.app).get('/api/v1/materials/quota')).status).toBe(401);
+  });
+});

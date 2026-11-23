@@ -59,12 +59,12 @@ export function PlanSection({ user, onChanged }: { user: AuthUser; onChanged: (u
             ? 'Pro, tanpa batas waktu.'
             : activeUntil
               ? `Pro, aktif sampai ${dateFormat.format(activeUntil)}.`
-              : 'Gratis, 3 foto catatan per hari.'}
+              : 'Gratis, 3 foto catatan dan 3 materi baru per hari.'}
         </p>
         {!permanentPro && (
           <p className="text-body-md text-ink-muted">
-            Pro membuka batas foto harian. Kode aktivasi kamu dapat dari sekolah atau tim REKSA. Kalau Pro masih aktif, kode baru menambah
-            masa aktifnya.
+            Pro membuka batas foto harian dan menaikkan batas materi baru jadi 20 per hari. Kode aktivasi kamu dapat dari sekolah atau tim
+            REKSA. Kalau Pro masih aktif, kode baru menambah masa aktifnya.
           </p>
         )}
       </div>

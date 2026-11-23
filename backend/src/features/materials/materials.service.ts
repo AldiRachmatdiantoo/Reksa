@@ -12,6 +12,8 @@ import {
 } from '../../common/errors/AppError.js';
 import { PdfTooManyPagesError, type PdfTextExtractor } from '../../common/utils/pdfText.js';
 import { buildObjectKey, SIGNED_URL_MAX_TTL_SEC, type IStorageService } from '../../config/storage.js';
+import type { MaterialQuotaView } from './materialQuota.policy.js';
+import type { MaterialQuotaService } from './materialQuota.service.js';
 import type { MaterialRecord, MaterialsRepository } from './materials.repository.js';
 import {
   MATERIAL_LIST_LIMIT,
@@ -28,6 +30,8 @@ export type MaterialsServiceDeps = {
   repo: MaterialsRepository;
   ai: IAiService;
   cache: RubricCache;
+  /** Kuota harian materi baru dan batas materi tersimpan. */
+  quota: MaterialQuotaService;
   storage: IStorageService;
   pdf: PdfTextExtractor;
   onWarning?: (message: string, data: Record<string, unknown>) => void;
@@ -80,7 +84,7 @@ export class MaterialsService {
     const text = normalizeMaterialText(input.content);
     if (text.length === 0) throw new UnprocessableEntityError('Isi materi kosong');
     const contentHash = sha256Hex(text);
-    const { rubric, cached } = await this.getRubric(contentHash, text);
+    const { rubric, cached } = await this.getRubric(userId, contentHash, text);
 
     const record = await this.deps.repo.create(userId, {
       classId: input.classId ?? null,
@@ -112,7 +116,7 @@ export class MaterialsService {
     }
 
     const contentHash = sha256Hex(text);
-    const { rubric, cached } = await this.getRubric(contentHash, text);
+    const { rubric, cached } = await this.getRubric(userId, contentHash, text);
 
     const storageKey = buildObjectKey('materials', userId, 'pdf');
     await this.deps.storage.putObject({ key: storageKey, body: file.buffer, contentType: 'application/pdf' });
@@ -134,6 +138,10 @@ export class MaterialsService {
       throw err;
     }
     return { material: toView(record, userId), rubricCached: cached };
+  }
+
+  getQuota(userId: string): Promise<MaterialQuotaView> {
+    return this.deps.quota.get(userId);
   }
 
   async list(userId: string): Promise<MaterialSummaryView[]> {
@@ -188,10 +196,26 @@ export class MaterialsService {
     }
   }
 
-  private async getRubric(contentHash: string, text: string): Promise<{ rubric: AiRubricOutput; cached: boolean }> {
+  /**
+   * Rubrik dari cache tidak memakai AI, jadi tidak memotong kuota harian (tapi tetap butuh ruang simpan).
+   * Rubrik baru memotong kuota sebelum AI dipanggil, dan kuota dikembalikan bila AI gagal.
+   */
+  private async getRubric(userId: string, contentHash: string, text: string): Promise<{ rubric: AiRubricOutput; cached: boolean }> {
     const hit = await this.deps.cache.get(contentHash);
-    if (hit) return { rubric: hit, cached: true };
-    const rubric = await this.extractRubric(text);
+    if (hit) {
+      await this.deps.quota.assertStorageRoom(userId);
+      return { rubric: hit, cached: true };
+    }
+    const ticket = await this.deps.quota.consume(userId);
+    let rubric: AiRubricOutput;
+    try {
+      rubric = await this.extractRubric(text);
+    } catch (err) {
+      await this.deps.quota.refund(userId, ticket).catch((refundErr: unknown) => {
+        this.deps.onWarning?.('Gagal mengembalikan kuota materi', { refundErr });
+      });
+      throw err;
+    }
     await this.deps.cache.set(contentHash, rubric);
     return { rubric, cached: false };
   }

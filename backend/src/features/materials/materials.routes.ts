@@ -26,6 +26,7 @@ const HOUR = 60 * 60_000;
 /**
  * POST   /materials           JSON (teks) atau multipart (PDF di field `file`); 20/jam per user
  * GET    /materials           materi milik user, terbaru dulu (maks 50)
+ * GET    /materials/quota     sisa kuota materi baru hari ini dan jumlah materi tersimpan
  * GET    /materials/:id       detail + rubrik
  * GET    /materials/:id/file  signed URL PDF asli (300 detik)
  * DELETE /materials/:id       hapus materi yang belum dipakai sesi
@@ -62,6 +63,7 @@ export function createMaterialsRouter({ service, signer, redis }: MaterialsRoute
     dispatchByContentType,
   );
   router.get('/', controller.list);
+  router.get('/quota', controller.quota);
   router.get('/:id', validate({ params: MaterialIdParamsSchema }), controller.get);
   router.get('/:id/file', validate({ params: MaterialIdParamsSchema }), controller.fileUrl);
   router.delete('/:id', validate({ params: MaterialIdParamsSchema }), controller.delete);
