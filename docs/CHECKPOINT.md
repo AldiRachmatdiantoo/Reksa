@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 23 November 2026, D3 frontend hidup di Vercel (Aldi, PR #49)
+**Checkpoint terakhir:** 23 November 2026, Gemini lewat relay Vercel, rubrik jalan di produksi (Aldi, PR #51)
 
 ---
 
@@ -16,6 +16,14 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #47 · Gemini lewat relay Vercel · PR #51 `feat/aldi-gemini-relay`
+
+- **Masalah:** Google menolak panggilan Gemini dari Azure Indonesia Central (HTTP 400 `FAILED_PRECONDITION`, "User location is not supported for the API use"). Backend memetakan 400 ke gagal permanen, jadi pengguna melihat "Penyusun konsep kunci sedang tidak bisa dipakai".
+- **Solusi (PR #51):** fungsi Vercel `frontend/api/gemini-relay.ts` (berjalan di AS) meneruskan `generateContent` ke Google. Wajib header `x-reksa-relay-token` (dibandingkan waktu-konstan), nama model divalidasi, API key tetap dibawa backend lewat header dan tidak disimpan di Vercel, isi tidak dicatat. Rewrite pertama di `frontend/vercel.json` memetakan `/api/gemini-relay/models/:model` ke fungsi ini.
+- **Konfigurasi:** Vercel env `GEMINI_RELAY_TOKEN` (Production). Azure revisi baru dengan image `4557e8046cd4`, `GEMINI_API_BASE_URL=https://reksa-brown.vercel.app/api/gemini-relay`, dan `GEMINI_RELAY_TOKEN` dari rahasia `gemini-relay-token`. Env baru wajib redeploy Vercel; redeploy bisa tertahan di verifikasi email Vercel.
+- **Bukti:** relay tanpa token dijawab 401 `UNAUTHORIZED`; Aldi mengunggah materi di produksi dan rubrik tersusun.
+- **Belum (D4):** audit foto tulisan tangan end-to-end, SSE QR bridge, batas ukuran body rewrite Vercel untuk foto dan PDF besar.
 
 ### #46 · D3 frontend hidup di Vercel · PR #49 `fix/aldi-vercel-azure`
 
