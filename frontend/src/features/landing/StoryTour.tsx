@@ -1,6 +1,7 @@
 import { AnimatePresence, motion, useInView } from 'motion/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { EASE_OUT, Reveal } from '@/shared/motion';
+import { Mascot, MASCOT_LABEL, type MascotMood, type MascotName } from '@/shared/mascot/Mascot';
 import { Icon } from '@/shared/ui/Icon';
 
 /**
@@ -16,6 +17,8 @@ type Chapter = {
   title: string;
   body: string[];
   visual: () => ReactNode;
+  /** Maskot yang menemani langkah ini di aplikasi, dengan satu kalimat pendek. */
+  guide: { name: MascotName; mood: MascotMood; line: string };
 };
 
 const CHAPTERS: Chapter[] = [
@@ -28,6 +31,7 @@ const CHAPTERS: Chapter[] = [
       'Begitu buku ditutup, yang bisa kamu jelaskan sendiri ternyata jauh lebih sedikit. REKSA dibuat untuk momen setelah buku ditutup itu.',
     ],
     visual: () => <HighlightedPage />,
+    guide: { name: 'risu', mood: 'sleep', line: 'Baca ulang terus? Aku ikut ngantuk.' },
   },
   {
     id: 'materi',
@@ -38,6 +42,7 @@ const CHAPTERS: Chapter[] = [
       'Daftar itulah patokan saat catatanmu dicek nanti, jadi dari awal kamu sudah tahu apa yang dinilai.',
     ],
     visual: () => <RubricCard />,
+    guide: { name: 'risu', mood: 'happy', line: 'Kirim materimu, aku susun konsep kuncinya.' },
   },
   {
     id: 'fokus',
@@ -48,6 +53,7 @@ const CHAPTERS: Chapter[] = [
       'Ambil kertas dan tulis semua yang kamu ingat: poin, panah, gambar kecil, apa saja. Bagian yang terasa sulit diingat justru bagian yang sedang kamu latih.',
     ],
     visual: () => <FocusTimer />,
+    guide: { name: 'rasi', mood: 'idle', line: 'Bacaan kututup dulu. Tulis yang kamu ingat!' },
   },
   {
     id: 'tebak',
@@ -58,6 +64,7 @@ const CHAPTERS: Chapter[] = [
       'Dari sini kamu belajar membedakan merasa paham dan benar-benar paham. Langkah ini jarang ada di aplikasi belajar lain.',
     ],
     visual: () => <ConfidenceSlider />,
+    guide: { name: 'risa', mood: 'think', line: 'Kira-kira berapa, ya? Jujur saja.' },
   },
   {
     id: 'foto',
@@ -68,6 +75,7 @@ const CHAPTERS: Chapter[] = [
       'Yang dicek adalah ide dan hubungan antarkonsep, bukan kerapian tulisan. Singkatan, panah, dan coretan dibaca sebagai ide.',
     ],
     visual: () => <NotePhoto />,
+    guide: { name: 'risa', mood: 'idle', line: 'Coretan dan panah tetap kubaca.' },
   },
   {
     id: 'hasil',
@@ -78,6 +86,7 @@ const CHAPTERS: Chapter[] = [
       'Kalau lebih nyaman mendengar, tekan Bacakan hasil.',
     ],
     visual: () => <ResultCard />,
+    guide: { name: 'risa', mood: 'cheer', line: 'Ini yang sudah tepat, ini yang masih terlewat.' },
   },
   {
     id: 'ulang',
@@ -88,6 +97,7 @@ const CHAPTERS: Chapter[] = [
       'Mengingat lagi dengan jeda seperti ini membantu materi bertahan lebih lama. Saat jatuh tempo, latihannya muncul di menu Ulang.',
     ],
     visual: () => <ReviewStrip />,
+    guide: { name: 'rasi', mood: 'happy', line: 'Sampai ketemu di hari ke-3 dan ke-7!' },
   },
 ];
 
@@ -130,6 +140,7 @@ export function StoryTour() {
                     aria-hidden="true"
                   >
                     {chapter.visual()}
+                    <ChapterGuide guide={chapter.guide} />
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -172,8 +183,22 @@ function ChapterBlock({ chapter, index, active, onEnter }: { chapter: Chapter; i
       </div>
       <Reveal className="pt-2 lg:hidden" aria-hidden="true">
         {chapter.visual()}
+        <ChapterGuide guide={chapter.guide} />
       </Reveal>
     </li>
+  );
+}
+
+/** Maskot kecil di bawah contoh tampilan, bicara lewat balon seperti panduan di aplikasi. Dekoratif. */
+function ChapterGuide({ guide }: { guide: Chapter['guide'] }) {
+  return (
+    <div className="mt-4 flex items-end gap-2">
+      <Mascot name={guide.name} mood={guide.mood} className="h-16 w-auto shrink-0 sm:h-20 lg:h-24" />
+      <p className="relative mb-3 rounded-lg border border-teal/40 bg-card px-3 py-2 text-body-sm text-ink">
+        <span aria-hidden="true" className="absolute bottom-3 -left-[7px] size-3 rotate-45 border-b border-l border-teal/40 bg-card" />
+        <span className="font-title text-teal">{MASCOT_LABEL[guide.name]}:</span> {guide.line}
+      </p>
+    </div>
   );
 }
 
