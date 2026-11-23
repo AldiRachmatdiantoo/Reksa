@@ -171,11 +171,11 @@ function LedgerCard({ entry }: { entry: LedgerEntry }) {
             </dd>
           </div>
           <div className="flex flex-col">
-            <dt className="text-label-sm text-ink-muted">Konsep terlewat</dt>
+            <dt className="text-label-sm text-ink-muted">Poin terlewat</dt>
             <dd className="text-ink tabular-nums">{entry.blindSpotCount}</dd>
           </div>
         </dl>
-        <p className="text-body-sm text-ink-muted">Kalibrasi: {jolDeltaLabel(entry.jolDelta)}.</p>
+        <p className="text-body-sm text-ink-muted">{jolDeltaLabel(entry.jolDelta)}.</p>
         <div className="flex flex-wrap gap-2 text-body-sm">
           {shortFocus ? (
             <span className="inline-flex items-center gap-1 rounded-md bg-danger-wash px-2 py-1 text-on-danger-wash">

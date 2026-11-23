@@ -16,7 +16,7 @@ export function nextStep(session: SessionLike, dueCount: number | null, storedMa
     return {
       to: '/belajar/hasil',
       title: 'Lihat hasil catatanmu',
-      text: 'Catatan terakhirmu sudah terkirim. Buka hasil ceknya, lalu lihat konsep mana yang terlewat.',
+      text: 'Catatan terakhirmu sudah terkirim. Buka hasil ceknya, lalu lihat poin mana yang terlewat.',
       action: 'Lihat hasil',
     };
   }
@@ -40,7 +40,7 @@ export function nextStep(session: SessionLike, dueCount: number | null, storedMa
     return {
       to: '/belajar/ulang',
       title: `${dueCount} latihan ulang menunggu`,
-      text: 'Konsep yang kemarin terlewat sudah waktunya dilatih lagi. Cuma 5 menit dan tidak memotong jatah foto harianmu.',
+      text: 'Poin yang kemarin terlewat sudah waktunya dilatih lagi. Cuma 5 menit dan tidak memotong jatah foto harianmu.',
       action: 'Mulai latihan ulang',
     };
   }
@@ -48,7 +48,7 @@ export function nextStep(session: SessionLike, dueCount: number | null, storedMa
     return {
       to: '/belajar/materi',
       title: 'Tambah materi pertamamu',
-      text: 'Unggah PDF atau tempel teks bacaanmu. Konsep kuncinya disusun otomatis, jadi catatanmu nanti bisa dicek.',
+      text: 'Unggah PDF atau tempel teks bacaanmu. Poin pentingnya disusun otomatis, jadi catatanmu nanti bisa dicek.',
       action: 'Tambah materi',
     };
   }

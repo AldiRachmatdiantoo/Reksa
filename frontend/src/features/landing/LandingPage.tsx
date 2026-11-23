@@ -22,7 +22,7 @@ const FAQ = [
   },
   {
     q: 'Tulisanku berantakan. Apakah nilainya turun?',
-    a: 'Tidak. Yang dicek adalah konsep dan hubungan sebab-akibat di catatanmu. Panah, singkatan, dan coretan tetap dihitung sebagai ide.',
+    a: 'Tidak. Yang dicek adalah poin dan hubungan sebab-akibat di catatanmu. Panah, singkatan, dan coretan tetap dihitung sebagai ide.',
   },
   {
     q: 'Kenapa harus menebak nilai sebelum dicek?',
@@ -145,7 +145,7 @@ export function LandingPage() {
               <motion.img
                 style={{ y: heroImageY }}
                 src="/assets/active-learning.jpg"
-                alt="Pelajar menulis peta konsep di kertas sambil memotretnya dengan kamera HP"
+                alt="Pelajar menulis peta pikiran di kertas sambil memotretnya dengan kamera HP"
                 width={1376}
                 height={768}
                 fetchPriority="high"

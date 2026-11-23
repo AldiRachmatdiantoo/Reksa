@@ -58,7 +58,7 @@ export function guideFor(role: Role, fullName: string): Guide {
           mood: 'idle',
           title: 'Mulai dari Materi',
           target: studentNav('/belajar/materi'),
-          text: 'Aku Risu. Unggah PDF atau tempel teks bahan bacaanmu di menu Materi. Aku susun konsep kuncinya, jadi catatanmu nanti bisa dicek. Paket gratis bisa 3 materi baru per hari.',
+          text: 'Aku Risu. Unggah PDF atau tempel teks bahan bacaanmu di menu Materi. Aku susun poin pentingnya, jadi catatanmu nanti bisa dicek. Paket gratis bisa 3 materi baru per hari.',
         },
         {
           mascot: 'rasi',
@@ -71,7 +71,7 @@ export function guideFor(role: Role, fullName: string): Guide {
           mascot: 'risa',
           mood: 'think',
           title: 'Tebak nilaimu, lalu foto catatanmu',
-          text: 'Tebak dulu seberapa banyak yang kamu kuasai, lalu foto tulisanmu. Aku cek per konsep: yang penting maksudnya benar, kata-katanya tidak harus sama. Paket gratis bisa 3 foto per hari.',
+          text: 'Tebak dulu seberapa banyak yang kamu kuasai, lalu foto tulisanmu. Aku cek per poin: yang penting maksudnya benar, kata-katanya tidak harus sama. Paket gratis bisa 3 foto per hari.',
         },
         {
           mascot: 'rasi',
@@ -107,14 +107,14 @@ export function guideFor(role: Role, fullName: string): Guide {
           mood: 'idle',
           title: 'Bukti belajar siswa',
           target: section('ledger-title'),
-          text: 'Aku Rasi. Lihat setiap catatan siswa yang sudah dicek: lama fokus, tebakan nilai dibanding skor, dan foto aslinya. Datanya dikunci dengan hash.',
+          text: 'Aku Rasi. Lihat setiap catatan siswa yang sudah dicek: lama fokus, tebakan nilai dibanding skor, dan foto aslinya. Datanya dikunci, jadi tidak bisa diubah diam-diam.',
         },
         {
           mascot: 'risa',
           mood: 'think',
           title: 'Peta bagian sulit',
           target: section('cohort-title'),
-          text: 'Lihat berapa banyak siswa yang melewatkan tiap konsep, tanpa menampilkan nama siswa. Cocok untuk menentukan bahan pertemuan berikutnya.',
+          text: 'Lihat berapa banyak siswa yang melewatkan tiap poin, tanpa menampilkan nama siswa. Cocok untuk menentukan bahan pertemuan berikutnya.',
         },
         {
           mascot: 'risa',
@@ -147,9 +147,9 @@ export function guideFor(role: Role, fullName: string): Guide {
       {
         mascot: 'risa',
         mood: 'think',
-        title: 'Konsep yang paling sering terlewat',
+        title: 'Poin yang paling sering terlewat',
         target: section('inst-concepts-title'),
-        text: 'Lihat konsep yang paling sering terlewat di seluruh institusi, dihitung dari hasil cek terakhir setiap siswa.',
+        text: 'Lihat poin yang paling sering terlewat di seluruh institusi, dihitung dari hasil cek terakhir setiap siswa.',
       },
       {
         mascot: 'risa',

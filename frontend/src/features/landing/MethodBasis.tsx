@@ -20,8 +20,8 @@ const BASIS: Basis[] = [
     },
   },
   {
-    finding: 'Peta konsep sama ampuhnya dengan menulis bebas, asalkan dibuat dari ingatan, bukan sambil melihat bacaan.',
-    inApp: 'Panah, peta konsep, dan gambar kecil di kertasmu tetap dihitung.',
+    finding: 'Peta pikiran sama ampuhnya dengan menulis bebas, asalkan dibuat dari ingatan, bukan sambil melihat bacaan.',
+    inApp: 'Panah, peta pikiran, dan gambar kecil di kertasmu tetap dihitung.',
     source: {
       label: 'Blunt & Karpicke, 2014, Journal of Educational Psychology',
       href: 'https://scholar.google.com/scholar?q=%22Learning+with+retrieval-based+concept+mapping%22',
@@ -29,7 +29,7 @@ const BASIS: Basis[] = [
   },
   {
     finding: 'Latihan yang diberi jeda beberapa hari lebih awet daripada belajar sekaligus dalam satu waktu.',
-    inApp: 'Konsep yang terlewat dilatih lagi di hari ke-3 dan ke-7.',
+    inApp: 'Poin yang terlewat dilatih lagi di hari ke-3 dan ke-7.',
     source: {
       label: 'Cepeda dkk., 2006, Psychological Bulletin',
       href: 'https://doi.org/10.1037/0033-2909.132.3.354',

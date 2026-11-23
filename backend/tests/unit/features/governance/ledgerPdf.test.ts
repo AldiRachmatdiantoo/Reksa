@@ -105,8 +105,8 @@ describe('renderLedgerPdf', () => {
     expect(first.find((l) => l.startsWith('Sesi: '))).not.toContain('sampai');
     expect(first).toContain('Fokus: - dari rencana 25 menit');
     expect(first).toContain('Status sesi: fokus kurang dari separuh waktu');
-    // "Konsep yang sudah tepat" kosong.
-    expect(first[first.indexOf('Konsep yang sudah tepat') + 1]).toBe('Tidak ada.');
+    // "Poin yang sudah tepat" kosong.
+    expect(first[first.indexOf('Poin yang sudah tepat') + 1]).toBe('Tidak ada.');
 
     // Kata yang lebih panjang dari satu baris dipotong menjadi beberapa baris tanpa kehilangan huruf.
     const pieces = first.filter((l) => /^x+$/.test(l));

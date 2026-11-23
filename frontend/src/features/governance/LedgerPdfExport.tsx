@@ -94,7 +94,7 @@ export function LedgerPdfSection({ isPro }: { isPro: boolean }) {
           PDF bukti belajar
         </h2>
         <p className="text-body-md text-ink-muted">
-          Untuk dilampirkan ke tugas atau portofolio. Isinya waktu sesi, lama fokus, tebakan nilai vs skor, konsep yang tepat dan terlewat,
+          Untuk dilampirkan ke tugas atau portofolio. Isinya waktu sesi, lama fokus, tebakan nilai vs skor, poin yang tepat dan terlewat,
           foto catatan, dan kode bukti. Penerima bisa mengecek keasliannya di{' '}
           <Link to="/cek-bukti" className="text-teal underline underline-offset-2">
             halaman cek bukti

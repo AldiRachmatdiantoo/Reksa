@@ -91,6 +91,6 @@ export function formatMinutes(seconds: number | null): string {
 
 /** Selisih tebakan dan skor dalam kalimat pendek untuk guru. */
 export function jolDeltaLabel(delta: number): string {
-  if (Math.abs(delta) <= 10) return 'tebakannya tepat';
-  return delta > 0 ? `meremehkan diri ${delta} poin` : `terlalu yakin ${-delta} poin`;
+  if (Math.abs(delta) <= 10) return 'Tebakannya tepat';
+  return delta > 0 ? `Tebakannya ${delta} lebih rendah dari nilai asli` : `Tebakannya ${-delta} lebih tinggi dari nilai asli`;
 }
