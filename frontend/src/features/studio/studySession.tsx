@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ApiError } from '@/core/apiClient';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { STUDY_SESSION_STORAGE_KEY } from './storageKey';
 import { scansApi } from '@/features/scanner/scansApi';
 import { outbox as defaultOutbox, outboxId, type OutboxStore } from '@/shared/offline/outbox';
 import { flushOutbox } from './offlineSync';
@@ -53,7 +54,7 @@ export type StudySession = {
   pendingSync?: { jol?: boolean; photo?: boolean };
 };
 
-const STORAGE_KEY = 'reksa-study-session';
+const STORAGE_KEY = STUDY_SESSION_STORAGE_KEY;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const emptySession = (materialId: string, materialTitle: string, presetMinutes = 25, classId: string | null = null): StudySession => ({
@@ -121,11 +122,16 @@ export function fromServer(s: ServerSession, previous?: StudySession | null): St
   };
 }
 
-function load(): StudySession | null {
+/**
+ * Cache dibaca hanya kalau pemiliknya akun yang sedang login. Tanpa ini, materi yang dipilih akun lain di tab yang
+ * sama (keluar lalu masuk akun lain) ikut terbawa dan tampil sebagai "Materi ini sudah dihapus".
+ */
+function load(userId: string | null): StudySession | null {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<StudySession>;
+    const { ownerId, ...parsed } = JSON.parse(raw) as Partial<StudySession> & { ownerId?: unknown };
+    if (!userId || ownerId !== userId) return null;
     // Cache lama (materi contoh, atau format sebelum /sessions) dibuang.
     if (
       typeof parsed.materialId !== 'string' ||
@@ -198,7 +204,7 @@ export const OUTBOX_RETRY_MS = 30_000;
 export function StudySessionProvider({ children, store = defaultOutbox }: { children: ReactNode; store?: OutboxStore }) {
   const auth = useAuth();
   const userId = auth.status === 'authenticated' ? auth.user.id : null;
-  const [session, setSession] = useState<StudySession | null>(load);
+  const [session, setSession] = useState<StudySession | null>(() => load(userId));
   const [syncing, setSyncing] = useState(true);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -209,12 +215,12 @@ export function StudySessionProvider({ children, store = defaultOutbox }: { chil
 
   useEffect(() => {
     try {
-      if (session) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+      if (session && userId) sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...session, ownerId: userId }));
       else sessionStorage.removeItem(STORAGE_KEY);
     } catch {
       // sessionStorage diblokir: sesi tetap jalan di memori.
     }
-  }, [session]);
+  }, [session, userId]);
 
   useEffect(
     () => () => {

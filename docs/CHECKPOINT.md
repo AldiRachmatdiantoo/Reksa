@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 23 November 2026, copy UI disederhanakan jadi bahasa yang mudah dipahami anak (Aldi, branch `feat/aldi-copy-sederhana`)
+**Checkpoint terakhir:** 23 November 2026, pilihan materi tidak lagi terbawa ke akun lain di tab yang sama (Aldi, branch `fix/aldi-sesi-antar-akun`)
 
 ---
 
@@ -17,7 +17,16 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 
 ## Riwayat checkpoint
 
-### #52 · Copy UI pakai bahasa yang mudah dipahami anak · branch `feat/aldi-copy-sederhana`
+### #53 · Pilihan materi tidak terbawa ke akun lain · branch `fix/aldi-sesi-antar-akun`
+
+- **Gejala:** akun demo pelajar membuka Belajar dan langsung melihat "Materi ini sudah dihapus: "golang 1" tidak ada lagi di daftar materimu", padahal materi itu milik akun lain yang sebelumnya dipakai di tab yang sama.
+- **Penyebab:** cache sesi belajar di `sessionStorage` (`reksa-study-session`) tidak mencatat pemiliknya dan tidak dibuang saat keluar. Materi yang sudah dipilih tapi belum dimulai tidak punya `serverId`, jadi sinkronisasi ke server tidak pernah membuangnya, dan `GET /materials/:id` untuk akun baru menjawab 404.
+- **Perbaikan:** cache disimpan bersama `ownerId` dan hanya dibaca kalau sama dengan akun yang login (cache format lama dibuang sekali). Tombol Keluar juga menghapus cache itu. Konstanta kuncinya di `features/studio/storageKey.ts`.
+- **Uji:** E2E baru di `session.spec.ts` (gagal sebelum perbaikan dengan pesan yang sama, lulus sesudahnya): akun A memilih materi, cookie berganti ke akun B, Belajar menampilkan pilihan materi; lalu Keluar mengosongkan cache.
+- **Akun demo (PR #67):** script `backend/scripts/set-demo-account.ts` menandai email terverifikasi dan memasang kata sandi dari env `DEMO_PASSWORD`. Sudah dijalankan Aldi ke produksi untuk `demopelajar@gmail.com` dan `demoguru@gmail.com`.
+- **Rollout:** frontend saja.
+
+### #52 · Copy UI pakai bahasa yang mudah dipahami anak · PR #66
 
 - **Kenapa:** permintaan Aldi: istilah seperti "homeostasis" diganti kata yang gampang ditelan anak kecil, berlaku ke semua copy UI, dengan aturan antislop (tanpa em dash, tanpa fakta karangan).
 - **Istilah yang diganti:** "konsep kunci" jadi "poin penting", "konsep" jadi "poin", "rubrik" jadi "daftar poin penting", "peta konsep" jadi "peta pikiran", "Kalibrasi: meremehkan diri 25 poin" jadi "Tebakannya 25 lebih rendah dari nilai asli", "dikunci dengan hash" jadi "dikunci, jadi tidak bisa diubah diam-diam". Kebijakan privasi tetap menyebut Argon2id di dalam kurung supaya tetap akurat.
