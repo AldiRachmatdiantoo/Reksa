@@ -53,7 +53,7 @@ test('someone under 18 cannot register; someone born 18 years ago confirms their
   expect(registerCalls).toEqual(['POST']);
 
   await page.goto('/akun');
-  await expect(page.getByText('Gratis, 3 foto catatan per hari.')).toBeVisible();
+  await expect(page.getByText('Gratis, 3 foto catatan dan 3 materi baru per hari.')).toBeVisible();
   // PDF bukti belajar (FR-12) khusus Pro: akun gratis hanya melihat keterangannya, tanpa form.
   await expect(page.getByRole('heading', { name: 'PDF bukti belajar' })).toBeVisible();
   await expect(page.getByText('Fitur ini khusus paket Pro.', { exact: false })).toBeVisible();
