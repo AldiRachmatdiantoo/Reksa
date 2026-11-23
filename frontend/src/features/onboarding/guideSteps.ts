@@ -51,7 +51,7 @@ export function guideFor(role: Role, fullName: string): Guide {
           mood: 'idle',
           title: 'Mulai dari Beranda',
           target: studentNav('/belajar/beranda'),
-          text: 'Beranda berisi pintasan ke semua bagian REKSA, lengkap dengan keterangan singkat isinya. Bingung mau ke mana? Buka Beranda dulu.',
+          text: 'Beranda menunjukkan satu hal yang paling pas kamu kerjakan sekarang, misalnya latihan ulang yang sudah waktunya atau foto catatan yang belum dikirim. Bingung mau mulai dari mana? Buka Beranda dulu.',
         },
         {
           mascot: 'risu',

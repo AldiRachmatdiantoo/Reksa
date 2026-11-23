@@ -2,7 +2,7 @@
 
 Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa pun (termasuk sesi Claude baru) bisa langsung melanjutkan.
 
-**Checkpoint terakhir:** 23 November 2026, Beranda pelajar berisi kartu pintasan hidup di produksi (Aldi, PR #63)
+**Checkpoint terakhir:** 23 November 2026, Beranda pelajar diganti jadi halaman langkah berikutnya (Aldi, branch `feat/aldi-beranda-langkah`)
 
 ---
 
@@ -16,6 +16,14 @@ Catatan posisi proyek. Diperbarui setiap kali satu tahap selesai, supaya siapa p
 | Fase 3 | 🟡 Stage 1 rubrik + Stage 3 klaster kelas, `AI_PROVIDER_MODE=gemini` dirangkai, REKSA dibatasi 18+ (branch `feat/aldi-gemini-text`), belum diuji dengan API key | ✅ Stage 2 Vision (`geminiVision.ts`) + uji prompt injection |
 
 ## Riwayat checkpoint
+
+### #51 · Beranda jadi halaman langkah berikutnya · branch `feat/aldi-beranda-langkah`
+
+- **Kenapa:** kartu pintasan di #50 terasa mubazir di desktop, karena mengulang menu yang ada tepat di header. Beranda sekarang menjawab "aku harus ngapain sekarang?", bukan daftar menu.
+- **Isi:** satu kartu langkah berikutnya (lembar bergaris, satu-satunya aksen ember) yang dipilih dari keadaan akun dengan urutan: sesi berjalan (lihat hasil, foto catatan, lanjutkan fokus), latihan ulang yang sudah waktunya, materi pertama, lalu sesi baru. Di bawahnya "Perlu kamu tahu", hanya tampil kalau ada isinya: email belum diverifikasi (memakai `VerifyEmailNotice`), catatan yang sedang dicek, hasil cek dalam 24 jam terakhir dengan nilainya, kuota materi baru habis. Terakhir kartu Panduan REKSA. Kartu Materi, Ulang, Riwayat, Kelas, dan Akun dibuang.
+- **Data:** `GET /spaced/due`, `GET /materials/quota`, `GET /history?limit=20` (item terbaru), sesi dari `StudySessionProvider`. Yang gagal dimuat dianggap tidak ada, jadi Beranda tetap memberi arah. Logika di `frontend/src/features/home/homeCards.ts`.
+- **Uji:** unit frontend 132; E2E 21 lolos dengan backend lokal mode `mock`. Dengan mode `gemini`, 4 uji yang menunggu hasil cek gagal karena Gemini gratis menolak (`AI_UNAVAILABLE`), bukan karena Beranda. `home.spec.ts` sekarang menelusuri akun baru, punya materi, sesi menunggu foto, lalu hasil cek baru. Dicek di browser lokal: desktop 1280px gelap, panel sempit terang.
+- **Rollout:** frontend saja.
 
 ### #50 · Beranda pelajar berisi kartu pintasan · PR #63
 
