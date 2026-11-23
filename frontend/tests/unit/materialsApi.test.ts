@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/core/apiClient';
-import { uploadErrorMessage } from '@/features/materials/materialsApi';
+import { openMaterialPdf, uploadErrorMessage } from '@/features/materials/materialsApi';
 
 describe('uploadErrorMessage', () => {
   it('memberi pesan koneksi saat server tidak terjangkau', () => {
@@ -32,5 +32,36 @@ describe('uploadErrorMessage', () => {
 
   it('punya pesan umum untuk error non-API', () => {
     expect(uploadErrorMessage(new Error('boom'))).toBe('Materi gagal dikirim. Coba lagi.');
+  });
+});
+
+describe('openMaterialPdf', () => {
+  const fakeTab = () => ({ opener: {} as unknown, location: { href: 'about:blank' }, close: vi.fn() });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('membuka tab kosong dulu lalu mengarahkannya ke signed URL tanpa opener', async () => {
+    const tab = fakeTab();
+    const open = vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window);
+    const getUrl = vi.fn().mockResolvedValue({ url: 'https://storage.example/m.pdf?sig=1' });
+
+    await expect(openMaterialPdf('m1', getUrl)).resolves.toBe(true);
+    expect(open).toHaveBeenCalledWith('about:blank', '_blank');
+    expect(getUrl).toHaveBeenCalledWith('m1');
+    expect(tab.opener).toBeNull();
+    expect(tab.location.href).toBe('https://storage.example/m.pdf?sig=1');
+  });
+
+  it('menutup tab kosong dan mengembalikan false bila URL gagal diambil', async () => {
+    const tab = fakeTab();
+    vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window);
+
+    await expect(openMaterialPdf('m1', vi.fn().mockRejectedValue(new Error('403')))).resolves.toBe(false);
+    expect(tab.close).toHaveBeenCalled();
+  });
+
+  it('tidak melempar saat pop up diblokir dan URL gagal', async () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    await expect(openMaterialPdf('m1', vi.fn().mockRejectedValue(new Error('x')))).resolves.toBe(false);
   });
 });

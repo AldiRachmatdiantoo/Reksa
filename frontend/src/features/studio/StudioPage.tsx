@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/core/apiClient';
-import { formatMaterialDate, useMaterial, useMaterials, type Material } from '@/features/materials/materialsApi';
+import { formatMaterialDate, openMaterialPdf, useMaterial, useMaterials, type Material } from '@/features/materials/materialsApi';
 import { useNow } from '@/shared/hooks/useNow';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { EASE_OUT, pageTransition, Reveal, Stagger, StaggerItem } from '@/shared/motion';
@@ -513,7 +513,10 @@ function MaterialArticle({ material }: { material: Material }) {
   return (
     <article className="flex flex-col gap-5 rounded-lg border border-line-soft bg-card p-5 sm:p-6">
       <header className="flex flex-col gap-2">
-        <h2 className="font-title text-title-lg text-ink">{material.title}</h2>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h2 className="font-title text-title-lg text-ink">{material.title}</h2>
+          {material.source === 'PDF' && <OpenPdfButton materialId={material.id} />}
+        </div>
         <p className="text-body-md text-ink-muted text-pretty">{material.rubric.summary}</p>
       </header>
       <Stagger
@@ -531,6 +534,36 @@ function MaterialArticle({ material }: { material: Material }) {
         ))}
       </Stagger>
     </article>
+  );
+}
+
+/**
+ * PDF asli untuk dibaca utuh. Hanya muncul saat bacaan terbuka: selama waktu fokus berjalan MaterialArticle tidak
+ * dirender, jadi tombol ini ikut tersembunyi dan latihan tulis dari ingatan tetap jujur.
+ */
+function OpenPdfButton({ materialId }: { materialId: string }) {
+  const [opening, setOpening] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const open = async () => {
+    setFailed(false);
+    setOpening(true);
+    setFailed(!(await openMaterialPdf(materialId)));
+    setOpening(false);
+  };
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <Button variant="outline" onClick={open} disabled={opening} aria-busy={opening}>
+        <Icon name="picture_as_pdf" />
+        {opening ? 'Membuka PDF...' : 'Buka PDF asli'}
+      </Button>
+      {failed && (
+        <p role="alert" className="text-body-sm text-danger">
+          PDF gagal dibuka. Coba lagi.
+        </p>
+      )}
+    </div>
   );
 }
 
