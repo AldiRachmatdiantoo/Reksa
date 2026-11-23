@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { dismissCookieNotice, registerStudent } from './helpers';
+import { createMaterial, dismissCookieNotice, registerStudent } from './helpers';
 
 /** Mencatat setiap panggilan /auth/me dan /auth/refresh beserta status jawabannya. */
 function watchAuthCalls(page: Page) {
@@ -53,6 +53,32 @@ test('a signed-in student stays signed in after a reload, and stays out after lo
   await page.goto('/belajar');
   await expect(page).toHaveURL(/\/masuk/);
   expect(calls).toEqual([]);
+});
+
+// Dulu materi yang dipilih akun sebelumnya di tab yang sama ikut terbawa ke akun berikutnya dan tampil sebagai
+// "Materi ini sudah dihapus" (terlihat di akun demo).
+test('a material picked by one account does not follow the next account in the same tab', async ({ page }) => {
+  await registerStudent(page.request, 'akun-a');
+  await createMaterial(page.request, 'Materi Akun A');
+  await page.goto('/belajar');
+  await dismissCookieNotice(page);
+  await page.getByRole('button', { name: /Materi Akun A/ }).click();
+  await expect(page.getByRole('button', { name: 'Mulai waktu fokus' })).toBeVisible();
+
+  // Cookie berganti ke akun lain tanpa lewat tombol Keluar (mis. sesi habis lalu masuk akun lain).
+  await registerStudent(page.request, 'akun-b');
+  await page.goto('/belajar');
+  await expect(page.getByRole('heading', { level: 1, name: 'Mau belajar materi apa?' })).toBeVisible();
+  await expect(page.getByText('Materi ini sudah dihapus')).toHaveCount(0);
+
+  // Keluar membuang pilihan materi dari tab ini.
+  await createMaterial(page.request, 'Materi Akun B');
+  await page.reload();
+  await page.getByRole('button', { name: /Materi Akun B/ }).click();
+  await expect(page.getByRole('button', { name: 'Mulai waktu fokus' })).toBeVisible();
+  await page.getByRole('button', { name: 'Keluar dari akun' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  expect(await page.evaluate(() => sessionStorage.getItem('reksa-study-session'))).toBeNull();
 });
 
 // Akun baru belum terverifikasi: penjelasannya ada di kotak verifikasi, tombol Gabung mati,
